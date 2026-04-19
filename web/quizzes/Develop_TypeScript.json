@@ -1,0 +1,373 @@
+{
+  "category": "Develop_TypeScript",
+  "questions": [
+    {
+      "id": "develop_typescript_easy_001",
+      "category": "Develop_TypeScript",
+      "difficulty": "easy",
+      "question": "What is the main purpose of an Activity in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To define the overall logic and flow of a long-running process"
+        },
+        {
+          "key": "B",
+          "text": "To execute a single, well-defined action like calling an API or querying a database"
+        },
+        {
+          "key": "C",
+          "text": "To manage and schedule other Workflows"
+        },
+        {
+          "key": "D",
+          "text": "To store the history of all Workflow events"
+        }
+      ],
+      "answer": "B",
+      "explanation": "In Temporal, an Activity is designed to perform one specific task — something that interacts with the outside world, like reading from a database, calling a third-party API, or processing a file. Think of Activities as the 'doing' parts of your application. The overall logic that decides what to do and in what order lives in a Workflow, while Activities handle the actual work.",
+      "source_doc": "develop_typescript_activities_basics.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_easy_002",
+      "category": "Develop_TypeScript",
+      "difficulty": "easy",
+      "question": "Why should Activities be written to be 'idempotent'?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Because Activities run faster when they are idempotent"
+        },
+        {
+          "key": "B",
+          "text": "Because Temporal may automatically retry an Activity multiple times if it fails or times out"
+        },
+        {
+          "key": "C",
+          "text": "Because idempotent Activities do not need to be registered with a Worker"
+        },
+        {
+          "key": "D",
+          "text": "Because Temporal deletes Activity history after the first successful run"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal automatically retries Activities when they fail or time out. This means the same Activity could be called more than once with the same inputs. 'Idempotent' means that running the same operation multiple times produces the same result as running it once — no duplicate charges, no duplicate records, etc. Writing idempotent Activities ensures that automatic retries don't cause unintended side effects.",
+      "source_doc": "develop_typescript_activities_execution.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_easy_003",
+      "category": "Develop_TypeScript",
+      "difficulty": "easy",
+      "question": "What is the purpose of marking an Activity error as 'benign' in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It prevents the Activity from ever being retried by Temporal"
+        },
+        {
+          "key": "B",
+          "text": "It causes the entire Workflow to stop immediately when the error occurs"
+        },
+        {
+          "key": "C",
+          "text": "It reduces noise in logs and monitoring by indicating the error is expected and not a real problem"
+        },
+        {
+          "key": "D",
+          "text": "It automatically fixes the error and resumes the Activity from where it left off"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Sometimes Activities encounter errors that are completely normal and expected — like polling an external service that isn't ready yet. If these expected errors are treated the same as real failures, they clutter your logs and monitoring dashboards, making it hard to spot actual problems. By marking an error as 'benign,' you tell Temporal to treat it as a low-priority, expected situation. This downgrades its log level and keeps your observability data clean, while still allowing your Workflow to handle the error normally.",
+      "source_doc": "develop_typescript_activities_benign-exceptions.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_med_001",
+      "category": "Develop_TypeScript",
+      "difficulty": "med",
+      "question": "In the Temporal TypeScript SDK, why do you import Activity types using `import type` instead of importing the functions directly when calling activities from a Workflow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "TypeScript requires `import type` for all async functions to avoid compilation errors"
+        },
+        {
+          "key": "B",
+          "text": "Workflow code runs in a sandboxed environment and must not import Activity implementation code directly; only types are used to create a type-safe proxy via `proxyActivities`"
+        },
+        {
+          "key": "C",
+          "text": "Importing Activity functions directly would cause them to execute immediately instead of being scheduled as Activity Tasks"
+        },
+        {
+          "key": "D",
+          "text": "The `proxyActivities` function only accepts string names, so importing types is just a developer convenience with no functional impact"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Workflow code runs in a special sandboxed V8 isolate that must be deterministic. Importing actual Activity function implementations would pull in Node.js APIs and side effects into this sandbox, breaking determinism. By using `import type`, you get full TypeScript type safety while ensuring only the type information (not the runtime code) is included in the Workflow bundle. The actual execution is handled by `proxyActivities`, which schedules an Activity Task that a Worker picks up and runs in the normal Node.js environment.",
+      "source_doc": "develop_typescript_activities_execution.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_med_002",
+      "category": "Develop_TypeScript",
+      "difficulty": "med",
+      "question": "You have an Activity that polls an external queue and frequently returns 'not ready yet' errors during normal operation. These expected errors are flooding your observability dashboards. What is the correct Temporal TypeScript SDK approach to handle this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Wrap the Activity in a try/catch inside the Workflow and suppress the error there"
+        },
+        {
+          "key": "B",
+          "text": "Set `maximumAttempts: 1` in the retry policy so the Activity doesn't retry and stops generating errors"
+        },
+        {
+          "key": "C",
+          "text": "Throw an `ApplicationFailure` with `category: ApplicationFailureCategory.BENIGN` so logs are downgraded to DEBUG and failure metrics are not emitted"
+        },
+        {
+          "key": "D",
+          "text": "Return a special sentinel value like `null` from the Activity instead of throwing an error"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal TypeScript SDK supports marking ApplicationFailure errors as BENIGN by setting the `category` field to `ApplicationFailureCategory.BENIGN`. This downgrades Activity failure logs to DEBUG level, suppresses Activity failure metrics, and avoids setting the OpenTelemetry failure status to ERROR. This is the correct pattern for expected, non-severe failures like polling loops or transient conditions that are a normal part of operation, keeping your observability data clean while still allowing Workflow logic to handle the outcome.",
+      "source_doc": "develop_typescript_activities_benign-exceptions.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_med_003",
+      "category": "Develop_TypeScript",
+      "difficulty": "med",
+      "question": "Which Activity timeout would you set if you want to limit how long a single attempt of an Activity can run, but still allow multiple retries that together could take much longer?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Schedule-To-Close Timeout, because it covers the entire Activity Execution including all retries"
+        },
+        {
+          "key": "B",
+          "text": "Schedule-To-Start Timeout, because it limits time from scheduling to when a Worker picks it up"
+        },
+        {
+          "key": "C",
+          "text": "Start-To-Close Timeout, because it limits the duration of a single Activity Task Execution attempt"
+        },
+        {
+          "key": "D",
+          "text": "Heartbeat Timeout, because it tracks progress within a single attempt"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Start-To-Close Timeout limits how long a single Activity Task Execution (one attempt) can run, from when a Worker polls the task to when it completes. This is the recommended timeout to always set. If the Activity fails and retries, each retry gets its own Start-To-Close budget. In contrast, the Schedule-To-Close Timeout is a hard cap across all attempts combined. Use Start-To-Close when you want per-attempt time limits with the flexibility for multiple retries, and optionally combine it with Schedule-To-Close to set an overall upper bound.",
+      "source_doc": "develop_typescript_activities_timeouts.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_med_004",
+      "category": "Develop_TypeScript",
+      "difficulty": "med",
+      "question": "You need to share an initialized database connection across multiple Activity functions without re-connecting on every Activity execution. What is the recommended TypeScript SDK pattern for this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Store the connection as a global variable in the activities file so all functions can access it"
+        },
+        {
+          "key": "B",
+          "text": "Create a factory function (`createActivities`) that closes over the shared dependency and returns an object of Activity functions, then pass the result to the Worker's `activities` option"
+        },
+        {
+          "key": "C",
+          "text": "Initialize the connection inside each Activity function and cache it using a module-level singleton pattern"
+        },
+        {
+          "key": "D",
+          "text": "Pass the connection details as Activity parameters from the Workflow so each Activity can create its own connection"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The recommended dependency injection pattern in Temporal TypeScript is to create a factory function (e.g., `createActivities(db)`) that accepts shared dependencies and returns an object of Activity functions as closures. You initialize expensive resources like DB connections once in your Worker startup code, pass them to the factory, and register the resulting activities object with `Worker.create({ activities: createActivities(db) })`. In the Workflow, you use `proxyActivities\u003cReturnType\u003ctypeof createActivities\u003e\u003e()` to get type-safe access. This avoids re-initializing connections on every Activity call and keeps secrets out of Activity parameters.",
+      "source_doc": "develop_typescript_activities_basics.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_hard_001",
+      "category": "Develop_TypeScript",
+      "difficulty": "hard",
+      "question": "Your team is building a Temporal Workflow in TypeScript that calls a payment processing Activity. A junior engineer writes `import { chargeCard } from './activities'` directly in the Workflow file and calls `await chargeCard(amount)` inline. The code compiles and tests pass locally. What will happen when this runs in production?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It will work correctly because Activities are just functions and TypeScript functions can be called anywhere."
+        },
+        {
+          "key": "B",
+          "text": "The Activity will execute but won't be recorded in the Event History, breaking Temporal's replay and fault-tolerance guarantees."
+        },
+        {
+          "key": "C",
+          "text": "Temporal will throw a runtime error because Activity functions cannot be imported into Workflow files and called directly — they must be invoked via proxyActivities."
+        },
+        {
+          "key": "D",
+          "text": "The Activity will run twice: once directly and once scheduled as an Activity Task by Temporal."
+        }
+      ],
+      "answer": "C",
+      "explanation": "In Temporal's TypeScript SDK, you must NEVER call Activity functions directly from a Workflow. Workflow code runs in a deterministic sandbox and Activities must be invoked via `proxyActivities()`, which returns a proxy object. When you call a proxied function, Temporal schedules an Activity Task — this is what creates the ActivityTaskScheduled event in the history, enables retries, and supports fault recovery through replay. Importing and calling the Activity function directly bypasses all of this machinery. The documentation explicitly warns: 'you never call an Activity function directly. Instead, you pass in the types of your Activities and Activity options to the proxyActivities function.' Notice the import pattern: `import type * as activities from './activities'` — the `type` keyword means only TypeScript types are imported, not the runtime function. If you import the actual function and call it, you break Temporal's execution model entirely.",
+      "source_doc": "develop_typescript_activities_execution.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_hard_002",
+      "category": "Develop_TypeScript",
+      "difficulty": "hard",
+      "question": "Your team's Activity polls an external job queue. When the queue is empty, the Activity throws an error and gets retried every 30 seconds. Your on-call engineer is flooded with PagerDuty alerts and your dashboards show constant Activity failure metrics, but this polling behavior is completely expected and normal. What is the correct Temporal TypeScript solution?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Increase the retry interval to reduce alert frequency, and accept that failure metrics will appear in dashboards during normal operation."
+        },
+        {
+          "key": "B",
+          "text": "Use a Workflow timer (`sleep`) between poll attempts instead of letting the Activity fail and retry, so no errors are thrown at all."
+        },
+        {
+          "key": "C",
+          "text": "Throw the error using `ApplicationFailure.create({ category: ApplicationFailureCategory.BENIGN })` so the error is downgraded to DEBUG logs and excluded from failure metrics and OpenTelemetry error status."
+        },
+        {
+          "key": "D",
+          "text": "Catch the error inside the Activity and return null instead of throwing, then handle the null return value in the Workflow."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal's TypeScript SDK provides `ApplicationFailureCategory.BENIGN` specifically for this production scenario: expected, non-severe errors that occur as part of normal operation (like polling). When you mark an ApplicationFailure as BENIGN, three things happen: Activity failure logs are downgraded to DEBUG level (no more alert noise), failure metrics are NOT emitted (dashboards stay clean), and OpenTelemetry spans do NOT get the ERROR status. The Activity still fails and retries normally — the retry mechanism is unaffected. This is architecturally superior to option B because it keeps the retry logic inside Temporal's framework rather than using timers, and superior to option D because returning null leaks implementation details into Workflow logic. The documentation says to use benign exceptions for 'Activity errors that occur regularly as part of normal operations, such as polling an external service that isn't ready yet.'",
+      "source_doc": "develop_typescript_activities_benign-exceptions.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_hard_003",
+      "category": "Develop_TypeScript",
+      "difficulty": "hard",
+      "question": "Your team uses a factory function pattern for Activities that share a database connection pool. In the Workflow file, you need to use these Activities with proper TypeScript type safety. Which of the following correctly proxies these factory-created Activities?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`const { greet } = proxyActivities\u003ctypeof createActivities\u003e({ startToCloseTimeout: '30s' });` — pass the factory function type directly."
+        },
+        {
+          "key": "B",
+          "text": "`const { greet } = proxyActivities\u003cReturnType\u003ctypeof createActivities\u003e\u003e({ startToCloseTimeout: '30s' });` — use ReturnType\u003c\u003e to get the type of the object the factory returns."
+        },
+        {
+          "key": "C",
+          "text": "`const { greet } = proxyActivities\u003ccreateActivities\u003e({ startToCloseTimeout: '30s' });` — reference the factory by name without typeof."
+        },
+        {
+          "key": "D",
+          "text": "Factory-function Activities cannot be typed in Workflows because proxyActivities requires a static activities object, not a dynamically generated one."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is a subtle but important TypeScript generic pattern. `createActivities` is a factory function — it's not the Activities object itself, it's a function that *returns* the Activities object. If you pass `typeof createActivities` to `proxyActivities`, you'd be typing it as a function, not as the object containing Activity methods. You need `ReturnType\u003ctypeof createActivities\u003e` which extracts the return type of the factory — the actual object with `greet`, `greet_es`, etc. as properties. This is precisely what the documentation demonstrates: `proxyActivities\u003cReturnType\u003ctypeof createActivities\u003e\u003e`. The key insight is that Temporal's runtime doesn't care about this type parameter at all — Activities are always dispatched by their string names. The generic type is purely for TypeScript compile-time safety. The factory pattern itself is valuable because it lets you inject expensive shared dependencies (like DB connections) into Activities without recreating them on every call.",
+      "source_doc": "develop_typescript_activities_basics.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_hard_004",
+      "category": "Develop_TypeScript",
+      "difficulty": "hard",
+      "question": "Your team is building a Workflow that triggers a video transcoding job on an external system. The transcoding takes 4-8 hours. You implement the Activity to call the external API to START the transcoding, then block waiting for a webhook callback. After 30 minutes, the Activity times out. What is the correct Temporal pattern for this use case?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Set a Schedule-To-Close Timeout of 10 hours on the Activity so it has enough time to wait for the webhook."
+        },
+        {
+          "key": "B",
+          "text": "Poll the external API status endpoint every 60 seconds inside the Activity until transcoding completes, relying on heartbeating to keep the Activity alive."
+        },
+        {
+          "key": "C",
+          "text": "Use Asynchronous Activity Completion: capture the Task Token, throw CompleteAsyncError to release the Activity thread, then call AsyncCompletionClient.complete() from the webhook handler when transcoding finishes."
+        },
+        {
+          "key": "D",
+          "text": "Use a Child Workflow instead of an Activity for long-running external operations, and have the Child Workflow sleep until the webhook arrives via a Signal."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Asynchronous Activity Completion is the correct Temporal pattern when an Activity needs to wait for an external system event (like a webhook). Here's how it works: (1) The Activity captures its Task Token via `activityInfo().taskToken`, sends that token (or Workflow/Activity IDs) to the external system as a callback identifier, then throws `CompleteAsyncError`. This releases the Worker thread — the Activity is now 'in flight' but not consuming any Worker resources. (2) When the webhook arrives hours later, a separate process (your webhook handler) uses `AsyncCompletionClient.complete(taskToken, result)` to signal completion to Temporal. The Workflow is then unblocked with the result. Setting an 8-10 hour timeout (option A) is wasteful and fragile — if the Activity thread dies, you lose state. Polling (option B) works but is inefficient and may miss the webhook. The key insight: Asynchronous Activity Completion decouples the Activity's *execution thread lifetime* from the Activity's *logical duration*, which is essential for integrating with external async systems.",
+      "source_doc": "develop_typescript_activities_asynchronous-activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_nightmare_001",
+      "category": "Develop_TypeScript",
+      "difficulty": "nightmare",
+      "question": "Your team builds a TypeScript workflow that orchestrates a long-running third-party document processing pipeline. The activity is implemented with async completion: it posts a task token to an external queue, throws `CompleteAsyncError`, and the external system later calls `AsyncCompletionClient.complete`. The activity is configured with `scheduleToCloseTimeout: '2h'` and a retry policy of `maximumAttempts: 3`. During a production incident, the external system crashes after receiving the task token but before calling `complete`. The crashed system is restored 3 hours later and attempts to call `AsyncCompletionClient.complete` with the original task token. What happens?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `complete` call succeeds because Temporal stores task tokens indefinitely and the async completion client can always finalize an activity regardless of elapsed time."
+        },
+        {
+          "key": "B",
+          "text": "The `complete` call fails because the `scheduleToCloseTimeout` of 2 hours elapsed, causing Temporal to mark the activity as failed. The retry policy then fires up to 3 times, each generating a new task token. The original task token is now stale and associated with a timed-out attempt, so the completion is rejected."
+        },
+        {
+          "key": "C",
+          "text": "The `complete` call succeeds because `CompleteAsyncError` suspends all timeout tracking for the activity until an external signal is received, making `scheduleToCloseTimeout` irrelevant."
+        },
+        {
+          "key": "D",
+          "text": "The workflow itself fails immediately when the `scheduleToCloseTimeout` elapses because the retry policy is ignored for activities using async completion."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question exposes a critical production trap at the intersection of async activity completion, timeouts, and retry policies. When an activity throws `CompleteAsyncError`, it signals Temporal that the activity function itself has returned but the activity execution is NOT yet complete — Temporal keeps the activity execution open, waiting for an external `AsyncCompletionClient.complete` call. Crucially, `scheduleToCloseTimeout` still ticks. It measures the total wall-clock time from when the activity was scheduled to when Temporal receives a successful completion — and `CompleteAsyncError` does not pause this clock. After 2 hours, Temporal marks the activity attempt as failed due to timeout. The retry policy then kicks in, and Temporal schedules a fresh attempt (up to 3 times). Each new attempt generates a brand-new task token. The original task token from the crashed-and-recovered system is now orphaned — it maps to a specific activity attempt that has already been timed out and superseded. When the external system calls `complete` with that stale token, Temporal rejects it (typically with a `NotFoundError` or similar). This is why async completion patterns require robust external state management: the external system must handle the scenario where its task token has expired, ideally by checking for a new scheduled attempt or by the workflow using a signal/query to reconcile state. The design insight: async completion decouples the activity function's return from the activity execution's completion, but it does NOT decouple the execution from Temporal's timeout machinery. Engineers must set `scheduleToCloseTimeout` to comfortably exceed the worst-case external processing time, AND implement idempotent external completion with task token validation.",
+      "source_doc": "develop_typescript_activities_asynchronous-activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_typescript_nightmare_002",
+      "category": "Develop_TypeScript",
+      "difficulty": "nightmare",
+      "question": "A TypeScript team implements the dependency injection pattern for activities, using a factory function `createActivities(db)` that closes over a database connection. They register the activities with a custom name map: `activities: { processOrder: createActivities(db).processOrder, fulfillOrder: createActivities(db).fulfillOrder }`. Inside the workflow, they use `proxyActivities\u003cReturnType\u003ctypeof createActivities\u003e\u003e({ startToCloseTimeout: '30s' })` and destructure `{ processOrder, fulfillOrder }`. After deploying, they notice that `processOrder` always succeeds but calls to `fulfillOrder` consistently fail with: `ApplicationFailure: Activity function fulfillOrder is not registered on this Worker`. The activity code for both functions is identical in structure. What is the most likely root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `proxyActivities` generic type parameter `ReturnType\u003ctypeof createActivities\u003e` is incorrect for factory functions; you must use `typeof createActivities` directly, which causes the proxy to generate wrong activity names."
+        },
+        {
+          "key": "B",
+          "text": "Each call to `createActivities(db)` returns a new object, so `processOrder` and `fulfillOrder` were registered from two different factory invocations. The worker registration map uses the object property names as activity names, so if the worker was started with only `processOrder` from the first call and `fulfillOrder` from the second, both are present — meaning the registration itself is likely correct. The real issue is that the worker running the task queue has a code deployment mismatch: `fulfillOrder` exists in the registered map but under a different string key than the workflow expects."
+        },
+        {
+          "key": "C",
+          "text": "In TypeScript, activities registered via a factory function pattern are referenced by their original function names in the source file, not the object property names used in the worker registration map. The workflow proxy uses `fulfillOrder` as the activity type name, but since the underlying function is an anonymous arrow function inside the factory, Temporal cannot match it."
+        },
+        {
+          "key": "D",
+          "text": "The worker registration map `{ processOrder: ..., fulfillOrder: ... }` explicitly sets the activity names as `processOrder` and `fulfillOrder`. The workflow proxy destructures these same names. However, if the worker was deployed with the registration key spelled differently (e.g., `fulfill_order` vs `fulfillOrder`) due to a copy-paste error in one of the two `createActivities(db)` calls populating the map, the string name mismatch causes the `NotFoundError` for that specific activity while the correctly-named one succeeds."
+        },
+        {
+          "key": "E",
+          "text": "This cannot happen because `proxyActivities` validates activity names at compile time using TypeScript generics, preventing mismatches before deployment."
+        }
+      ],
+      "answer": "D",
+      "explanation": "This question teaches a fundamental principle: in Temporal's TypeScript SDK, activities are referenced exclusively by their string names at runtime — TypeScript's type system provides compile-time safety but cannot catch runtime name mismatches introduced by worker registration keys. The `activities: { processOrder: ..., fulfillOrder: ... }` map in `Worker.create` defines the canonical string names Temporal uses. The `proxyActivities\u003cReturnType\u003ctypeof createActivities\u003e\u003e()` call in the workflow generates proxies whose method names must exactly match those registration keys. The error `Activity function fulfillOrder is not registered on this Worker` means the worker the task landed on has no activity registered under the string `'fulfillOrder'`. Since `processOrder` works, the worker IS running and IS serving the task queue — but `fulfillOrder` specifically is absent or misspelled in that worker's registration map. A classic production scenario: `createActivities(db).processOrder` is correctly keyed as `processOrder`, but `createActivities(db).fulfillOrder` was accidentally keyed as `fulfillOrder` in staging and `fulfill_order` in production (or vice versa) — or one key was simply omitted in a rushed deployment. The deeper architectural insight: because activities are 'just functions' registered by name, the TypeScript type system's structural typing gives you a false sense of safety. The type `ReturnType\u003ctypeof createActivities\u003e` tells the proxy what methods exist and their signatures, but it cannot verify that the worker's actual registration keys match. This is why the docs explicitly warn to 'validate and handle mismatches in Activity names' when using dynamic references, and why integration tests that actually run workers are essential — the compiler alone cannot catch this class of error.",
+      "source_doc": "develop_typescript_activities_basics.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    }
+  ]
+}

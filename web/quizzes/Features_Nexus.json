@@ -1,0 +1,369 @@
+{
+  "category": "Features_Nexus",
+  "questions": [
+    {
+      "id": "features_nexus_easy_001",
+      "category": "Features_Nexus",
+      "difficulty": "easy",
+      "question": "What is the main purpose of Temporal Nexus?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To replace Workflows with a faster execution engine"
+        },
+        {
+          "key": "B",
+          "text": "To let teams share functionality across isolated Namespaces without exposing internal details"
+        },
+        {
+          "key": "C",
+          "text": "To store metrics and logs from all Temporal applications in one place"
+        },
+        {
+          "key": "D",
+          "text": "To combine multiple Temporal Clusters into a single unified cluster"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Nexus solves a common problem in growing platforms: how do teams share and reuse functionality without creating tight dependencies? Nexus allows each team to keep their own isolated Namespace (for security and separation) while exposing a clean interface — called a Nexus Service — that other teams can call. The callers never see the internal implementation details, just the service contract. Think of it like a well-defined API between teams, but built on top of Temporal's durable execution model.",
+      "source_doc": "nexus.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_easy_002",
+      "category": "Features_Nexus",
+      "difficulty": "easy",
+      "question": "When a Nexus handler service goes offline temporarily, what happens to the caller Workflow that was trying to use it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The caller Workflow immediately fails with an error"
+        },
+        {
+          "key": "B",
+          "text": "The caller Workflow is paused and must be manually resumed by an operator"
+        },
+        {
+          "key": "C",
+          "text": "The caller Workflow continues scheduling the Operation, which will be processed when the service comes back up"
+        },
+        {
+          "key": "D",
+          "text": "The caller Workflow switches to a backup service automatically"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Nexus uses the same queue-based Worker architecture as the rest of Temporal. When a caller Workflow schedules a Nexus Operation, it hands off responsibility to the Nexus Machinery. If the handler service is temporarily down, the Machinery keeps retrying automatically. The caller Workflow does not fail or get stuck — it simply waits. Once the handler service comes back online and its Workers start polling the Task Queue again, the pending Operations get processed. This is a core benefit of building on Temporal's durable execution foundation.",
+      "source_doc": "nexus.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_easy_003",
+      "category": "Features_Nexus",
+      "difficulty": "easy",
+      "question": "What is a Nexus Endpoint used for?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It runs Workflow code directly so Workers don't have to"
+        },
+        {
+          "key": "B",
+          "text": "It acts as a go-between so callers can reach a handler service without knowing its internal details"
+        },
+        {
+          "key": "C",
+          "text": "It stores the results of completed Nexus Operations for later retrieval"
+        },
+        {
+          "key": "D",
+          "text": "It manages user permissions and login credentials for Temporal Cloud"
+        }
+      ],
+      "answer": "B",
+      "explanation": "A Nexus Endpoint is a reverse proxy — a middleman that sits between the caller and the handler. When a caller Workflow wants to use a Nexus Service, it only needs to know the Endpoint's name. The Endpoint takes care of routing the request to the correct Namespace and Task Queue on the handler side. This means if the handler team changes their internal setup (like renaming a Task Queue), the caller does not need to update anything. The Endpoint provides a stable, named address that hides all those internal details.",
+      "source_doc": "nexus_endpoints.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_med_001",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "A team wants to expose a Nexus Operation that sends a Signal to an existing Workflow. The operation must complete quickly. Which SDK builder function and operation mode should they use?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "New-Workflow-Run-Operation as an asynchronous operation, since signals are fire-and-forget"
+        },
+        {
+          "key": "B",
+          "text": "New-Sync-Operation as a synchronous operation, completing within the 10-second handler deadline"
+        },
+        {
+          "key": "C",
+          "text": "New-Workflow-Run-Operation as a synchronous operation, using the handler's Task Queue directly"
+        },
+        {
+          "key": "D",
+          "text": "New-Sync-Operation as an asynchronous operation, since it can run up to 60 days"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Synchronous Nexus Operations use New-Sync-Operation and must complete within the 10-second handler deadline. They are the correct choice for invoking Signals, Queries, Updates, or other low-latency reliable calls using the Temporal SDK Client. New-Workflow-Run-Operation is for asynchronous operations that start a new Workflow and can run much longer. Use sync operations when you need a fast, reliable cross-namespace call like signaling an existing workflow.",
+      "source_doc": "nexus_operations.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_med_002",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "Your caller Workflow schedules a Nexus Operation, but the handler service is temporarily down. What happens to the caller Workflow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The caller Workflow fails immediately with a NexusOperationFailed event"
+        },
+        {
+          "key": "B",
+          "text": "The caller Workflow is blocked and paused until the handler service recovers"
+        },
+        {
+          "key": "C",
+          "text": "The caller Workflow continues to schedule the Operation, and the Nexus Machinery retries automatically when the service recovers"
+        },
+        {
+          "key": "D",
+          "text": "The caller Workflow must implement custom retry logic to reschedule the Operation after the service recovers"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Because Nexus uses the same queue-based Worker architecture as the rest of Temporal, handler Workers simply poll the Endpoint's target Task Queue for Nexus Tasks. If the handler service is down, caller Workflows continue to schedule Operations — they process when the service comes back up. The Nexus Machinery handles automatic retries with exponential backoff. This is a key durability benefit: no bespoke service availability coordination is needed.",
+      "source_doc": "nexus.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_med_003",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "When debugging a Nexus Operation that appears stuck, a developer runs `temporal workflow describe` and sees the Operation in 'BackingOff' state with multiple attempts. What does this indicate?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Operation returned a non-retryable error and has permanently failed"
+        },
+        {
+          "key": "B",
+          "text": "The Operation is experiencing retryable errors and the Nexus Machinery is backing off before the next retry attempt"
+        },
+        {
+          "key": "C",
+          "text": "The handler Workflow has completed but the completion callback has not been delivered yet"
+        },
+        {
+          "key": "D",
+          "text": "The circuit breaker has tripped and the Operation will never be retried"
+        }
+      ],
+      "answer": "B",
+      "explanation": "A Pending Operation in 'BackingOff' state with multiple attempts means the handler is returning retryable errors, and the Nexus Machinery is applying exponential backoff before retrying. Retryable errors surface in Pending Operations rather than resolving the operation immediately. Non-retryable errors would instead produce a NexusOperationFailed, NexusOperationTimedOut, or NexusOperationCanceled event in the caller's Workflow History. In practice, seeing BackingOff is a signal to check handler logs for the underlying error causing repeated failures.",
+      "source_doc": "nexus_execution-debugging.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_med_004",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "A caller Workflow in Namespace A needs to call a Nexus Operation exposed by a team in Namespace B. How does the caller reference the handler, and what information does the caller need to know?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The caller must know the handler's Namespace, Task Queue, and Service name to route requests directly"
+        },
+        {
+          "key": "B",
+          "text": "The caller only needs the Nexus Endpoint name; the Endpoint encapsulates the target Namespace, Task Queue, and implementation"
+        },
+        {
+          "key": "C",
+          "text": "The caller must know the handler Workflow ID and Run ID to attach to the correct Workflow"
+        },
+        {
+          "key": "D",
+          "text": "The caller references the handler by its gRPC endpoint URL and Service name registered in the Nexus Registry"
+        }
+      ],
+      "answer": "B",
+      "explanation": "A Nexus Endpoint acts as a reverse proxy that decouples callers from handlers. The caller only needs to know the Endpoint name — the Endpoint routes requests to the target Namespace and Task Queue internally. This is a core design principle of Nexus: callers never need to know the handler's Namespace, Task Queue, or internal implementation. This allows handler teams to change their internal architecture without breaking callers. In practice, you register an Endpoint in the Nexus Registry (via UI, CLI, or Cloud Ops API) and share only the Endpoint name with consuming teams.",
+      "source_doc": "nexus_endpoints.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_hard_001",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "Your team runs a Nexus handler that processes payments. During a high-traffic period, the handler starts returning internal server errors intermittently. You notice in the Temporal UI that the Pending Operations are stuck in 'BackingOff' state with increasing attempt counts. A junior engineer suggests that since errors are retrying automatically, no action is needed. What is the critical risk they are missing?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "BackingOff state means the Operation has already failed permanently and the caller Workflow is blocked forever."
+        },
+        {
+          "key": "B",
+          "text": "After 5 consecutive retryable errors from a caller Namespace/Endpoint pair, the circuit breaker trips, blocking ALL Operations from that caller to that Endpoint — not just the failing ones."
+        },
+        {
+          "key": "C",
+          "text": "The automatic retries will exhaust the caller Workflow's event history, causing it to fail with a history size limit error."
+        },
+        {
+          "key": "D",
+          "text": "Pending Operations in BackingOff state still consume handler Worker capacity, potentially starving other Task Queues."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Nexus implements per caller-Namespace/Endpoint pair circuit breaking that trips after 5 consecutive retryable errors. This means a single misbehaving handler can block ALL Nexus Operations from that caller Namespace to that Endpoint — not just the one that's failing. This is a critical production concern: if your payment handler keeps returning retryable errors, the circuit breaker will eventually trip and block your entire team's ability to call any Operation on that Endpoint. The fix is to return non-retryable Nexus errors for failures that won't resolve on retry (like invalid input), reserving retryable errors only for truly transient conditions. BackingOff state (shown in Pending Operations) means the Machinery is still retrying with exponential backoff — it's a warning sign, not a terminal state, but it puts you on the path to circuit breaking.",
+      "source_doc": "nexus_operations.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_hard_002",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "You are designing a Nexus Operation that needs to send a Slack notification and return the message ID. The notification API typically responds in 200ms but can occasionally take up to 30 seconds during API degradation. You plan to implement this as a synchronous Nexus Operation. What will happen during those slow API responses?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal will automatically convert it to an asynchronous Operation if the handler takes longer than 10 seconds."
+        },
+        {
+          "key": "B",
+          "text": "The handler will complete successfully as long as it finishes within 60 seconds, since that's the cloud limit."
+        },
+        {
+          "key": "C",
+          "text": "The synchronous handler will timeout after 10 seconds as measured by the caller's Nexus Machinery. The timed-out handler will be retried, and repeated failures like this can trip the circuit breaker blocking all Operations on that Endpoint."
+        },
+        {
+          "key": "D",
+          "text": "The caller Workflow will be suspended and wait indefinitely until the handler responds, since Workflows are durable."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Synchronous Nexus Operations must complete within a 10-second handler deadline as measured from the caller's Nexus Machinery. This isn't a soft limit — when the handler exceeds this deadline, it's treated as a timeout. Critically, timed-out handlers are retried until the Operation's Schedule-to-Close timeout is exceeded. If the Slack API regularly takes 30 seconds, you'll have repeated timeouts counting toward the circuit breaker threshold (5 consecutive retryable errors trips it). The correct design is to use an asynchronous Nexus Operation (New-Workflow-Run-Operation) backed by a Workflow for anything that might take longer than a few seconds. Temporal does not auto-convert sync Operations to async — that architectural decision belongs to you. The 60-day limit applies to async Operations only.",
+      "source_doc": "nexus_operations.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_hard_003",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "A Platform team exposes a 'UserService' via Nexus. The Billing team and the Orders team both call it from separate caller Namespaces. The Platform team updates the Nexus Endpoint to point to a new Task Queue. What is true about how the Billing and Orders teams are affected, and what demonstrates Nexus's architectural intent?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Both teams' Workflows will fail immediately because the Endpoint configuration they compiled into their code is now stale."
+        },
+        {
+          "key": "B",
+          "text": "Both teams are completely unaffected at the code level — they still reference the Endpoint by name. The Endpoint acts as a reverse proxy that decouples callers from the handler's Namespace, Task Queue, and implementation details."
+        },
+        {
+          "key": "C",
+          "text": "Only in-flight Operations are affected; new Operations will automatically discover the new Task Queue through service mesh DNS."
+        },
+        {
+          "key": "D",
+          "text": "Teams must update their Nexus client configuration and redeploy their Workers to pick up the new Task Queue routing."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is the core architectural principle of Nexus Endpoints: they act as a reverse proxy that fully decouples callers from handler implementation details. Caller Workflows reference only the Endpoint name — they have no knowledge of the target Namespace, Task Queue, or underlying implementation. When the Platform team updates the Endpoint (even changing the target Task Queue), callers require zero code changes and zero redeployment. This is intentional: Nexus is designed so teams can evolve their handler infrastructure without creating coordination overhead for every consuming team. The Nexus Registry manages this routing centrally. This is fundamentally different from direct Workflow-to-Workflow calls where the caller would need to know the Namespace and Task Queue.",
+      "source_doc": "nexus_endpoints.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_hard_004",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "You're debugging a production issue where a caller Workflow's Nexus Operation appears to have started (you see NexusOperationStarted in the caller's history) but the caller never receives the result even though the handler Workflow completed successfully 2 hours ago. Which debugging approach correctly uses Nexus's built-in tooling to diagnose this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Check the caller Workflow's Activity history — the Nexus completion must have been delivered as an Activity result that failed silently."
+        },
+        {
+          "key": "B",
+          "text": "Look at Pending Callbacks on the handler Workflow using 'temporal workflow describe'. The completion callback is sent from the handler's Namespace back to the caller's Namespace, and its state will reveal if delivery failed or is pending."
+        },
+        {
+          "key": "C",
+          "text": "Restart the handler Worker — it must be holding an in-memory reference to the completed result that wasn't flushed."
+        },
+        {
+          "key": "D",
+          "text": "Check if the Nexus Endpoint was deleted after the Operation started, which would cause the completion to be silently dropped."
+        }
+      ],
+      "answer": "B",
+      "explanation": "For asynchronous Nexus Operations, result delivery works through a Nexus Completion Callback: when the handler Workflow completes, it sends a callback from the handler's Namespace to the caller's Namespace. This is a separate delivery step from the Operation starting. If the caller has a NexusOperationStarted event but no Completed/Failed event, the completion callback likely hasn't been successfully delivered. The 'temporal workflow describe' command on the handler Workflow shows Pending Callbacks with their State (e.g., Succeeded, Backing Off), Attempt count, and last failure reason — exactly what you need to diagnose delivery failures. This bi-directional linking is a first-class debugging feature: from the caller you can navigate to the handler Workflow, and from the handler Workflow you can navigate back to the caller's Nexus Operation event. Nexus completion callbacks are durable and retried, so they won't be silently dropped.",
+      "source_doc": "nexus_execution-debugging.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_nightmare_001",
+      "category": "Features_Nexus",
+      "difficulty": "nightmare",
+      "question": "Your team operates a multi-namespace Temporal platform where Workflow A (caller namespace) executes an async Nexus Operation that starts Workflow B (handler namespace). Workflow B completes successfully after 45 minutes, but the caller Workflow A never receives the completion and eventually times out. During debugging, you observe the following from `temporal workflow describe` on Workflow A:\n\n```\nPending Nexus Operations: 1\n  Endpoint: payment-service\n  Operation: process-payment\n  State: BackingOff\n  Attempt: 47\n  LastAttemptFailure: {\"message\":\"handler error (INTERNAL): connection refused\"}\n```\n\nWorkflow B's history shows a successful completion event and a Pending Callback in state `Failed` with 12 attempts. What is the most likely root cause, and what is the correct mental model for why the caller never received the result?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Nexus circuit breaker tripped after 5 consecutive retryable errors on the caller-to-endpoint pair, permanently blocking all Operations. The fix is to restart the caller Worker to reset the circuit breaker state."
+        },
+        {
+          "key": "B",
+          "text": "Workflow B completed and attempted to deliver the Nexus Completion Callback to the caller's Nexus Machinery, but the callback is failing (shown by Pending Callback state 'Failed' with 12 attempts). The caller's 'BackingOff' state and the handler's failed callback are two independent retry loops - the caller is retrying the start request unnecessarily because the NexusOperationStarted event was never properly correlated, while the actual completion signal is stuck in callback delivery failure, likely due to network issues between the handler namespace's Nexus Machinery and the caller namespace endpoint."
+        },
+        {
+          "key": "C",
+          "text": "The async Nexus Operation's operation token was lost when Workflow B completed, making it impossible for the handler namespace to re-attach to the operation. The caller should be using a synchronous operation with a longer handler deadline instead."
+        },
+        {
+          "key": "D",
+          "text": "The Nexus Endpoint's reverse proxy lost its routing state when Workflow B completed, so the callback has no destination. The endpoint must be re-registered in the Nexus Registry to restore connectivity."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This scenario reveals a critical architectural distinction: in async Nexus Operations, result delivery follows a completely separate path from Operation scheduling. The caller's 'BackingOff' state with 47 attempts indicates the caller's Nexus Machinery is retrying the *start* request - this happens when the NexusOperationStarted event was not properly recorded, meaning the caller doesn't yet know the operation was started. Meanwhile, Workflow B completed and the handler's Nexus Machinery is attempting to deliver a Nexus Completion Callback back to the caller's namespace - this is a separate, independent retry loop shown by 'Pending Callbacks' state 'Failed' with 12 attempts.\n\nThe async lifecycle has two distinct phases: (1) Start: caller Machinery delivers start request → handler responds with operation token → caller records NexusOperationStarted. (2) Completion: handler Workflow completes → handler Machinery delivers Completion Callback to caller Machinery → caller records NexusOperationCompleted. The 'connection refused' error on the callback attempts points to a network-level issue between namespaces - perhaps a firewall rule, TLS cert expiry, or the caller namespace endpoint being unreachable from the handler side.\n\nWhy the other answers fail: (A) Circuit breakers trip after 5 consecutive errors per caller/endpoint destination pair, but they reset automatically - restarting Workers has no effect on circuit breaker state, which lives in the Temporal Service. (C) Operation tokens are durable - Temporal's Nexus Machinery holds them, not the worker, so Workflow B's completion doesn't lose the token. (D) Endpoints are stateless reverse proxies managed in the Registry; they don't hold routing state that can be 'lost.'\n\nThe production insight: when debugging async Nexus failures, always inspect *both* the caller's Pending Operations AND the handler workflow's Pending Callbacks. They represent independent retry loops with independent failure modes. A healthy start path combined with a failing callback path is a network/connectivity problem between namespaces, not a Temporal logic problem.",
+      "source_doc": "nexus_operations.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_nexus_nightmare_002",
+      "category": "Features_Nexus",
+      "difficulty": "nightmare",
+      "question": "An engineering team is building a cross-namespace order fulfillment system. A caller Workflow executes a synchronous Nexus Operation to signal an inventory Workflow in the handler namespace. The sync handler code looks like this (Python):\n\n```python\n@nexus.sync_operation\nasync def reserve_inventory(ctx, input: ReserveInput) -\u003e ReserveOutput:\n    client = ctx.client  # Temporal SDK client\n    handle = client.get_workflow_handle(input.workflow_id)\n    await handle.signal(reserve_signal, input.quantity)\n    # Fetch confirmation state\n    result = await handle.query(get_reservation_status)\n    return ReserveOutput(reservation_id=result.reservation_id)\n```\n\nIn load testing, they observe that under high throughput, the caller Workflow occasionally fails with a NexusOperationFailed event, and the Pending Operations view shows the operation repeatedly in 'BackingOff' state before eventually tripping. The handler Workers show no errors. What is the most likely failure mechanism, and what architectural change would most reliably fix it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The inventory Workflow's signal handler is not idempotent, causing duplicate signals under retry. The fix is to add a deduplication key to the signal before re-signaling on retry."
+        },
+        {
+          "key": "B",
+          "text": "Under high load, the combined latency of the signal delivery plus the query response is exceeding the 10-second synchronous handler deadline as measured from the caller's Nexus Machinery. Each timeout is treated as a retryable error, so the Nexus Machinery retries - but each retry re-executes the signal (potentially double-signaling) and re-queries. After enough consecutive retryable timeouts, the circuit breaker trips. The fix is to convert this to an asynchronous Nexus Operation backed by a handler Workflow that durably performs the signal and returns the result via completion callback."
+        },
+        {
+          "key": "C",
+          "text": "The `ctx.client` in a sync handler is not safe for concurrent use under load. The fix is to create a new Temporal client per request inside the handler."
+        },
+        {
+          "key": "D",
+          "text": "Querying a Workflow from within a Nexus sync handler is not supported. Queries can only be executed from outside Temporal. The fix is to use a Workflow Update instead of a Query to retrieve the reservation status."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question exposes a subtle and dangerous interaction between sync handler deadlines, automatic retries, and the circuit breaker. Here's the full failure chain:\n\n1. **Deadline violation**: The sync handler must complete within 10 seconds as measured from the *caller's* Nexus Machinery - not from when the handler Worker starts processing. Under load, queuing delay on the handler Task Queue plus the signal round-trip plus the query round-trip can easily exceed 10 seconds. The caller Machinery sees a timeout and treats it as a retryable upstream timeout error.\n\n2. **Retry amplification**: Each retry re-executes the handler code, meaning the inventory Workflow receives the signal again (potential over-reservation) and the query runs again. This is the at-least-once execution semantic biting you: sync handlers are not automatically idempotent.\n\n3. **Circuit breaker trip**: After 5 consecutive retryable errors on the caller-namespace/endpoint destination pair, the circuit breaker trips, blocking *all* Operations from that caller to that endpoint - not just this operation type. This is the 'eventually tripping' behavior described.\n\n4. **The real fix**: Convert to an async Operation using New-Workflow-Run-Operation. The handler Workflow durably signals the inventory Workflow, queries the result, and returns it via the Nexus Completion Callback. Now the 10-second deadline only covers acknowledging the start (returning the operation token), not the full business logic. The completion can take minutes.\n\nWhy the other answers fall short: (A) Idempotency is a real concern with retried sync handlers, but it's a symptom of the wrong architecture, not the root cause of the NexusOperationFailed events. (C) The SDK client in Nexus handler context is designed for concurrent use - this is not the failure mode. (D) Queries from sync handlers using the SDK Client are explicitly supported per the documentation ('New-Sync-Operation - Run a synchronous Operation: invoke a Query, Signal, or Update, or execute other reliable code using the Temporal SDK Client').\n\nThe production insight: synchronous Nexus Operations are deceptively easy to write but carry a hard constraint - the 10-second wall clock deadline measured from the *caller's* perspective, not the handler's. Any I/O in a sync handler (signals, queries, updates, external calls) that could be slow under load is a latent circuit-breaker bomb. The circuit breaker is per caller/endpoint pair, so one slow sync operation can block unrelated operations to the same endpoint. If your sync handler does more than one I/O call, seriously consider whether it should be async.",
+      "source_doc": "nexus_operations.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    }
+  ]
+}

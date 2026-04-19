@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>temporal.quiz</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=3">
+  <script src="app.js?v=3" defer></script>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo-mark">
+      <img src="temporal-logo.svg" alt="Temporal" width="56" height="56">
+    </div>
+    <h1>temporal.quiz</h1>
+    <div class="tagline">test your workflow knowledge</div>
+    <button class="btn btn-ghost btn-history" id="historyBtn">History</button>
+  </div>
+
+  <div class="section-label">Category</div>
+  <div class="categories"></div>
+  <div class="section-label">Difficulty</div>
+  <div class="difficulty-filter"></div>
+
+  <div class="stats">
+    <div class="progress-ring">
+      <svg width="36" height="36">
+        <circle class="bg" cx="18" cy="18" r="15" />
+        <circle class="fill" cx="18" cy="18" r="15"
+          stroke-dasharray="94.25" stroke-dashoffset="94.25" />
+      </svg>
+      <div class="text">0/0</div>
+    </div>
+    <div class="stat">
+      <span class="stat-icon streak-flame">&#9733;</span>
+      <span>Streak <span class="stat-value streak">0</span></span>
+    </div>
+    <div class="stat">
+      <span>Accuracy <span class="stat-value accuracy">0%</span></span>
+    </div>
+  </div>
+
+  <div class="question-card">
+    <p class="question-text">Select a category to begin</p>
+  </div>
+
+  <div class="answers"></div>
+
+  <div class="explanation" id="explanation" style="display:none;"></div>
+
+  <div class="actions">
+    <button class="btn btn-ghost" id="skipBtn">Skip</button>
+    <button class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+  </div>
+
+  <div class="footer">
+    powered by <a href="https://temporal.io">temporal</a> + claude &middot; updated daily
+  </div>
+  <div class="disclaimer">
+    Disclaimer: This is not an official Temporal quiz website. It is an unofficial, community-made project and is not affiliated with or endorsed by Temporal Technologies.
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2>History</h2>
+    <button class="btn btn-ghost btn-close" id="sidebarCloseBtn">Close</button>
+  </div>
+  <div class="sidebar-list" id="historyList"></div>
+</div>
+
+<div class="calculator-container">
+  <button class="btn btn-ghost btn-calc-toggle" id="calcToggleBtn">Calc</button>
+  <div class="calculator" id="calculator" style="display:none;">
+    <input type="text" class="calc-display" id="calcDisplay" readonly>
+    <div class="calc-buttons" id="calcButtons">
+      <button data-calc="7">7</button>
+      <button data-calc="8">8</button>
+      <button data-calc="9">9</button>
+      <button data-calc="/">/</button>
+      <button data-calc="4">4</button>
+      <button data-calc="5">5</button>
+      <button data-calc="6">6</button>
+      <button data-calc="*">*</button>
+      <button data-calc="1">1</button>
+      <button data-calc="2">2</button>
+      <button data-calc="3">3</button>
+      <button data-calc="-">-</button>
+      <button data-calc="0">0</button>
+      <button data-calc=".">.</button>
+      <button id="calcEvalBtn">=</button>
+      <button data-calc="+">+</button>
+      <button id="calcClearBtn" class="calc-clear">C</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
