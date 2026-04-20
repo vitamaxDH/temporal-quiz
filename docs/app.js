@@ -692,20 +692,52 @@ function renderCustomCategories() {
 
   const manifestIds = new Set((manifest?.categories ?? []).map(c => c.category));
   const renderedIds = new Set();
+  const selected = new Set(customConfig.categories);
 
   const makePill = (id, label) => {
     const pill = document.createElement('div');
     pill.className = 'pill';
-    if (customConfig.categories.includes(id)) pill.classList.add('active');
+    if (selected.has(id)) pill.classList.add('active');
     pill.textContent = label;
     pill.title = formatCategoryLabel(id);
     pill.addEventListener('click', () => {
       toggleChip(customConfig.categories, id);
-      pill.classList.toggle('active');
+      renderCustomCategories();
     });
     return pill;
   };
 
+  const makeAllPill = (label, ids) => {
+    const pill = document.createElement('div');
+    pill.className = 'pill pill-all-toggle';
+    const allSelected = ids.length > 0 && ids.every(id => selected.has(id));
+    if (allSelected) pill.classList.add('active');
+    pill.textContent = label;
+    pill.title = allSelected ? `Deselect ${label.toLowerCase()}` : `Select ${label.toLowerCase()}`;
+    pill.addEventListener('click', () => {
+      if (allSelected) {
+        customConfig.categories = customConfig.categories.filter(id => !ids.includes(id));
+      } else {
+        // Merge without duplicates.
+        customConfig.categories = Array.from(new Set([...customConfig.categories, ...ids]));
+      }
+      saveState();
+      renderCustomCategories();
+    });
+    return pill;
+  };
+
+  // Top-level All row (every manifest category)
+  const allIds = [...manifestIds];
+  const topRow = document.createElement('div');
+  topRow.className = 'customize-group customize-group-top';
+  const topRowInner = document.createElement('div');
+  topRowInner.className = 'customize-group-row';
+  topRowInner.appendChild(makeAllPill('All', allIds));
+  topRow.appendChild(topRowInner);
+  host.appendChild(topRow);
+
+  // Per-group rows with a group-level All
   CUSTOM_CATEGORY_GROUPS.forEach(group => {
     const present = group.categories.filter(c => manifestIds.has(c.id));
     if (present.length === 0) return;
@@ -720,6 +752,7 @@ function renderCustomCategories() {
 
     const row = document.createElement('div');
     row.className = 'customize-group-row';
+    row.appendChild(makeAllPill('All', present.map(c => c.id)));
     present.forEach(c => {
       row.appendChild(makePill(c.id, c.label));
       renderedIds.add(c.id);
@@ -741,6 +774,7 @@ function renderCustomCategories() {
 
     const row = document.createElement('div');
     row.className = 'customize-group-row';
+    row.appendChild(makeAllPill('All', ungrouped));
     ungrouped.forEach(id => row.appendChild(makePill(id, formatCategoryLabel(id))));
     groupEl.appendChild(row);
     host.appendChild(groupEl);
