@@ -13,11 +13,16 @@ RULES:
 - Focus on "what" and "why" rather than edge cases or production gotchas
 - Do NOT include code snippets or require SDK-specific knowledge
 
+CHOICE QUALITY (critical — avoid these MCQ tells):
+- All four choices (A, B, C, D) must be comparable in length and specificity. Aim for within ~20%% word count of each other.
+- The correct answer must NOT be the longest, most hedged, most qualified, or most "textbook-sounding" option. Wrong answers should not be noticeably terser.
+- Rotate which letter is correct across the question set so A/B/C/D are roughly evenly distributed. Do NOT default to a single letter.
+
 Generate %d easy multiple-choice questions from this documentation:
 %s
 
 Return ONLY a JSON array matching this exact schema (no markdown fences, no extra text):
-[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"B","explanation":"...","source_doc":"filename.html"}]`, n, bucketText)
+[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"A","explanation":"...","source_doc":"filename.html"}]`, n, bucketText)
 }
 
 func MedPrompt(n int, bucketText string) string {
@@ -31,11 +36,16 @@ RULES:
 - Focus on "how it works" and correct usage, not extreme edge cases
 - Questions should be answerable by someone who has built a few Temporal workflows
 
+CHOICE QUALITY (critical — avoid these MCQ tells):
+- All four choices (A, B, C, D) must be comparable in length and specificity. Aim for within ~20%% word count of each other.
+- The correct answer must NOT be the longest, most hedged, most qualified, or most "textbook-sounding" option. Wrong answers should not be noticeably terser.
+- Rotate which letter is correct across the question set so A/B/C/D are roughly evenly distributed. Do NOT default to a single letter.
+
 Generate %d medium-difficulty multiple-choice questions from this documentation:
 %s
 
 Return ONLY a JSON array matching this exact schema (no markdown fences, no extra text):
-[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"B","explanation":"...","source_doc":"filename.html"}]`, n, bucketText)
+[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"C","explanation":"...","source_doc":"filename.html"}]`, n, bucketText)
 }
 
 func HardPrompt(n int, bucketText string) string {
@@ -49,11 +59,16 @@ RULES:
 - Do NOT write definition/recall questions like "What is X?"
 - Do NOT make questions tricky for the sake of being tricky
 
+CHOICE QUALITY (critical — avoid these MCQ tells):
+- All four choices (A, B, C, D) must be comparable in length and specificity. Aim for within ~20%% word count of each other.
+- The correct answer must NOT be the longest, most hedged, most qualified, or most "textbook-sounding" option. Wrong answers should not be noticeably terser.
+- Rotate which letter is correct across the question set so A/B/C/D are roughly evenly distributed. Do NOT default to a single letter.
+
 Generate %d hard multiple-choice questions from this documentation:
 %s
 
 Return ONLY a JSON array matching this exact schema (no markdown fences, no extra text):
-[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"B","explanation":"...","source_doc":"filename.html"}]`, n, bucketText)
+[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"D","explanation":"...","source_doc":"filename.html"}]`, n, bucketText)
 }
 
 func NightmarePrompt(n int, bucketText string) string {
@@ -66,6 +81,11 @@ RULES:
 - The explanation should go deep: explain the underlying design principle, connect it to broader Temporal architecture, and give the reader an insight they can apply beyond this specific question
 - After reading the explanation, the engineer should think "I'm glad I learned that before hitting it in production"
 
+CHOICE QUALITY (critical — avoid these MCQ tells):
+- All four choices (A, B, C, D) must be comparable in length and specificity. Aim for within ~20%% word count of each other.
+- The correct answer must NOT be the longest, most hedged, most qualified, or most "textbook-sounding" option. Wrong answers should not be noticeably terser.
+- Rotate which letter is correct across the question set so A/B/C/D are roughly evenly distributed. Do NOT default to a single letter.
+
 Generate %d nightmare-difficulty multiple-choice questions from this documentation:
 %s
 
@@ -76,7 +96,7 @@ Return ONLY a JSON array matching this exact schema (no markdown fences, no extr
 func EvalPrompt(questionsJSON string) string {
 	return fmt.Sprintf(`You are a quiz quality evaluator for Temporal platform educational content. Evaluate each question on these criteria (score 1-5):
 
-1. CLARITY: Is the question unambiguous? Is there exactly one clearly correct answer?
+1. CLARITY: Is the question unambiguous? Is there exactly one clearly correct answer? Are the four choices comparable in length and specificity (no choice should be noticeably longer, more hedged, or more qualified than the others)?
 2. ACCURACY: Is the stated correct answer actually correct?
 3. DIFFICULTY_FIT: Does the difficulty label (easy/med/hard/nightmare) match the actual difficulty?
 4. EXPLANATION: Does the explanation teach something useful and correctly explain why the answer is right?
