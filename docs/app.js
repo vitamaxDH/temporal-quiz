@@ -137,15 +137,36 @@ function escapeHtml(s) {
 /* ---- Format helpers ---- */
 
 function formatQuestion(text) {
-  // Fenced code blocks: ```lang\n...\n``` -> <pre><code>
+  if (text == null) return '';
+  // Stash code blocks as placeholders so markdown passes can't corrupt them.
+  const parts = [];
+  const stash = (html) => {
+    const i = parts.length;
+    parts.push(html);
+    return `\u0001${i}\u0001`;
+  };
+
+  // Fenced code blocks first: ```lang\n...\n```
   text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
     const escaped = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return `<pre class="code-block" data-lang="${lang}"><code>${escaped}</code></pre>`;
+    return stash(`<pre class="code-block" data-lang="${lang}"><code>${escaped}</code></pre>`);
   });
-  // Inline backticks: `code` -> <code>
-  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // Newlines to <br> (outside of <pre> blocks)
+
+  // Inline code next: `code`
+  text = text.replace(/`([^`]+)`/g, (_, code) => stash(`<code>${code}</code>`));
+
+  // Bold: **text** (no line breaks, no nested **)
+  text = text.replace(/\*\*([^\n*]+)\*\*/g, '<strong>$1</strong>');
+
+  // Italic: _text_ (single underscore, not mid-word like snake_case_id)
+  text = text.replace(/(^|[^A-Za-z0-9_])_([^\n_]+?)_(?![A-Za-z0-9_])/g, '$1<em>$2</em>');
+
+  // Newlines to <br> (outside of stashed code blocks)
   text = text.replace(/\n/g, '<br>');
+
+  // Restore code placeholders.
+  text = text.replace(/\u0001(\d+)\u0001/g, (_, i) => parts[Number(i)]);
+
   return text;
 }
 
