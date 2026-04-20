@@ -297,8 +297,15 @@ func (a *QuizActivities) EvaluateQuiz(ctx context.Context, questions []QuizQuest
 	return output, nil
 }
 
-// WriteQuizFiles groups questions by category, writes per-category JSON files,
-// and generates a manifest.json summarizing all categories.
+// WriteQuizFiles groups questions by category and writes a dated snapshot
+// at OutputDir/runs/<YYYY-MM-DD>/<Category>.json plus
+// OutputDir/runs/<YYYY-MM-DD>/manifest.json. Daily runs accumulate there
+// so the UI can offer a "previous quizzes" picker. Running on the same
+// day overwrites that day's snapshot.
+//
+// The runs.json index is intentionally NOT written here — it is rebuilt
+// by the publish step from whatever date folders exist in the destination,
+// so the worker can stay stateless across machines.
 func (a *QuizActivities) WriteQuizFiles(ctx context.Context, questions []QuizQuestion) error {
 	if err := os.MkdirAll(a.OutputDir, 0o755); err != nil {
 		return fmt.Errorf("create output dir: %w", err)
@@ -310,7 +317,15 @@ func (a *QuizActivities) WriteQuizFiles(ctx context.Context, questions []QuizQue
 		grouped[q.Category] = append(grouped[q.Category], q)
 	}
 
-	now := time.Now().UTC().Format(time.RFC3339)
+	nowUTC := time.Now().UTC()
+	now := nowUTC.Format(time.RFC3339)
+	dateStr := nowUTC.Format("2006-01-02")
+
+	runDir := filepath.Join(a.OutputDir, "runs", dateStr)
+	if err := os.MkdirAll(runDir, 0o755); err != nil {
+		return fmt.Errorf("create run dir: %w", err)
+	}
+
 	var entries []ManifestEntry
 
 	for cat, qs := range grouped {
@@ -324,9 +339,9 @@ func (a *QuizActivities) WriteQuizFiles(ctx context.Context, questions []QuizQue
 			return fmt.Errorf("marshal category %s: %w", cat, err)
 		}
 
-		filename := filepath.Join(a.OutputDir, cat+".json")
-		if err := os.WriteFile(filename, data, 0o644); err != nil {
-			return fmt.Errorf("write category file %s: %w", filename, err)
+		catPath := filepath.Join(runDir, cat+".json")
+		if err := os.WriteFile(catPath, data, 0o644); err != nil {
+			return fmt.Errorf("write category file %s: %w", catPath, err)
 		}
 
 		var easyCount, medCount, hardCount, nightmareCount int
@@ -368,13 +383,13 @@ func (a *QuizActivities) WriteQuizFiles(ctx context.Context, questions []QuizQue
 		TotalCount:  totalCount,
 	}
 
-	data, err := json.MarshalIndent(manifest, "", "  ")
+	manifestData, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal manifest: %w", err)
 	}
 
-	manifestPath := filepath.Join(a.OutputDir, "manifest.json")
-	if err := os.WriteFile(manifestPath, data, 0o644); err != nil {
+	manifestPath := filepath.Join(runDir, "manifest.json")
+	if err := os.WriteFile(manifestPath, manifestData, 0o644); err != nil {
 		return fmt.Errorf("write manifest: %w", err)
 	}
 

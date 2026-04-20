@@ -188,8 +188,18 @@ func TestWriteQuizFiles_Success(t *testing.T) {
 	err := a.WriteQuizFiles(t.Context(), questions)
 	require.NoError(t, err)
 
-	// Verify manifest.json.
-	manifestData, err := os.ReadFile(filepath.Join(outputDir, "manifest.json"))
+	// WriteQuizFiles writes only the dated snapshot. We discover today's
+	// run dir dynamically (the test runs in real time).
+	runsDir := filepath.Join(outputDir, "runs")
+	runDirs, err := os.ReadDir(runsDir)
+	require.NoError(t, err)
+	require.Len(t, runDirs, 1, "expected exactly one dated run directory")
+	require.True(t, runDirs[0].IsDir(), "expected run entry to be a directory")
+
+	runDir := filepath.Join(runsDir, runDirs[0].Name())
+
+	// Verify manifest.json under the run dir.
+	manifestData, err := os.ReadFile(filepath.Join(runDir, "manifest.json"))
 	require.NoError(t, err)
 
 	var manifest Manifest
@@ -211,20 +221,26 @@ func TestWriteQuizFiles_Success(t *testing.T) {
 	assert.Equal(t, 1, manifest.Categories[1].HardCount)
 	assert.Equal(t, 1, manifest.Categories[1].NightmareCount)
 
-	// Verify per-category JSON files.
-	devData, err := os.ReadFile(filepath.Join(outputDir, "develop.json"))
+	// Verify per-category JSON files under the run dir.
+	devData, err := os.ReadFile(filepath.Join(runDir, "develop.json"))
 	require.NoError(t, err)
 	var devQuiz CategoryQuiz
 	require.NoError(t, json.Unmarshal(devData, &devQuiz))
 	assert.Equal(t, "develop", devQuiz.Category)
 	assert.Len(t, devQuiz.Questions, 4)
 
-	cliData, err := os.ReadFile(filepath.Join(outputDir, "cli.json"))
+	cliData, err := os.ReadFile(filepath.Join(runDir, "cli.json"))
 	require.NoError(t, err)
 	var cliQuiz CategoryQuiz
 	require.NoError(t, json.Unmarshal(cliData, &cliQuiz))
 	assert.Equal(t, "cli", cliQuiz.Category)
 	assert.Len(t, cliQuiz.Questions, 1)
+
+	// No flat-file mirror should exist at the top of the output dir.
+	_, err = os.Stat(filepath.Join(outputDir, "manifest.json"))
+	assert.True(t, os.IsNotExist(err), "manifest.json should NOT exist at outputDir root")
+	_, err = os.Stat(filepath.Join(outputDir, "develop.json"))
+	assert.True(t, os.IsNotExist(err), "develop.json should NOT exist at outputDir root")
 }
 
 func TestEvaluateQuiz_Success(t *testing.T) {
