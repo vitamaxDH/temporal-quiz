@@ -1,0 +1,369 @@
+{
+  "category": "Develop",
+  "questions": [
+    {
+      "id": "develop_easy_001",
+      "category": "Develop",
+      "difficulty": "easy",
+      "question": "What is the main purpose of an Activity in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To define the overall structure and logic of a long-running business process"
+        },
+        {
+          "key": "B",
+          "text": "To execute a single, well-defined action such as calling an API or querying a database"
+        },
+        {
+          "key": "C",
+          "text": "To manage the scheduling and retry of Workflows"
+        },
+        {
+          "key": "D",
+          "text": "To store the results of a Workflow in a permanent database"
+        }
+      ],
+      "answer": "B",
+      "explanation": "In Temporal, an Activity is designed to perform a single, focused task — like calling a third-party API, querying a database, or processing a file. Think of Activities as the individual steps in a process. The Workflow is what orchestrates (organizes and coordinates) those steps, while each Activity does the actual work of interacting with the outside world.",
+      "source_doc": "basics.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_easy_002",
+      "category": "Develop",
+      "difficulty": "easy",
+      "question": "What happens if an Activity keeps failing — does Temporal just give up immediately?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Yes, Temporal stops the entire Workflow as soon as an Activity fails once"
+        },
+        {
+          "key": "B",
+          "text": "No, Temporal automatically retries the Activity using a default Retry Policy unless you configure otherwise"
+        },
+        {
+          "key": "C",
+          "text": "No, but you must manually restart the Activity each time it fails"
+        },
+        {
+          "key": "D",
+          "text": "Yes, but only if you have not set a Start-To-Close Timeout"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal is designed to handle failures gracefully. When an Activity fails, Temporal automatically retries it based on a Retry Policy. If you do not set a custom Retry Policy, a sensible default one is used. This means your Activities will keep being attempted until they succeed or until a timeout is reached — without you needing to write any special retry logic yourself.",
+      "source_doc": "timeouts.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_easy_003",
+      "category": "Develop",
+      "difficulty": "easy",
+      "question": "What is the key difference between a 'Start-To-Close Timeout' and a 'Schedule-To-Close Timeout' for an Activity?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Start-To-Close covers only the first attempt, while Schedule-To-Close covers only retries"
+        },
+        {
+          "key": "B",
+          "text": "Start-To-Close limits how long a single attempt can run, while Schedule-To-Close limits the total time allowed for the entire Activity including all retries"
+        },
+        {
+          "key": "C",
+          "text": "Start-To-Close is for short Activities and Schedule-To-Close is for long-running Activities"
+        },
+        {
+          "key": "D",
+          "text": "They are identical and can be used interchangeably"
+        }
+      ],
+      "answer": "B",
+      "explanation": "These two timeouts control different scopes of time. The Start-To-Close Timeout sets a limit on how long one individual attempt of an Activity can take. The Schedule-To-Close Timeout sets a limit on the total overall time — from when the Activity was first scheduled to when it must be finished, counting all retries. For example, if retries are allowed, multiple Start-To-Close windows can fit within one Schedule-To-Close window.",
+      "source_doc": "timeouts.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_med_001",
+      "category": "Develop",
+      "difficulty": "med",
+      "question": "In the Temporal .NET SDK, what is the minimum timeout requirement when calling `ExecuteActivityAsync` for an Activity Execution?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Only `ScheduleToStartTimeout` must be set to ensure the Activity starts within a bounded time."
+        },
+        {
+          "key": "B",
+          "text": "Either `StartToCloseTimeout` or `ScheduleToCloseTimeout` must be set; at least one is required."
+        },
+        {
+          "key": "C",
+          "text": "All three timeouts (`ScheduleToCloseTimeout`, `StartToCloseTimeout`, and `ScheduleToStartTimeout`) must be explicitly set."
+        },
+        {
+          "key": "D",
+          "text": "No timeout is required because Activities have a default timeout applied automatically by the Temporal service."
+        }
+      ],
+      "answer": "B",
+      "explanation": "An Activity Execution must have either `StartToCloseTimeout` or `ScheduleToCloseTimeout` set — at least one of these is required. `ScheduleToStartTimeout` is optional. There is no automatic default that satisfies this requirement, so omitting both will result in an error. In practice, `StartToCloseTimeout` is used to bound a single attempt, while `ScheduleToCloseTimeout` bounds the entire execution including retries.",
+      "source_doc": "timeouts (develop_dotnet_activities_timeouts.html)",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_med_002",
+      "category": "Develop",
+      "difficulty": "med",
+      "question": "You have an Activity that polls an external service and regularly returns a 'not ready yet' error as part of normal operation. What is the best approach in the Temporal .NET SDK to prevent this from polluting your metrics and logs?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Return `null` from the Activity instead of throwing an exception so Temporal treats it as a success."
+        },
+        {
+          "key": "B",
+          "text": "Catch the error inside the Activity and swallow it, then retry manually using a loop inside the Activity function."
+        },
+        {
+          "key": "C",
+          "text": "Throw an `ApplicationFailureException` with `category: ApplicationErrorCategory.Benign` so the failure is downgraded in observability tooling."
+        },
+        {
+          "key": "D",
+          "text": "Set `MaximumAttempts = 1` on the Retry Policy so the Activity never retries and doesn't generate retry-related metrics."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Benign exceptions (`ApplicationErrorCategory.Benign`) are designed exactly for this use case. When thrown, Activity failure logs are downgraded to DEBUG level, failure metrics are not emitted, and the OpenTelemetry failure status is not set to ERROR. This lets you handle expected transient failures cleanly without noise, while still allowing the Workflow to react to the error. Using benign exceptions is the recommended pattern for polling scenarios or expected transient failures.",
+      "source_doc": "benign-exceptions (develop_dotnet_activities_benign-exceptions.html)",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_med_003",
+      "category": "Develop",
+      "difficulty": "med",
+      "question": "When implementing asynchronous Activity completion in the Temporal .NET SDK, what must the Activity do to signal that it will be completed externally?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Return a special sentinel value like `null` or an empty string to indicate the Activity is pending external completion."
+        },
+        {
+          "key": "B",
+          "text": "Set a flag on the `ActivityExecutionContext` and then return normally from the Activity function."
+        },
+        {
+          "key": "C",
+          "text": "Capture the Task Token and throw a `CompleteAsyncException` from within the Activity function."
+        },
+        {
+          "key": "D",
+          "text": "Call `handle.CompleteAsync()` directly from inside the Activity before it returns."
+        }
+      ],
+      "answer": "C",
+      "explanation": "For asynchronous Activity completion in .NET, the Activity must capture its Task Token (or Namespace/Workflow Id/Activity Id) for later use, then throw a `CompleteAsyncException`. This special exception tells Temporal that the Activity will be completed by an external process. Later, an external system uses `myClient.GetAsyncActivityHandle(capturedToken)` to get a handle and call `CompleteAsync()`, `FailAsync()`, `HeartbeatAsync()`, etc. This pattern is useful for long-running human-approval workflows or external system integrations.",
+      "source_doc": "asynchronous-activity (develop_dotnet_activities_asynchronous-activity.html)",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_med_004",
+      "category": "Develop",
+      "difficulty": "med",
+      "question": "What is the key behavioral difference between a Standalone Activity and a regular Workflow Activity in the Temporal .NET SDK?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Standalone Activities require a different `[Activity]` attribute and cannot share code with Workflow Activities."
+        },
+        {
+          "key": "B",
+          "text": "Standalone Activities are started directly from a Temporal Client rather than from within a Workflow Definition, but the Activity code itself is identical."
+        },
+        {
+          "key": "C",
+          "text": "Standalone Activities run on a separate dedicated Worker and cannot be registered on the same Worker as Workflow Activities."
+        },
+        {
+          "key": "D",
+          "text": "Standalone Activities do not support retry policies and must handle failures manually in the calling application code."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The only difference between a Standalone Activity and a regular Workflow Activity is how they are invoked. The Activity definition (using `[Activity]` attribute) and Worker registration are identical — in fact, the same Activity can be executed both ways. Standalone Activities are started using `client.ExecuteActivityAsync()` or `client.StartActivityAsync()` directly from application code (not from inside a Workflow). This is useful when you need durable execution of a single task without the overhead of a full Workflow orchestration.",
+      "source_doc": "standalone-activities (develop_dotnet_activities_standalone-activities.html)",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_hard_001",
+      "category": "Develop",
+      "difficulty": "hard",
+      "question": "Your team is integrating with a flaky third-party payment API that occasionally returns a '503 Service Unavailable' response. During normal operations, you expect roughly 20-30% of calls to get a 503 before eventually succeeding on retry. Your on-call engineer is getting paged because Activity failure metrics are spiking, even though payments are completing successfully. What is the most appropriate fix?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Increase the retry count in the RetryPolicy so the Activity succeeds faster and fewer failures are recorded"
+        },
+        {
+          "key": "B",
+          "text": "Catch the 503 exception in the Activity and rethrow it as an ApplicationFailureException with ApplicationErrorCategory.Benign, so it is excluded from failure metrics and downgraded to DEBUG logs"
+        },
+        {
+          "key": "C",
+          "text": "Wrap the Activity in a try/catch inside the Workflow Definition to suppress the failure before it reaches metrics"
+        },
+        {
+          "key": "D",
+          "text": "Set a shorter StartToCloseTimeout so the Activity fails faster and the retry succeeds before metrics record the failure"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's benign exception feature exists precisely for this pattern: expected, transient failures that are part of normal operations. When you throw an ApplicationFailureException with ApplicationErrorCategory.Benign, Temporal downgrades the Activity failure log to DEBUG level, suppresses Activity failure metrics, and does not set the OpenTelemetry failure status to ERROR. This means your observability stack stays quiet for expected noise while your Workflow still retries and ultimately succeeds. Options A and D don't address the metric noise at all — they just change retry timing. Option C is wrong because Workflow Definitions cannot catch Activity exceptions mid-execution in that way, and even if they could, suppressing failures in the Workflow doesn't affect the Activity-level metrics that are already emitted by the Worker.",
+      "source_doc": "benign-exceptions.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_hard_002",
+      "category": "Develop",
+      "difficulty": "hard",
+      "question": "You are building a document processing system where a human reviewer must approve a document before the Workflow continues. The review can take hours or days. Your Activity calls an external review service, registers the document, captures the Task Token, and throws CompleteAsyncException. Three days later, the review service calls your webhook with an approval. Which statement correctly describes the state of the Activity Execution during those three days?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity is in a failed state and will be retried by Temporal on a schedule until the review service responds"
+        },
+        {
+          "key": "B",
+          "text": "The Activity Execution is still open and waiting; the Worker thread/task is free, but Temporal is tracking the Activity as incomplete until CompleteAsync is called on the handle"
+        },
+        {
+          "key": "C",
+          "text": "The Activity has completed successfully as far as Temporal is concerned; the Workflow moves on and the webhook result is delivered as a Signal"
+        },
+        {
+          "key": "D",
+          "text": "The Activity times out after StartToCloseTimeout elapses and must be restarted by the webhook handler"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Asynchronous Activity Completion is designed for exactly this human-in-the-loop pattern. When the Activity throws CompleteAsyncException, it tells Temporal 'this Activity is not done yet, but the Worker is releasing the thread.' The Activity Execution remains open in Temporal's tracking — it won't be retried because no failure occurred, and it won't time out as long as the overall Schedule-To-Close Timeout hasn't elapsed. The Worker is free to process other work. When the webhook fires three days later, your code calls GetAsyncActivityHandle(capturedToken) and then CompleteAsync(), which delivers the result to Temporal and allows the Workflow to proceed. This is fundamentally different from Signals — the result flows back through the Activity completion path, not a Workflow event.",
+      "source_doc": "asynchronous-activity.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_hard_003",
+      "category": "Develop",
+      "difficulty": "hard",
+      "question": "A team configures their Activity with only a ScheduleToStartTimeout of 30 seconds and no other timeouts. Their code compiles and deploys successfully. What will happen at runtime when this Activity is scheduled?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity will execute normally; ScheduleToStartTimeout alone is sufficient to define an Activity Execution"
+        },
+        {
+          "key": "B",
+          "text": "The Activity will fail immediately at schedule time with a validation error because at least one of StartToCloseTimeout or ScheduleToCloseTimeout is required"
+        },
+        {
+          "key": "C",
+          "text": "The Activity will execute but will run forever with no timeout if the worker picks it up within 30 seconds"
+        },
+        {
+          "key": "D",
+          "text": "Temporal will automatically apply a default StartToCloseTimeout of 10 seconds to compensate for the missing required timeout"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal requires that every Activity Execution have either a StartToCloseTimeout or a ScheduleToCloseTimeout set — ScheduleToStartTimeout alone is not sufficient. This is a critical production gotcha: ScheduleToStartTimeout only measures the time from when the Activity is scheduled until a Worker picks it up. Without StartToCloseTimeout or ScheduleToCloseTimeout, Temporal has no way to bound how long the actual execution can take, which would mean Activities could run (or hang) indefinitely. The documentation is explicit: 'An Activity Execution must have either the Start-To-Close or the Schedule-To-Close Timeout set.' Temporal does not silently add defaults for the required timeouts — it will reject the Activity schedule. This is a common misconfiguration that surfaces only at runtime.",
+      "source_doc": "timeouts.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_hard_004",
+      "category": "Develop",
+      "difficulty": "hard",
+      "question": "You have an Activity that calls a rate-limited API. On attempt 1, the API returns a 429 Too Many Requests with a Retry-After header saying to wait 90 seconds. Your RetryPolicy has an InitialInterval of 1 second and a BackoffCoefficient of 2, which would normally schedule the next retry in 2 seconds. You want the retry to respect the API's 90-second Retry-After header. What is the correct approach in Temporal .NET?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Thread.Sleep(90) inside the Activity before rethrowing the exception to delay the retry"
+        },
+        {
+          "key": "B",
+          "text": "Modify the RetryPolicy's InitialInterval to 90 seconds so the exponential backoff starts at the right value"
+        },
+        {
+          "key": "C",
+          "text": "Throw an ApplicationFailureException with nextRetryDelay set to TimeSpan.FromSeconds(90), which overrides the RetryPolicy interval for just this retry"
+        },
+        {
+          "key": "D",
+          "text": "Use a Workflow Timer after the Activity fails to wait 90 seconds before calling ExecuteActivityAsync again"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The nextRetryDelay field on ApplicationFailureException is designed precisely for this scenario: you need to override the computed retry interval for a specific attempt based on external information (like a Retry-After header). When you set nextRetryDelay, it replaces the interval that the RetryPolicy would have calculated for that specific retry — so the next attempt happens after 90 seconds regardless of what BackoffCoefficient would compute. Subsequent retries resume normal RetryPolicy calculation. Option A is dangerous: sleeping inside an Activity ties up the Worker thread, consumes the StartToCloseTimeout, and prevents the Worker from processing other tasks. Option B changes all retries, not just the current one, breaking your progressive backoff for other failure modes. Option D works but is overly complex — it requires catching the failure in the Workflow, adding Workflow logic for a concern that belongs in the Activity, and loses the automatic retry semantics.",
+      "source_doc": "timeouts.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_nightmare_001",
+      "category": "Develop",
+      "difficulty": "nightmare",
+      "question": "A team is building a payment processing system in .NET using Temporal. Their `ProcessPaymentActivity` calls an external payment gateway that occasionally returns HTTP 429 (rate limited) responses. They implement the following pattern:\n\n```csharp\n[Activity]\npublic async Task\u003cPaymentResult\u003e ProcessPaymentAsync(PaymentRequest request)\n{\n    var attempt = ActivityExecutionContext.Current.Info.Attempt;\n    try\n    {\n        return await _gateway.SubmitPaymentAsync(request);\n    }\n    catch (RateLimitedException ex)\n    {\n        throw new ApplicationFailureException(\n            \"Rate limited by payment gateway\",\n            inner: ex,\n            category: ApplicationErrorCategory.Benign,\n            nextRetryDelay: TimeSpan.FromSeconds(5 * attempt));\n    }\n}\n```\n\nThe activity is scheduled with:\n```csharp\nnew() {\n    ScheduleToCloseTimeout = TimeSpan.FromMinutes(2),\n    StartToCloseTimeout = TimeSpan.FromSeconds(30),\n    RetryPolicy = new() {\n        MaximumAttempts = 10,\n        MaximumInterval = TimeSpan.FromSeconds(60)\n    }\n}\n```\n\nDuring a severe rate-limiting event, the gateway rate-limits the first 6 attempts. The team notices the activity fails permanently before exhausting all 10 attempts. Which combination of factors causes this premature failure?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `ApplicationErrorCategory.Benign` flag causes Temporal to stop retrying after a certain number of benign errors, since they are treated as non-retryable by the retry scheduler."
+        },
+        {
+          "key": "B",
+          "text": "The `ScheduleToCloseTimeout` of 2 minutes is exhausted before 10 attempts complete. The `nextRetryDelay` grows as `5 * attempt` seconds (5s, 10s, 15s, 20s, 25s, 30s...) and the cumulative delay plus execution time exceeds 2 minutes regardless of the per-attempt `StartToCloseTimeout` or `MaximumAttempts` limit."
+        },
+        {
+          "key": "C",
+          "text": "The `nextRetryDelay` overrides `MaximumAttempts`, so once the delay exceeds `MaximumInterval` (60 seconds), Temporal interprets it as a final timeout and stops retrying."
+        },
+        {
+          "key": "D",
+          "text": "The `StartToCloseTimeout` of 30 seconds applies to the entire retry sequence, not per attempt, so after the first failed attempt the overall start-to-close budget is consumed."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question reveals a critical interaction between `ScheduleToCloseTimeout`, `nextRetryDelay`, and `MaximumAttempts` that trips up engineers who think of these as independent guards.\n\n**The core issue:** `ScheduleToCloseTimeout` is a hard wall clock deadline for the *entire* Activity Execution — covering scheduling time, all attempts, and all wait intervals between retries. `MaximumAttempts` and `StartToCloseTimeout` operate *within* that outer bound. Whichever limit is hit first wins.\n\n**The math:** With `5 * attempt` delay, the inter-attempt waits are: 5s, 10s, 15s, 20s, 25s, 30s. Just the cumulative retry delays through attempt 6 sum to 5+10+15+20+25+30 = 105 seconds of waiting, plus actual execution time on each attempt. This blows past the 2-minute (120s) `ScheduleToCloseTimeout` before attempt 7 ever starts. Temporal marks the entire Activity Execution as failed with a timeout error, even though `MaximumAttempts=10` hasn't been reached.\n\n**Why the other answers are wrong:**\n- **A** is completely wrong: `ApplicationErrorCategory.Benign` only affects observability (log level, metrics, OTel status). It has zero effect on retry behavior. The retry engine treats benign errors identically to regular `ApplicationFailureException` for scheduling purposes.\n- **C** is a fabricated behavior. `nextRetryDelay` overrides the *interval* computation from the retry policy for one retry, but it does not interact with `MaximumAttempts` at all.\n- **D** misunderstands `StartToCloseTimeout`. It applies per *attempt* (per Activity Task Execution), not across the whole sequence. Each individual attempt gets its own 30-second budget.\n\n**The production insight:** When using `nextRetryDelay` for adaptive back-off, always calculate the worst-case cumulative delay and ensure `ScheduleToCloseTimeout` is large enough to accommodate it — or cap the growth. A common pattern is `Math.Min(5 * attempt, maxDelay)` and then sizing `ScheduleToCloseTimeout` accordingly. Many engineers set `ScheduleToCloseTimeout` thinking it only matters if a single attempt hangs, not realizing it also caps the total retry duration.",
+      "source_doc": "timeouts (develop_dotnet_activities_timeouts.html)",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "develop_nightmare_002",
+      "category": "Develop",
+      "difficulty": "nightmare",
+      "question": "An engineering team migrates a long-running data export workflow to use Temporal's Standalone Activities feature (pre-release, .NET SDK). Their export activity takes up to 8 minutes and uses asynchronous completion — a separate service polls S3, then calls `CompleteAsync` with the download URL. They write the following:\n\n```csharp\n// In the export orchestration service (NOT a workflow)\nvar handle = await client.StartActivityAsync(\n    () =\u003e MyActivities.ExportDataAsync(new ExportInput(userId)),\n    new(\"export-\" + userId, \"export-task-queue\")\n    {\n        ScheduleToCloseTimeout = TimeSpan.FromMinutes(10),\n    });\n\n// In the Activity itself:\n[Activity]\npublic static async Task\u003cstring\u003e ExportDataAsync(ExportInput input)\n{\n    var token = ActivityExecutionContext.Current.Info.TaskToken;\n    await _notificationService.RegisterCallbackAsync(input.UserId, token);\n    throw new CompleteAsyncException(); // signal async completion\n}\n\n// In the S3 polling service:\nvar asyncHandle = client.GetAsyncActivityHandle(capturedToken);\nawait asyncHandle.CompleteAsync(s3Url);\n```\n\nDuring load testing, the team observes that some exports succeed but others fail with a timeout error even when S3 completion arrives within 5 minutes. The failures are non-deterministic. What is the most likely root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Standalone Activities do not support asynchronous completion via `CompleteAsyncException`. This pattern is only valid for Workflow-orchestrated activities. The `GetAsyncActivityHandle` call silently succeeds but the completion is discarded."
+        },
+        {
+          "key": "B",
+          "text": "The `ScheduleToCloseTimeout` clock starts when the activity is *scheduled* (i.e., when `StartActivityAsync` is called), not when `CompleteAsyncException` is thrown. If the task queue is under load and the Activity Task waits in queue before even starting, that queuing time is consumed from the `ScheduleToCloseTimeout` budget, leaving less time for the async external operation to complete."
+        },
+        {
+          "key": "C",
+          "text": "The task token captured inside the Activity is only valid for the duration of that specific Worker process. If the Worker restarts between the `throw new CompleteAsyncException()` and the S3 polling service calling `CompleteAsync`, the token becomes invalid and `CompleteAsync` throws a not-found error."
+        },
+        {
+          "key": "D",
+          "text": "Each call to `client.StartActivityAsync` with the same Activity ID on the same task queue creates a new Activity Execution, causing duplicate exports. The second execution's token overwrites the first in the notification service, causing the first to time out."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question exposes a subtle but devastating interaction between the `Schedule-To-Close Timeout` semantics, async activity completion, and Task Queue queuing latency under load.\n\n**The core insight:** `ScheduleToCloseTimeout` is measured from the moment the Activity is *scheduled* — which in the case of a Standalone Activity is the moment `StartActivityAsync` completes and Temporal durably records the schedule. The clock does NOT pause while the Activity Task sits in the Task Queue waiting for a Worker to pick it up, while the Activity Function executes, while the Worker reports `CompleteAsyncException`, or while the external system is doing its work. It is a single uninterrupted countdown.\n\n**Why this causes non-deterministic failures under load:** During load testing, the `export-task-queue` has variable queue depth. Sometimes the Activity Task is picked up immediately (negligible queue time), the async operation completes in 4 minutes, and everything fits within 10 minutes. Other times the Task sits in the queue for 3-4 minutes due to high load, the async operation takes 5 minutes, and the sum exceeds 10 minutes — causing a timeout even though the async operation itself was fast enough in isolation.\n\n**Why the other answers are wrong:**\n- **A** is incorrect. Standalone Activities and Workflow Activities share the same underlying activity execution model. Both support `CompleteAsyncException` / `GetAsyncActivityHandle`. The docs explicitly show this pattern for async completion in `.NET`.\n- **C** is a common misconception. Task tokens are durable, server-side identifiers recorded in the Event History. They are not tied to a specific Worker process instance. After a Worker restart, `CompleteAsync` using a valid token still works because the Temporal Server validates the token, not the Worker.\n- **D** is wrong because Temporal enforces ID uniqueness within a namespace for Standalone Activities (similar to Workflow ID uniqueness). A second `StartActivityAsync` call with the same ID would either fail or reuse the existing execution depending on configuration — it would not silently create a duplicate that overwrites state.\n\n**The production fix:** Size `ScheduleToCloseTimeout` to include *worst-case queue time* plus *worst-case async operation time*, with a safety margin. Alternatively, use `Schedule-To-Start Timeout` separately to detect and alert on queue saturation, so you know when workers need to be scaled before timeouts cascade. This is especially critical for async activities where the external operation time is already close to the intended timeout budget.",
+      "source_doc": "standalone-activities (develop_dotnet_activities_standalone-activities.html)",
+      "generated_at": "2026-04-20T05:01:13Z"
+    }
+  ]
+}

@@ -1,0 +1,257 @@
+{
+  "category": "Features_Data_and_Security",
+  "questions": [
+    {
+      "id": "features_data_and_security_easy_001",
+      "category": "Features_Data_and_Security",
+      "difficulty": "easy",
+      "question": "Which of the following best describes how Temporal Cloud handles your sensitive workflow data, according to its security design?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal Cloud stores and reads your workflow data to help optimize performance"
+        },
+        {
+          "key": "B",
+          "text": "Temporal Cloud orchestrates encrypted workflows without ever accessing your sensitive data"
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud decrypts your data temporarily during workflow execution for processing"
+        },
+        {
+          "key": "D",
+          "text": "Temporal Cloud shares your workflow data with compliance auditors when required"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud is designed with a 'provable security by design' principle. This means it can orchestrate and coordinate your workflows while your data remains encrypted throughout — Temporal itself never needs to access or read your sensitive information. Think of it like a postal service that routes sealed envelopes without ever opening them.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "features_data_and_security_easy_002",
+      "category": "Features_Data_and_Security",
+      "difficulty": "easy",
+      "question": "If you want full control over your Temporal infrastructure and want to follow production-ready security best practices on your own servers, which deployment option would you explore?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal Cloud Security, since it offers the most security features"
+        },
+        {
+          "key": "B",
+          "text": "Company Security, since it covers all deployment types"
+        },
+        {
+          "key": "C",
+          "text": "Self-Hosted Security, which covers deploying and securing your own Temporal Platform"
+        },
+        {
+          "key": "D",
+          "text": "The Security Whitepaper, which provides server configuration scripts"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal offers two main deployment models: Temporal Cloud (a managed SaaS service) and Self-Hosted (where you run Temporal on your own infrastructure). If you want to manage your own servers and apply your own security controls, the Self-Hosted Security guide is the right place to start, as it covers production-ready best practices for that scenario.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "features_data_and_security_easy_003",
+      "category": "Features_Data_and_Security",
+      "difficulty": "easy",
+      "question": "Temporal Cloud is described as a SaaS offering. What does this mean for users?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Users must download and install Temporal on their own computers"
+        },
+        {
+          "key": "B",
+          "text": "Users manage all of the underlying server infrastructure themselves"
+        },
+        {
+          "key": "C",
+          "text": "Temporal provides and manages the platform as a service, so users don't have to run the infrastructure"
+        },
+        {
+          "key": "D",
+          "text": "Users can only run Temporal workflows on a single dedicated server"
+        }
+      ],
+      "answer": "C",
+      "explanation": "SaaS stands for 'Software as a Service.' When Temporal Cloud is described as a SaaS offering, it means Temporal Technologies hosts, manages, and maintains the underlying platform infrastructure for you. You simply use the service to run your workflows without worrying about setting up or operating servers — this is the key difference from the self-hosted option where you manage everything yourself.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "features_data_and_security_med_001",
+      "category": "Features_Data_and_Security",
+      "difficulty": "med",
+      "question": "Which transport security mechanism does Temporal Cloud use to secure communication between clients and the platform?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "OAuth 2.0 bearer tokens over HTTPS"
+        },
+        {
+          "key": "B",
+          "text": "Mutual TLS (mTLS)"
+        },
+        {
+          "key": "C",
+          "text": "API key authentication with HMAC signing"
+        },
+        {
+          "key": "D",
+          "text": "SAML-based single sign-on"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud uses mutual TLS (mTLS) for securing connections. Unlike standard TLS where only the server presents a certificate, mTLS requires both the client and server to authenticate each other with certificates. This is a key security feature you configure when setting up your Temporal Cloud namespace — you register your CA certificate with the namespace, and your workers and clients present certificates signed by that CA when connecting.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "features_data_and_security_med_002",
+      "category": "Features_Data_and_Security",
+      "difficulty": "med",
+      "question": "Which statement best describes how Temporal Cloud handles sensitive data passed through workflow inputs and outputs?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal Cloud automatically encrypts all payload data at rest using AES-256 before storing event history"
+        },
+        {
+          "key": "B",
+          "text": "Temporal Cloud orchestrates workflows without decrypting your payload data, enabling end-to-end encryption where only your application holds the keys"
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud provides a built-in key management service that encrypts payloads before they reach the server"
+        },
+        {
+          "key": "D",
+          "text": "Temporal Cloud stores payloads in plaintext but restricts access via role-based access control"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud is designed so it can orchestrate encrypted workflows without ever accessing your sensitive data. This is the 'provable security by design' model — you implement a custom DataConverter with a codec that encrypts payloads before they leave your application. Temporal Cloud only ever sees ciphertext. This means even Temporal employees cannot read your workflow data, which is important for compliance use cases involving PII or financial data.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "features_data_and_security_med_003",
+      "category": "Features_Data_and_Security",
+      "difficulty": "med",
+      "question": "When self-hosting Temporal, which aspect of security becomes YOUR responsibility that Temporal Cloud would otherwise manage for you?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Implementing the Workflow and Activity retry logic"
+        },
+        {
+          "key": "B",
+          "text": "Writing custom data converters for payload serialization"
+        },
+        {
+          "key": "C",
+          "text": "Deploying and securing the underlying Temporal Platform infrastructure"
+        },
+        {
+          "key": "D",
+          "text": "Configuring namespace-level task queue permissions"
+        }
+      ],
+      "answer": "C",
+      "explanation": "When self-hosting Temporal, you take on responsibility for deploying and securing the infrastructure itself — this includes the Temporal server, its dependencies (like Cassandra or PostgreSQL), network security, certificate management, and applying production-ready hardening practices. Temporal Cloud offloads this operational burden. The self-hosted security guide covers production best practices for operators who need full control over their deployment, often for compliance or data residency reasons.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "features_data_and_security_med_004",
+      "category": "Features_Data_and_Security",
+      "difficulty": "med",
+      "question": "A company needs to verify Temporal's compliance certifications and organizational security practices before approving it as a vendor. Where should they look first?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Temporal self-hosted security documentation"
+        },
+        {
+          "key": "B",
+          "text": "The Temporal Cloud namespace configuration settings"
+        },
+        {
+          "key": "C",
+          "text": "trust.temporal.io for company-level security and compliance information"
+        },
+        {
+          "key": "D",
+          "text": "The Temporal Cloud Security Whitepaper for infrastructure architecture details"
+        }
+      ],
+      "answer": "C",
+      "explanation": "trust.temporal.io is the dedicated resource for Temporal Technologies' company-level security information, including compliance certifications (such as SOC 2), organizational security measures, and general security practices. This is distinct from the Cloud Security Whitepaper, which focuses on how the platform technically achieves security by design. For vendor security reviews, procurement teams typically need the compliance certifications and organizational policies found at trust.temporal.io.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "features_data_and_security_nightmare_001",
+      "category": "Features_Data_and_Security",
+      "difficulty": "nightmare",
+      "question": "Your organization runs Temporal Cloud for orchestrating financial workflows. Regulatory compliance requires that all PII (names, account numbers, SSNs) processed in workflow inputs, outputs, and activity parameters must never leave your security boundary in plaintext — including being invisible to Temporal's own infrastructure. Your security team reviews the Temporal Cloud architecture and notes that Temporal Cloud operates on a multi-tenant server that routes workflow tasks. A junior engineer proposes solving this by 'just using TLS since Temporal Cloud already uses mTLS.' A senior engineer pushes back. Which statement best describes why mTLS alone is insufficient for this requirement, and what the correct architectural pattern is?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "mTLS is insufficient because it only encrypts traffic between the Worker and the Temporal Frontend service, leaving the Temporal history service able to read workflow event payloads in plaintext. The fix is to use Temporal Cloud's built-in field-level encryption toggle in the namespace settings."
+        },
+        {
+          "key": "B",
+          "text": "mTLS secures the transport channel but Temporal Cloud servers still process and store workflow event history payloads — including activity inputs/outputs — in plaintext on Temporal's infrastructure. The correct pattern is a custom DataConverter that encrypts payloads on the Worker before they are sent to the server, so Temporal's infrastructure only ever sees ciphertext blobs it cannot decrypt."
+        },
+        {
+          "key": "C",
+          "text": "mTLS is sufficient for compliance because Temporal Cloud is SOC 2 certified, meaning all data at rest is encrypted by Temporal using customer-managed keys. No additional DataConverter is needed as long as the namespace uses mTLS certificates."
+        },
+        {
+          "key": "D",
+          "text": "The correct fix is to deploy Temporal in self-hosted mode, because Temporal Cloud's architecture fundamentally cannot support PII isolation regardless of DataConverter usage — the Temporal server must deserialize payloads to execute workflow logic."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is one of the most critical architectural misunderstandings in Temporal deployments involving sensitive data. mTLS (mutual TLS) protects the *transport layer* — it ensures that traffic between your Workers and Temporal's Frontend service cannot be intercepted or tampered with in transit, and that both parties authenticate each other. But mTLS says nothing about what happens *after* data arrives at the server. Temporal's server stores every workflow event — including activity inputs, outputs, signals, and workflow results — in its history database as-is. On Temporal Cloud, this means Temporal Technologies' infrastructure holds your workflow event history in whatever form the payloads arrive. If a Worker sends an activity input containing an SSN in plaintext (even over mTLS), that SSN is stored in Temporal's history service in plaintext.\n\nThe Temporal Cloud Security Whitepaper describes the 'provable security by design' model: Temporal Cloud is designed so that you can make your sensitive data *cryptographically inaccessible* to Temporal's infrastructure — but only if you implement a custom DataConverter. The DataConverter intercepts all payload serialization/deserialization on the Worker side. Before a payload leaves your Worker process (before it's sent to the Temporal server), the DataConverter encrypts it with a key that only your infrastructure controls. The Temporal server stores and routes the ciphertext blob, but cannot read it. When another Worker polls and receives the task, the DataConverter decrypts the payload using your key. Temporal's servers are literally provably unable to read your data — not just contractually, but cryptographically.\n\nOption A is wrong because the history service storing plaintext *is* the problem, but there is no 'built-in field-level encryption toggle' — this is your responsibility to implement. Option C conflates SOC 2 compliance (which is about Temporal's organizational security practices) with data isolation — SOC 2 does not mean Temporal encrypts your payloads with keys only you control. Option D is wrong because self-hosted Temporal has the same architecture; the Temporal server still processes and stores event history. A self-hosted deployment moves operational responsibility to you but doesn't change the need for a DataConverter if you want payload-level isolation. The key insight: mTLS protects data *in motion*, DataConverter protects data *at rest and in processing* on infrastructure you don't control. For regulated workloads, you need both.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "features_data_and_security_nightmare_002",
+      "category": "Features_Data_and_Security",
+      "difficulty": "nightmare",
+      "question": "An engineering team is designing a Temporal-based system for a healthcare company. They have three requirements: (1) Workflows orchestrate activities that call external APIs with OAuth tokens — these tokens must never be logged or visible in Temporal's Web UI. (2) Temporal Web UI must remain accessible to on-call engineers for debugging workflow state. (3) The system runs on Temporal Cloud. They implement a custom DataConverter with AES-256 encryption for all payloads. During an incident, an on-call engineer opens the Temporal Web UI to inspect a stuck workflow's input — they see encrypted binary blobs instead of readable JSON. The team debates three follow-up architectures. Which approach correctly allows the Web UI to display decrypted payload data to authorized engineers WITHOUT compromising the security model where Temporal's servers cannot read the plaintext?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Disable the DataConverter for workflow inputs while keeping it enabled for activity inputs/outputs, since workflow inputs are typically less sensitive than activity results and the Web UI needs to read them. Use Temporal Cloud's role-based access control to restrict who can view workflow inputs in the UI."
+        },
+        {
+          "key": "B",
+          "text": "Deploy a Codec Server — an HTTP service that you host and control, which the Temporal Web UI can be configured to call client-side to decode payloads for display. The Web UI sends the encrypted blobs to your Codec Server, your Codec Server decrypts them and returns plaintext to the *browser*, meaning decryption happens on the authorized user's client side and Temporal's servers never see the plaintext."
+        },
+        {
+          "key": "C",
+          "text": "Store a copy of all payload encryption keys in Temporal Cloud's namespace configuration using the secrets management API. The Web UI will automatically retrieve these keys and perform client-side decryption when an authorized engineer views a workflow."
+        },
+        {
+          "key": "D",
+          "text": "The requirements are mutually exclusive — a DataConverter that encrypts all payloads will always make the Web UI show binary blobs, and there is no supported Temporal mechanism to provide UI-readable decrypted data while maintaining server-side opacity. The team must choose between debuggability and security."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question targets a real operational pain point teams hit after implementing DataConverters: the Web UI becomes opaque, which defeats a primary debugging tool. The answer reveals one of Temporal's most elegant security design decisions: the Codec Server pattern.\n\nHere's how it works and why it preserves the security model: The Temporal Web UI, when configured with a Codec Server endpoint, does NOT send payloads to the Temporal server for decryption. Instead, when an engineer opens a workflow in the UI, the *browser* receives the encrypted payload blobs (as the Web UI always would), and then the browser makes a direct HTTP request to your Codec Server (which you host in your own infrastructure) to decode them. The Codec Server decrypts the blobs using your keys and returns plaintext. This decryption happens entirely client-side (in the browser's fetch call) — Temporal Cloud's servers are in the data path for routing the encrypted blobs, but they are never in the data path for decryption. Your Codec Server can enforce its own authentication (e.g., require the engineer to present a valid SSO token before decrypting), giving you fine-grained access control over who can read sensitive data in the UI.\n\nOption A is dangerous because the 'less sensitive' assumption is exactly the kind of reasoning that causes breaches. OAuth tokens typically appear in workflow or activity inputs. RBAC controls access to *viewing* data but doesn't help if the data is already in plaintext on Temporal's servers. Option C is wrong because Temporal Cloud has no 'secrets management API' for encryption keys, and storing your decryption keys in Temporal's infrastructure would completely defeat the security model — Temporal could then decrypt your payloads. Option D is wrong and this is the key insight: the requirements are NOT mutually exclusive. The Codec Server pattern was specifically designed to solve this exact tension. The broader design principle here is that Temporal's architecture consistently pushes sensitive operations to the edges (your Workers, your Codec Server) rather than centralizing them in the platform. This isn't a limitation — it's intentional. The platform routes and orchestrates; your code owns secrets and decryption. Understanding this boundary lets you build systems that are both fully debuggable by your team and cryptographically opaque to the platform operator.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    }
+  ]
+}

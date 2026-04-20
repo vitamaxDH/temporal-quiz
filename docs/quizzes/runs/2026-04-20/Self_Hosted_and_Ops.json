@@ -1,0 +1,341 @@
+{
+  "category": "Self_Hosted_and_Ops",
+  "questions": [
+    {
+      "id": "self_hosted_and_ops_easy_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "easy",
+      "question": "When rotating security credentials for Temporal Workers, what is the recommended approach to avoid workflow disruptions?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Immediately replace old credentials with new ones across all Workers at the same time"
+        },
+        {
+          "key": "B",
+          "text": "Add new credentials first, migrate Workers gradually, then remove the old credentials after confirming everything works"
+        },
+        {
+          "key": "C",
+          "text": "Shut down all Workers, update credentials, then restart them"
+        },
+        {
+          "key": "D",
+          "text": "Let old credentials expire naturally before generating new ones"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal recommends a 'dual credential' rotation process to achieve near-zero downtime. First, you generate new credentials and configure Temporal Cloud to accept both old and new ones simultaneously. Then you migrate Workers one by one to the new credentials. Only after confirming all Workers are working correctly with the new credentials do you remove the old ones. This overlap period is critical — it ensures no Worker is left without valid credentials during the transition, which could cause authentication failures and disrupt running workflows.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_easy_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "easy",
+      "question": "In Temporal Cloud, what is a key reason to avoid combining many separate Activities into a single large Activity as a cost-saving measure?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal charges more for single large Activities than for multiple small ones"
+        },
+        {
+          "key": "B",
+          "text": "Large Activities cannot be retried automatically"
+        },
+        {
+          "key": "C",
+          "text": "You lose the ability to see which step failed and to retry individual steps independently"
+        },
+        {
+          "key": "D",
+          "text": "Single Activities cannot send signals to other workflows"
+        }
+      ],
+      "answer": "C",
+      "explanation": "While merging Activities does reduce the number of billable Actions, it comes at a serious cost to observability. Imagine combining five steps — validate input, call payment API, update database, send notification, and generate receipt — into one Activity. If something goes wrong, you cannot see which of the five steps failed. Worse, if the notification step fails, Temporal will retry the entire Activity, including the payment call, which could cause unintended side effects. Temporal encourages optimizing costs only after understanding your workflow's failure modes, because losing visibility makes debugging and incident response much harder.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_easy_003",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "easy",
+      "question": "What is the main purpose of creating an internal Temporal knowledge hub within an organization?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To replace Temporal's official documentation with a complete copy your team controls"
+        },
+        {
+          "key": "B",
+          "text": "To provide a single, organization-specific resource that helps developers get started, follow consistent standards, and self-serve answers"
+        },
+        {
+          "key": "C",
+          "text": "To store workflow execution logs and monitoring dashboards"
+        },
+        {
+          "key": "D",
+          "text": "To track billing and cost usage across teams"
+        }
+      ],
+      "answer": "B",
+      "explanation": "As more teams within an organization start using Temporal, knowledge can become siloed — different teams develop inconsistent patterns, new developers struggle to get started, and the platform team gets overwhelmed with repeated questions. A knowledge hub solves this by providing one central place with organization-specific guidance: how to get started quickly, what architectural standards to follow, how costs work, and how to troubleshoot common issues. Importantly, a knowledge hub is NOT a copy of Temporal's official docs — it links to those and focuses only on decisions and conventions specific to your organization.",
+      "source_doc": "best-practices_knowledge-hub.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "A team is using the same Certificate Authority (CA) for both dev and prod Temporal Cloud namespaces. What is the recommended approach to prevent dev certificates from accessing the production namespace?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Use separate CAs for dev and prod — sharing a CA between environments is not supported by Temporal Cloud"
+        },
+        {
+          "key": "B",
+          "text": "Rotate prod certificates more frequently so dev certificates are always expired relative to prod"
+        },
+        {
+          "key": "C",
+          "text": "Give certificates a common name matching the namespace and use Certificate Filters to restrict access to production"
+        },
+        {
+          "key": "D",
+          "text": "Use API keys for dev and mTLS for prod so the authentication methods themselves enforce environment separation"
+        }
+      ],
+      "answer": "C",
+      "explanation": "When using the same CA for multiple environments, Temporal Cloud supports Certificate Filters as an additional authorization layer. By giving each certificate a common name that matches its target namespace (e.g., 'prod-namespace'), you can configure Certificate Filters to block dev certificates from authenticating to production — even though both certificates are signed by the same CA. This is a practical workaround for organizations that centralize certificate management under a single CA.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_003",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "Your Temporal Cloud bill shows unexpectedly high Actions costs. After investigation, you find an Activity that calls a third-party payment API is retrying ~20 times whenever the API has a brief outage. Which combination of Retry Policy changes would most directly reduce Actions consumed during outages?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Convert the Activity to a Local Activity so multiple retries count as a single billable Action"
+        },
+        {
+          "key": "B",
+          "text": "Increase InitialInterval (e.g., to 10s), set a MaximumAttempts cap, and add 4xx HTTP errors to NonRetryableErrorTypes"
+        },
+        {
+          "key": "C",
+          "text": "Remove the Retry Policy entirely and handle retries inside the Activity function using a loop"
+        },
+        {
+          "key": "D",
+          "text": "Move the payment API call into the Workflow function directly to avoid Activity retry overhead"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Each Activity retry counts as one billable Action. Three targeted fixes reduce retry-related Actions: (1) increasing InitialInterval reduces retry frequency during outages, (2) setting MaximumAttempts caps the total retries per failure, and (3) adding 4xx errors to NonRetryableErrorTypes prevents retrying errors that will never succeed (like bad requests). Converting to a Local Activity is tempting but Local Activities have different failure semantics — if one fails, all are retried together — making it inappropriate for an expensive external call. Never put retry logic inside Activities or Workflow code directly.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_004",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "A Temporal workflow processes thousands of events over several weeks. The team notices increasing latency and rising storage costs for this workflow. Which pattern directly addresses BOTH problems simultaneously?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Reduce the namespace retention period from 30 days to 7 days to lower storage costs"
+        },
+        {
+          "key": "B",
+          "text": "Switch all Activities to Local Activities to reduce the number of Events written to history"
+        },
+        {
+          "key": "C",
+          "text": "Implement Continue-As-New to periodically close the current execution and start fresh, limiting Event History size"
+        },
+        {
+          "key": "D",
+          "text": "Implement a custom Data Converter with compression to reduce the size of each event in the history"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Long-running workflows that accumulate thousands of events suffer from two related problems: large Event Histories slow down workflow execution (history must be replayed) and increase Active Storage costs (open workflows are stored at the more expensive Active Storage rate). Continue-As-New solves both: it closes the current execution (moving it to cheaper Retained Storage) and starts a fresh execution with a clean history. Reducing retention only affects closed workflows and doesn't help active ones. Compression helps with payload size but not event count. Local Activities reduce Action count but don't limit history growth.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "Your team shares a single CA to issue mTLS certificates for both dev and prod Temporal Cloud namespaces. A security audit flags this as a risk because a compromised dev certificate could potentially authenticate to production. What is the recommended Temporal-native mitigation for this exact scenario?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Switch to API keys for all environments since they don't share CA trust chains"
+        },
+        {
+          "key": "B",
+          "text": "Use Certificate Filters with a naming convention where the certificate Common Name matches the namespace name, then configure filters to restrict which certificates can access production"
+        },
+        {
+          "key": "C",
+          "text": "Generate entirely separate CAs for dev and prod — Temporal has no mechanism to differentiate certificates from the same CA"
+        },
+        {
+          "key": "D",
+          "text": "Use Let's Encrypt for production certificates since it provides public trust and stronger revocation guarantees"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud supports Certificate Filters as an authorization layer on top of mTLS. When you name certificates with a Common Name that matches the namespace (e.g., 'my-app-prod'), Certificate Filters can be configured to only accept certificates whose CN matches the target namespace. This means even if a dev certificate is signed by the same CA as prod certificates, it will be rejected by prod's Certificate Filters because the CN is 'my-app-dev', not 'my-app-prod'. This is a Temporal-native solution that avoids the operational overhead of managing separate CAs. Option C is wrong — Temporal does provide this mechanism. Option D is explicitly discouraged in the docs: 'Let's Encrypt is not recommended, as it is designed primarily for public-facing services and lacks support for internal certificate requirements.'",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "Your payment processing Workflows call a third-party billing API as an Activity. The API has occasional outages lasting 20-30 minutes. After a recent outage, you discover that across 1,000 concurrent Workflows, you accumulated over 20,000 unexpected Actions in Temporal Cloud — significantly inflating your bill. The Workflow logic was correct and all Workflows eventually succeeded. What is the root cause and the best fix?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal Cloud charges double for Activities that call external APIs; use Local Activities instead to reduce billing"
+        },
+        {
+          "key": "B",
+          "text": "The default Retry Policy's aggressive backoff (1s initial, 2.0 coefficient, unlimited attempts) caused dozens of retries per Workflow during the outage; increase InitialInterval, cap MaximumAttempts, or add the billing API's error types to NonRetryableErrorTypes"
+        },
+        {
+          "key": "C",
+          "text": "The Workflows should have used Continue-As-New during the outage to reset their retry counters and avoid accumulating Actions"
+        },
+        {
+          "key": "D",
+          "text": "Signals should replace Activity retries for external API calls since Signals don't count as billable Actions"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Each Activity retry counts as one billable Action. Temporal's default Retry Policy (1s initial interval, 2.0 backoff coefficient, unlimited maximum attempts, 100s maximum interval) is intentionally aggressive for resilience — but during a 30-minute outage, an Activity hits the 100s cap after roughly 12-15 retries and then retries every 100 seconds. With 1,000 concurrent Workflows, this generates thousands of extra Actions. The fix is to tune the Retry Policy for expensive external operations: set a higher InitialInterval (e.g., 10s) to reduce frequency, cap MaximumAttempts to bound total cost, add non-retryable error types for 4xx responses that won't resolve on retry, or implement an Activity pause pattern for manual intervention. Continue-As-New doesn't reset retry counts. Local Activities have different semantics and don't solve retry cost.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_003",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "You're optimizing a high-throughput order processing system on Temporal Cloud. Each Workflow currently runs 5 sequential Activities: validate_input, charge_payment, update_database, send_notification, generate_receipt. A colleague proposes merging all 5 into a single process_order Activity to reduce Actions from 5 to 1 per Workflow, saving 80% on Actions costs. You're about to approve this change — what critical production risk does this optimization introduce that your colleague may have overlooked?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Merging Activities is not supported by the Temporal SDK; you cannot call multiple operations from within a single Activity"
+        },
+        {
+          "key": "B",
+          "text": "A single merged Activity loses per-step visibility in the UI, eliminates independent retry control (a notification failure retries the payment call), and prevents filtering Workflows by failure stage — significantly increasing MTTR when incidents occur"
+        },
+        {
+          "key": "C",
+          "text": "The merged Activity will exceed Temporal's maximum Activity execution time limit, causing timeouts"
+        },
+        {
+          "key": "D",
+          "text": "Temporal bills merged Activities at the same rate as separate Activities, so no cost savings are actually achieved"
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is the core observability vs. cost tradeoff in Temporal design. When you merge 5 Activities into 1, you lose: (1) per-step visibility — you can't see in the UI which of the 5 steps failed; (2) independent retry control — if notification fails, the entire merged Activity retries including the payment charge, which could double-charge customers; (3) failure stage filtering — you can't query 'show me all Workflows that failed at the database step.' The docs explicitly use this exact example: merging validate/payment/database/notification/receipt into processOrder. The cost savings are real, but the tradeoff is increased MTTR during incidents and loss of retry isolation between steps with very different failure semantics (e.g., payment vs. notification). This optimization should be made consciously, not automatically.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_004",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "Your platform team is scaling Temporal adoption across 15 engineering teams. You've noticed that the platform team spends 25+ hours per week answering Slack questions like 'how do I set up a namespace?', 'what's the retry policy convention?', and 'where do I get credentials?' — most of which have been answered before. You're building an internal knowledge hub to fix this. Which content strategy will most effectively reduce this support burden according to Temporal's guidance?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Comprehensively mirror Temporal's official documentation internally so engineers never need to leave your intranet"
+        },
+        {
+          "key": "B",
+          "text": "Focus the knowledge hub on organization-specific decisions, conventions, and operational procedures — link to official Temporal docs for general concepts — and answer Slack questions by linking to the relevant knowledge hub page rather than explaining inline"
+        },
+        {
+          "key": "C",
+          "text": "Create a dedicated support ticket system that routes all Temporal questions to the platform team with guaranteed 24-hour SLAs"
+        },
+        {
+          "key": "D",
+          "text": "Restrict Temporal access to engineers who have completed official Temporal certification to reduce the volume of basic questions"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The knowledge hub guidance makes two critical distinctions. First, you should NOT mirror official Temporal documentation — when Temporal updates their docs, your mirror becomes a source of confusion and drift. Instead, link to official docs and reserve your hub for what only your organization knows: your Namespace naming conventions, your credential provisioning process, your retry policy standards, your escalation paths. Second, the behavioral change that actually reduces support load is answering Slack questions with links to the knowledge hub page instead of inline explanations. This reinforces discoverability, improves the hub's traffic metrics, and trains engineers to self-serve. The goal metric cited is going from 20-30+ questions/week to fewer than 5 — achieved through self-service resolution, not ticket routing or access restriction.",
+      "source_doc": "best-practices_knowledge-hub.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_nightmare_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "nightmare",
+      "question": "Your team runs 50,000 concurrent Workflows on Temporal Cloud. Each Workflow processes payment orders and uses 5 separate Activities: validate_input, call_payment_api, update_database, send_notification, and generate_receipt. A junior engineer proposes consolidating all 5 into a single 'process_order' Local Activity to dramatically reduce costs, since 'multiple Local Activities that run back-to-back only count as a single billable action.' The payment API occasionally experiences 2-3 minute outages. What is the most critical production risk this optimization introduces that the engineer has overlooked?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Local Activities cannot be used for payment operations because they lack transactional guarantees that Regular Activities provide through the Temporal server."
+        },
+        {
+          "key": "B",
+          "text": "If the consolidated Local Activity fails mid-execution (e.g., during send_notification after the payment API call succeeds), all Local Activities in the batch retry together, meaning the payment API call re-executes and risks double-charging customers — while also losing the ability to independently retry only the failed step."
+        },
+        {
+          "key": "C",
+          "text": "Local Activities running for 2-3 minutes during payment API outages will exceed Temporal Cloud's hard limit on Local Activity execution time, causing the Workflow to fail with a non-retryable error."
+        },
+        {
+          "key": "D",
+          "text": "Consolidating into a Local Activity prevents the Workflow from receiving Signals during execution, which will cause queued cancellation requests to be silently dropped until the Activity completes."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question exposes a subtle but catastrophic misunderstanding of Local Activity retry semantics. The documentation explicitly warns: 'if a specific Local Activity fails, all of them will be retried together.' This is because Local Activities execute within the Workflow Worker process itself rather than being dispatched to Activity Workers — they share a single Workflow Task. When a batch of Local Activities executes within one Workflow Task and any one fails, Temporal must replay the entire Workflow Task, which re-executes all Local Activities in that batch from the start. In a payment context, this creates the classic double-charge problem: if validate_input, call_payment_api, and update_database all succeed but send_notification fails, retrying the batch re-executes call_payment_api against a live payment processor. The cost savings are also illusory in a failure scenario — during a 2-3 minute payment API outage across 50,000 Workflows, you lose independent retry control (you can't back off only the payment step), you lose per-step visibility in the UI (you can't tell which step failed), and you lose the ability to set non-retryable error types per operation. The broader design principle here is that Activity boundaries in Temporal are failure isolation boundaries, not just cost units. The documentation's warning 'Activities should be split based on failure boundaries and retry requirements, not cost optimization alone' exists precisely because premature consolidation trades durable correctness guarantees for cost savings. The right approach for this payment flow is to keep Regular Activities, tune retry policies on call_payment_api (setting MaximumAttempts and using NonRetryableErrorTypes for 4xx errors), and use Local Activities only for genuinely idempotent, sub-10-second, non-sensitive operations where joint retry is safe.",
+      "source_doc": "cost-optimization.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "self_hosted_and_ops_nightmare_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "nightmare",
+      "question": "Your organization uses a single internal CA to sign certificates for both dev and prod Temporal Cloud namespaces. A security audit flags that a compromised dev certificate could potentially authenticate to the prod namespace. Your platform team proposes fixing this by immediately revoking all dev certificates and reissuing them from a separate CA. A Temporal expert on your team pushes back, arguing this is unnecessary operational overhead. Which approach correctly addresses the security concern with minimal disruption, and why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The security audit is correct and separate CAs are required. Temporal Cloud validates certificates at the CA level only, so any certificate from a shared CA has equal access to all namespaces using that CA, making Certificate Filters ineffective as a compensating control."
+        },
+        {
+          "key": "B",
+          "text": "Configure Certificate Filters on the prod namespace using a common name convention (e.g., CN=prod-namespace-name) so that even though dev and prod certificates share a CA, only certificates with the prod-matching common name are authorized — eliminating the cross-environment risk without requiring separate CAs or certificate reissuance."
+        },
+        {
+          "key": "C",
+          "text": "Switch the entire organization from mTLS to API keys immediately, since API keys are scoped to specific namespaces by default and the Operations API only supports API key authentication anyway, making mTLS the inherently weaker option."
+        },
+        {
+          "key": "D",
+          "text": "Implement a zero-downtime dual-credential rotation by adding the new separate-CA certificates to Temporal Cloud first, migrating all dev Workers to the new certificates, then removing the old shared-CA dev certificates — but this must happen before fixing the prod namespace access control gap."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question tests understanding of how Temporal Cloud's Certificate Filters interact with shared CA architecture — a common production scenario that engineers often solve with expensive CA separation when a lightweight built-in control already exists. Temporal Cloud's authentication model validates that a certificate is signed by a trusted CA, but Certificate Filters provide an additional layer that evaluates specific certificate attributes (like Common Name) presented during the mTLS handshake. The documentation explicitly describes this pattern: 'Give certificates a common name that matches the namespace. If you do this when using the same CA for dev and prod, then you can leverage Certificate Filters to prevent access to production environments.' This means your prod namespace can be configured to only accept certificates where CN=prod-namespace-name, even if a dev certificate is signed by the same CA — a compromised dev cert with CN=dev-namespace-name simply won't pass the filter. Option A is wrong because it mischaracterizes how Temporal Cloud authentication works — Certificate Filters are specifically designed for this shared-CA scenario and are described as an effective compensating control. Option C conflates the authentication method recommendation (API keys are easier to manage) with a security equivalence claim that isn't made in the documentation; mTLS with Certificate Filters is explicitly supported and valid for production. Option D describes the correct zero-downtime rotation procedure, but it doesn't address the actual security concern (cross-environment certificate access) and adds unnecessary operational work if the real goal is access isolation rather than CA separation. The broader architectural insight here is that in Temporal Cloud, mTLS authentication has two distinct layers: CA trust (is this cert signed by a CA we trust?) and Certificate Filters (does this cert's attributes match what we expect for this namespace?). Engineers who only understand the first layer will over-engineer solutions. The correct production pattern is: standardize on a naming convention like CN=\u003cnamespace-name\u003e, enforce Certificate Filters on every namespace, and document this as your org's standard in your internal knowledge hub so all teams apply it consistently.",
+      "source_doc": "cloud-access-control.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "category": "Miscellaneous",
+  "questions": [
+    {
+      "id": "miscellaneous_easy_001",
+      "category": "Miscellaneous",
+      "difficulty": "easy",
+      "question": "Which of the following programming languages does Temporal NOT currently offer an official SDK for?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Python"
+        },
+        {
+          "key": "B",
+          "text": "Rust"
+        },
+        {
+          "key": "C",
+          "text": "TypeScript"
+        },
+        {
+          "key": "D",
+          "text": "Go"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal offers SDKs for .NET, Go, Java, PHP, Python, Ruby, and TypeScript. Rust is not among the supported languages. SDKs are important because they provide the tools and libraries you need to build Temporal applications in your preferred programming language.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "miscellaneous_easy_002",
+      "category": "Miscellaneous",
+      "difficulty": "easy",
+      "question": "What is the main purpose of a Temporal SDK?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To host the Temporal server on your own machine"
+        },
+        {
+          "key": "B",
+          "text": "To monitor the performance of your running workflows"
+        },
+        {
+          "key": "C",
+          "text": "To help you build Temporal applications in a specific programming language"
+        },
+        {
+          "key": "D",
+          "text": "To replace your existing database with Temporal storage"
+        }
+      ],
+      "answer": "C",
+      "explanation": "A Temporal SDK (Software Development Kit) is a set of libraries and tools that makes it easier to build Temporal applications in a particular programming language. Each SDK is tailored to a specific language, so Go developers use the Go SDK, Python developers use the Python SDK, and so on.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    },
+    {
+      "id": "miscellaneous_nightmare_001",
+      "category": "Miscellaneous",
+      "difficulty": "nightmare",
+      "question": "Your team is building a multi-region order fulfillment system in Go. A parent workflow orchestrates three child workflows (inventory, payment, shipping) using `workflow.ExecuteChildWorkflow`. The parent has a 24-hour `WorkflowExecutionTimeout`. During a deployment, you use `GetVersion` to handle a logic change in how the parent coordinates child results. A child workflow is mid-execution when `continue-as-new` is triggered on the parent to reset its event history. After the continue-as-new, the parent re-executes and calls `GetVersion` again for the same changeID. What is the most critical production risk in this scenario, and what is the correct behavior?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The child workflows are automatically cancelled when the parent calls continue-as-new, because child workflow lifetime is bound to the parent's current execution run, not the workflow ID chain."
+        },
+        {
+          "key": "B",
+          "text": "After continue-as-new, the new parent run has no history of the previous GetVersion call for that changeID, so GetVersion will return the maxSupported version — but if the worker code path for that version differs from what the still-running child workflow expects as a callback, you can get inconsistent orchestration state that is silent and difficult to debug."
+        },
+        {
+          "key": "C",
+          "text": "continue-as-new is forbidden when child workflows are still running; Temporal will return an error and the parent must wait for all children to complete before calling ContinueAsNew."
+        },
+        {
+          "key": "D",
+          "text": "GetVersion state is stored in the Temporal server and persists across continue-as-new boundaries, so the new parent run will receive the same version integer that was recorded before the continue-as-new, ensuring deterministic replay."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This scenario exposes a subtle but dangerous interaction between three features: child workflows, GetVersion, and continue-as-new.\n\n**continue-as-new and child workflows**: When a parent calls ContinueAsNew, the NEW run starts fresh with an empty event history. Critically, child workflows that were started by the OLD run continue executing independently — they are NOT cancelled. They remain associated with the parent workflow ID chain, and their completion callbacks (if any) are routed to the new run. This means the new parent run must be designed to handle completion events from children it never 'saw' start.\n\n**GetVersion after continue-as-new**: GetVersion works by recording a marker event in the workflow history the FIRST time it is called for a given changeID. On replay, Temporal reads that marker to return the same version. After continue-as-new, the new run's history is empty — there is no marker. So when the new run calls GetVersion for the same changeID, it behaves as a 'first call' and returns maxSupported. If your code branched differently for an older version in the pre-CAN run, the new run will now execute the new code path, but any in-flight children from the old run were LAUNCHED under old coordination logic. The result is silent state divergence: the parent thinks it's on the new code path, but the children are operating under old assumptions.\n\n**Why A is wrong**: Children are NOT automatically cancelled on continue-as-new. They are detached from the old run's event loop but continue running. ParentClosePolicy controls what happens on parent CLOSE (not continue-as-new), and the default is ABANDON or TERMINATE depending on SDK version.\n\n**Why C is wrong**: Temporal does not block ContinueAsNew when children are running. This is legal and common in long-running orchestrators.\n\n**Why D is wrong**: GetVersion state lives ONLY in workflow history as marker events. It has no server-side persistence across runs. Each new run starts with zero version markers.\n\n**Production lesson**: Before calling ContinueAsNew in a parent that uses GetVersion, you must either (1) wait for all children to complete, (2) pass version state explicitly as the new workflow's input arguments, or (3) architect child workflows to be stateless with respect to parent versioning. Teams that miss this often see non-determinism errors appear sporadically after deployments, only on workflows that crossed a continue-as-new boundary during the rollout window.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T05:01:13Z"
+    }
+  ]
+}
