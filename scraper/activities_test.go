@@ -130,7 +130,7 @@ func (s *ActivitiesTestSuite) TestReadLocalDocs_Success() {
 	devContent, _ := os.ReadFile(devFile)
 	assert.Contains(s.T(), string(devContent), "Go SDK Basics")
 
-	cloudFile := filepath.Join(tmpOut, "temporal_docs_txt", "temporal_docs_Temporal_Cloud.txt")
+	cloudFile := filepath.Join(tmpOut, "temporal_docs_txt", "temporal_docs_Operations_TemporalCloud.txt")
 	assert.FileExists(s.T(), cloudFile)
 	cloudData, _ := os.ReadFile(cloudFile)
 	assert.Contains(s.T(), string(cloudData), "Cloud Namespaces")
@@ -153,7 +153,7 @@ func (s *ActivitiesTestSuite) TestReadLocalDocs_StripsFrontmatter() {
 	require.NoError(s.T(), val.Get(&result))
 	assert.Contains(s.T(), result, "1 files")
 
-	evalFile := filepath.Join(tmpOut, "temporal_docs_txt", "temporal_docs_Evaluate_and_Concepts.txt")
+	evalFile := filepath.Join(tmpOut, "temporal_docs_txt", "temporal_docs_General_Concepts.txt")
 	assert.FileExists(s.T(), evalFile)
 	content, _ := os.ReadFile(evalFile)
 	assert.Contains(s.T(), string(content), "Evaluate Temporal")

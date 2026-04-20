@@ -70,6 +70,9 @@ RULES:
 - Do NOT write definition/recall questions like "What is X?"
 - Do NOT make questions tricky for the sake of being tricky
 
+RELATIONSHIP QUESTIONS:
+- Reserve 1-2 questions per bucket that explicitly test the RELATIONSHIP between this feature and an adjacent one — e.g., Workflows + Retry Policies; Activities + Heartbeats + Timeouts; Signals + Worker Versioning + deploy rollouts; Schedules + Namespaces; Data Converter + Payload Codec + encryption-at-rest; Task Queues + Workers + sticky scheduling. These composite questions teach how Temporal features behave together in practice, not in isolation.
+
 CHOICE QUALITY (critical — avoid these MCQ tells):
 - All four choices (A, B, C, D) must be comparable in length and specificity. Aim for within ~20%% word count of each other.
 - The correct answer must NOT be the longest, most hedged, most qualified, or most "textbook-sounding" option. Wrong answers should not be noticeably terser.
@@ -95,6 +98,9 @@ RULES:
 - Wrong answers represent things an engineer might reasonably believe before understanding the deeper behavior
 - The explanation should go deep: explain the underlying design principle, connect it to broader Temporal architecture, and give the reader an insight they can apply beyond this specific question
 - After reading the explanation, the engineer should think "I'm glad I learned that before hitting it in production"
+
+RELATIONSHIP QUESTIONS:
+- At nightmare level, EVERY question should exercise the relationship between 2+ features. If you can't explain which features interact and how, the question isn't nightmare-worthy. Examples of strong feature pairings: Workflows + History + Versioning on replay safety; Signals + Updates + Workers on ordering guarantees; Schedules + Namespaces + Task Queues on cross-namespace routing; Data Converter + Payload Codec + mTLS on end-to-end encryption trust boundaries; Continuous Export + Visibility Store + Archival on observability cost and retention.
 
 CHOICE QUALITY (critical — avoid these MCQ tells):
 - All four choices (A, B, C, D) must be comparable in length and specificity. Aim for within ~20%% word count of each other.

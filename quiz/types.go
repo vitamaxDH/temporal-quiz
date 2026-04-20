@@ -16,31 +16,28 @@ const (
 )
 
 // PriorityCategories are the core Temporal topics that MUST have coverage
-// in every daily run. Based on the structure of
-// https://github.com/temporalio/documentation and the concepts every
-// Temporal developer encounters first:
+// in every daily run. Drawn from the structure of
+// https://github.com/temporalio/documentation plus the features every
+// Temporal user hits early: workflow primitives, execution state,
+// messaging, scheduling, retries, and security.
 //
-//   - Workflows (the primitive)
-//   - Activities (the other half)
-//   - Workers & Routing (where code runs)
-//   - Messaging & Visibility (signals / queries / updates / search attrs)
-//   - Data & Security (data converter, payload codec, auth)
-//   - Nexus (cross-namespace typed RPCs)
-//   - Features Other (retry policies, schedules, patching)
-//   - Evaluate & Concepts (foundational encyclopedia)
-//
-// QuizGeneratorWorkflow generates more questions per priority bucket and
-// falls back to pre-eval output if the eval filter zeros a priority
-// category, so coverage is guaranteed even when eval is strict.
+// QuizGeneratorWorkflow generates more questions per priority bucket
+// (PriorityCountMultiplier) and falls back to pre-eval output if the
+// eval filter zeros a priority category, so coverage is guaranteed
+// even when eval is strict.
 var PriorityCategories = []string{
 	"Features_Workflows",
 	"Features_Activities",
-	"Features_Workers_and_Routing",
-	"Features_Messaging_and_Visibility",
-	"Features_Data_and_Security",
+	"Features_Workers",
+	"Features_TaskQueues",
+	"Features_Signals_Queries_Updates",
+	"Features_Schedules",
+	"Features_Timers_Retries",
 	"Features_Nexus",
-	"Features_Other",
-	"Evaluate_and_Concepts",
+	"Features_History",
+	"Features_WorkerVersioning",
+	"Features_DataConversion",
+	"Features_Security",
 }
 
 // IsPriorityCategory reports whether the given category is in PriorityCategories.
