@@ -1,38 +1,53 @@
-.PHONY: build test lint worker scrape quizgen localgen pipeline publish start-server stop-server clean wipe-all
+.PHONY: help worker scrape quizgen localgen pipeline publish start-server stop-server clean test build
+
+# Per-difficulty question counts (used by quizgen + localgen)
+EASY ?= 3
+MED ?= 4
+HARD ?= 4
+NIGHTMARE ?= 2
+DOCS_DIR ?=
+
+# Publish targets
+UI_REPO ?= ../temporal-quiz-ui
+UI_QUIZZES = $(UI_REPO)/docs/quizzes
+SRC_QUIZZES = web/quizzes
+TODAY = $(shell date -u +%Y-%m-%d)
 
 help:
-	@echo "Temporal Quiz - Available Commands:"
-	@echo "------------------------------------"
-	@echo "  make build        : Build all binaries (worker, starter, pipeline)"
-	@echo "  make test         : Run all tests"
-	@echo "  make lint         : Run go vet"
-	@echo "  make worker       : Build and run the Temporal Worker"
-	@echo "  make scrape       : Trigger the Scraper Workflow"
-	@echo "  make quizgen      : Generate quizzes only (skip scraping)"
+	@echo "Temporal Quiz - Available Commands"
+	@echo "----------------------------------"
+	@echo ""
+	@echo "Individual steps:"
+	@echo "  make worker       : Build and run the Temporal Worker (long-running)"
+	@echo "  make scrape       : Trigger the Scraper Workflow (pulls latest docs)"
+	@echo "  make quizgen      : Generate quizzes from already-scraped docs"
 	@echo "  make localgen     : Read local/GitHub docs then generate quizzes"
-	@echo "  make pipeline     : Run full daily pipeline (scrape + generate quizzes)"
-	@echo "  make publish      : Sync generated quizzes into the UI repo and push"
-	@echo "                       (override UI_REPO=path/to/temporal-quiz-ui if needed)"
+	@echo ""
+	@echo "End-to-end:"
+	@echo "  make pipeline     : scrape + generate quizzes + publish to UI repo"
+	@echo "  make publish      : Publish today's run to UI repo (standalone)"
+	@echo "                       (override UI_REPO=path/to/temporal-quiz-ui)"
+	@echo ""
+	@echo "Infrastructure:"
 	@echo "  make start-server : Start local Temporal Docker Cluster"
 	@echo "  make stop-server  : Stop local Temporal Docker Cluster"
-	@echo "  make clean        : Remove downloaded HTML files"
-	@echo "  make wipe-all     : Remove ALL downloaded files and binaries"
+	@echo ""
+	@echo "Utility:"
+	@echo "  make test         : Run the Go test suite"
+	@echo "  make clean        : Remove scraped docs + binaries"
 
+# --- Build (implicit dependency of individual targets, not shown in help)
 build:
-	@echo "Building binaries..."
 	@go build -o bin/worker ./cmd/worker
 	@go build -o bin/starter ./cmd/starter
 	@go build -o bin/pipeline ./cmd/pipeline
 	@go build -o bin/quizgen ./cmd/quizgen
 	@go build -o bin/localgen ./cmd/localgen
-	@echo "Built: bin/worker, bin/starter, bin/pipeline, bin/quizgen, bin/localgen"
 
 test:
 	@go test ./... -v
 
-lint:
-	@go vet ./...
-
+# --- Individual steps
 worker: build
 	@echo "Starting Temporal Worker... (Press Ctrl+C to stop)"
 	@GODEBUG=netdns=cgo ./bin/worker
@@ -41,26 +56,21 @@ scrape: build
 	@echo "Triggering Scraper Workflow..."
 	@GODEBUG=netdns=cgo ./bin/starter
 
-EASY ?= 3
-MED ?= 4
-HARD ?= 4
-NIGHTMARE ?= 2
-
 quizgen: build
 	@echo "Generating quizzes (easy=$(EASY), med=$(MED), hard=$(HARD), nightmare=$(NIGHTMARE))..."
 	@GODEBUG=netdns=cgo ./bin/quizgen -easy=$(EASY) -med=$(MED) -hard=$(HARD) -nightmare=$(NIGHTMARE)
-
-DOCS_DIR ?=
 
 localgen: build
 	@echo "Reading docs and generating quizzes..."
 	@GODEBUG=netdns=cgo ./bin/localgen $(if $(DOCS_DIR),-docs=$(DOCS_DIR)) -easy=$(EASY) -med=$(MED) -hard=$(HARD) -nightmare=$(NIGHTMARE)
 
+# --- Full pipeline: scrape + generate + publish
 pipeline: build
 	@echo "Running full pipeline (scrape + generate quizzes)..."
 	@GODEBUG=netdns=cgo ./bin/pipeline
+	@$(MAKE) --no-print-directory publish
 
-# publish — sync today's generated run into the UI repo and push.
+# --- Publish today's run into the UI repo.
 #
 # Layout of web/quizzes/ after a pipeline run:
 #   web/quizzes/runs/<YYYY-MM-DD>/...    (today's snapshot)
@@ -69,11 +79,6 @@ pipeline: build
 # regenerates runs.json from whatever date dirs exist in the destination,
 # then commits and pushes. Override UI_REPO=... if your UI checkout lives
 # elsewhere.
-UI_REPO ?= ../temporal-quiz-ui
-UI_QUIZZES = $(UI_REPO)/docs/quizzes
-SRC_QUIZZES = web/quizzes
-TODAY = $(shell date -u +%Y-%m-%d)
-
 publish:
 	@if [ ! -d "$(SRC_QUIZZES)/runs/$(TODAY)" ]; then \
 	  echo "error: $(SRC_QUIZZES)/runs/$(TODAY) does not exist. Run 'make pipeline' or 'make quizgen' first."; \
@@ -94,6 +99,7 @@ publish:
 	    git commit -m "data: refresh quizzes $(TODAY)" && git push; \
 	  fi
 
+# --- Infrastructure
 start-server:
 	@echo "Starting Temporal cluster via Docker Compose..."
 	@cd temporal-docker-compose && docker-compose up -d
@@ -103,10 +109,7 @@ stop-server:
 	@echo "Stopping Temporal cluster..."
 	@cd temporal-docker-compose && docker-compose down
 
+# --- Maintenance
 clean:
-	@echo "Cleaning up raw HTML files..."
-	@rm -rf temporal_docs_html
-
-wipe-all: clean
-	@echo "Wiping all processed txt files and binaries..."
-	@rm -rf temporal_docs_txt bin/
+	@echo "Cleaning up scraped docs + binaries..."
+	@rm -rf temporal_docs_html temporal_docs_txt bin/
