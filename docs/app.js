@@ -687,7 +687,7 @@ function openCustomize() {
       </div>
 
       <div class="customize-row">
-        <div class="customize-label">Difficulty <span class="customize-hint">(empty = all)</span></div>
+        <div class="customize-label">Difficulty</div>
         <div class="customize-grid" id="customDiffs"></div>
       </div>
 
@@ -891,15 +891,42 @@ function renderCustomDifficulties() {
   const host = document.getElementById('customDiffs');
   if (!host) return;
   host.innerHTML = '';
+
+  // "All" chip — active when no specific difficulty is picked (an empty
+  // filter already means every difficulty is in). Clicking it resets the
+  // selection. Clicking any specific chip deactivates All implicitly.
+  const allChip = document.createElement('div');
+  allChip.className = 'diff-chip diff-chip-all';
+  if (customConfig.difficulties.length === 0) allChip.classList.add('active');
+  allChip.innerHTML = '<span class="difficulty-badge difficulty-all"><span class="difficulty-label">All</span></span>';
+  allChip.addEventListener('click', () => {
+    customConfig.difficulties = [];
+    renderCustomDifficulties();
+  });
+  host.appendChild(allChip);
+
   const diffs = ['easy', 'med', 'hard', 'nightmare'];
+  // When All is active (no explicit picks), show every specific chip in
+  // its active state too, so the "all are included" meaning is visually
+  // unambiguous instead of the chips going dim.
+  const allActive = customConfig.difficulties.length === 0;
   diffs.forEach(d => {
     const pill = document.createElement('div');
     pill.className = 'diff-chip';
-    if (customConfig.difficulties.includes(d)) pill.classList.add('active');
+    if (allActive || customConfig.difficulties.includes(d)) pill.classList.add('active');
     pill.innerHTML = difficultyDots(d);
     pill.addEventListener('click', () => {
-      toggleChip(customConfig.difficulties, d);
-      pill.classList.toggle('active');
+      // First click out of the All state seeds the selection with ONLY
+      // the clicked difficulty. Without this, the dim-all → dim-one
+      // transition felt like a deselect rather than a pick.
+      if (allActive) {
+        customConfig.difficulties = [d];
+      } else {
+        toggleChip(customConfig.difficulties, d);
+      }
+      // Re-render so the All chip activates/deactivates in sync with the
+      // specific picks.
+      renderCustomDifficulties();
     });
     host.appendChild(pill);
   });
