@@ -10,7 +10,10 @@ DOCS_DIR ?=
 # Publish targets
 UI_REPO ?= ../temporal-quiz-ui
 UI_QUIZZES = $(UI_REPO)/docs/quizzes
-SRC_QUIZZES = web/quizzes
+# SRC_QUIZZES follows the worker's output dir. When TEMPORAL_QUIZ_OUTPUT_DIR
+# is set (common when pointing the worker straight at the UI repo), publish
+# will detect that source == destination and skip the copy step.
+SRC_QUIZZES ?= $(if $(TEMPORAL_QUIZ_OUTPUT_DIR),$(TEMPORAL_QUIZ_OUTPUT_DIR),web/quizzes)
 TODAY = $(shell date -u +%Y-%m-%d)
 
 help:
@@ -88,9 +91,15 @@ publish:
 	  echo "error: $(UI_REPO) is not a git repo. Set UI_REPO=path/to/temporal-quiz-ui."; \
 	  exit 1; \
 	fi
-	@echo "Publishing quizzes to $(UI_QUIZZES)/runs/$(TODAY)..."
 	@mkdir -p "$(UI_QUIZZES)/runs/$(TODAY)"
-	@cp $(SRC_QUIZZES)/runs/$(TODAY)/*.json "$(UI_QUIZZES)/runs/$(TODAY)/"
+	@src=$$(cd "$(SRC_QUIZZES)" && pwd -P); \
+	dest=$$(cd "$(UI_QUIZZES)" && pwd -P); \
+	if [ "$$src" = "$$dest" ]; then \
+	  echo "Worker already wrote to $(UI_QUIZZES); skipping copy."; \
+	else \
+	  echo "Copying $(SRC_QUIZZES)/runs/$(TODAY)/ -> $(UI_QUIZZES)/runs/$(TODAY)/ ..."; \
+	  cp "$(SRC_QUIZZES)/runs/$(TODAY)"/*.json "$(UI_QUIZZES)/runs/$(TODAY)/"; \
+	fi
 	@python3 scripts/build_runs_index.py "$(UI_QUIZZES)"
 	@cd "$(UI_REPO)" && git add docs/quizzes && \
 	  if git diff --cached --quiet; then \
