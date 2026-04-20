@@ -42,7 +42,8 @@ let state = {
   sessions: [],       // [{ id, started_at, ended_at, mode, config, planned, total, correct, history:[...] }]
   theme: 'dark',      // 'dark' | 'light'
   categoryNotes: {},  // { category: 'markdown text' }
-  questionNotes: {}   // { <hash>: { hash, note, question, source_doc, category, created_at, updated_at } }
+  questionNotes: {},  // { <hash>: { hash, note, question, source_doc, category, created_at, updated_at } }
+  toolbox: { x: null, y: null, open: false, tab: 'calc' }
 };
 
 /* ---- Persistence ---- */
@@ -225,12 +226,16 @@ async function init() {
   document.getElementById('notesExportBtn').addEventListener('click', exportNotes);
   document.getElementById('sidebarCloseBtn').addEventListener('click', toggleSidebar);
   document.getElementById('sidebarOverlay').addEventListener('click', toggleSidebar);
-  document.getElementById('calcToggleBtn').addEventListener('click', toggleCalculator);
-  document.getElementById('calcEvalBtn').addEventListener('click', calcEval);
-  document.getElementById('calcClearBtn').addEventListener('click', calcClear);
-  document.getElementById('calcButtons').addEventListener('click', (e) => {
-    if (e.target.dataset.calc) calcInput(e.target.dataset.calc);
+  document.getElementById('toolboxLauncher').addEventListener('click', toggleToolbox);
+  document.getElementById('toolboxClose').addEventListener('click', closeToolbox);
+  document.getElementById('toolboxTabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.toolbox-tab');
+    if (btn) setToolboxTab(btn.dataset.tab);
   });
+  initToolboxDrag();
+  applyToolboxPosition();
+  window.addEventListener('resize', applyToolboxPosition);
+  if (state.toolbox?.open) openToolbox();
 
   try {
     await loadRuns();
@@ -564,6 +569,7 @@ function startSession(qs, length, meta = {}) {
   sessionAnswered = 0;
   sessionCorrect = 0;
   sessionWrongItems = [];
+  timerState.sessionStart = Date.now();
   questions = Number.isFinite(length) ? qs.slice(0, length) : qs;
   currentIndex = 0;
   mode = 'quiz';
@@ -597,6 +603,11 @@ function startSession(qs, length, meta = {}) {
 function showQuestion() {
   if (!questions.length) return;
   if (mode !== 'quiz') mode = 'quiz';
+  timerState.qStart = Date.now();
+  scratchText = '';
+  if (state.toolbox?.open && state.toolbox?.tab === 'scratch') {
+    renderToolboxBody('scratch');
+  }
 
   const q = questions[currentIndex];
   revealed = false;
@@ -835,6 +846,7 @@ function nextQuestion() {
 
 function renderRecap() {
   mode = 'recap';
+  timerState.qStart = null;
   // Stamp the session's end time if not already stamped
   const activeSess = state.sessions && state.sessions[0];
   if (activeSess && activeSess.ended_at === null) {
@@ -1241,29 +1253,333 @@ function renderHistory() {
   }).join('');
 }
 
-/* ---- Calculator ---- */
+/* ---- Toolbox ---- */
 
-function toggleCalculator() {
-  const calc = document.getElementById('calculator');
-  calc.style.display = calc.style.display === 'none' ? 'block' : 'none';
+function toggleToolbox() {
+  if (state.toolbox?.open) closeToolbox();
+  else openToolbox();
 }
 
-function calcInput(val) {
-  document.getElementById('calcDisplay').value += val;
+function openToolbox() {
+  if (!state.toolbox) state.toolbox = { x: null, y: null, open: false, tab: 'calc' };
+  state.toolbox.open = true;
+  saveState();
+  document.getElementById('toolbox').style.display = 'flex';
+  setToolboxTab(state.toolbox.tab || 'calc');
 }
 
-function calcClear() {
-  document.getElementById('calcDisplay').value = '';
+function closeToolbox() {
+  if (state.toolbox) state.toolbox.open = false;
+  saveState();
+  document.getElementById('toolbox').style.display = 'none';
 }
 
-function calcEval() {
-  const display = document.getElementById('calcDisplay');
-  try {
-    const sanitized = display.value.replace(/[^0-9+\-*/.() ]/g, '');
-    display.value = Function('"use strict"; return (' + sanitized + ')')();
-  } catch {
-    display.value = 'Error';
+function setToolboxTab(tab) {
+  if (!state.toolbox) state.toolbox = { x: null, y: null, open: true, tab };
+  state.toolbox.tab = tab;
+  saveState();
+  document.querySelectorAll('.toolbox-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  renderToolboxBody(tab);
+}
+
+function renderToolboxBody(tab) {
+  const host = document.getElementById('toolboxBody');
+  if (!host) return;
+  host.innerHTML = '';
+  if (tab === 'calc') renderCalc(host);
+  else if (tab === 'duration') renderDuration(host);
+  else if (tab === 'timer') renderTimer(host);
+  else if (tab === 'scratch') renderScratch(host);
+  else if (tab === 'cheat') renderCheat(host);
+}
+
+function clampToolboxX(x) {
+  const el = document.getElementById('toolbox');
+  const w = el?.offsetWidth || 280;
+  return Math.max(8, Math.min(x, window.innerWidth - w - 8));
+}
+function clampToolboxY(y) {
+  const el = document.getElementById('toolbox');
+  const h = el?.offsetHeight || 320;
+  return Math.max(8, Math.min(y, window.innerHeight - h - 8));
+}
+
+function applyToolboxPosition() {
+  const el = document.getElementById('toolbox');
+  if (!el) return;
+  // On narrow screens, let CSS place it (full-width bottom dock).
+  if (window.innerWidth <= 480) {
+    el.style.left = '';
+    el.style.top = '';
+    el.style.right = '';
+    el.style.bottom = '';
+    return;
   }
+  const tb = state.toolbox || {};
+  if (tb.x != null && tb.y != null) {
+    el.style.left = clampToolboxX(tb.x) + 'px';
+    el.style.top = clampToolboxY(tb.y) + 'px';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+  }
+}
+
+function initToolboxDrag() {
+  const box = document.getElementById('toolbox');
+  const handle = document.getElementById('toolboxHeader');
+  if (!box || !handle) return;
+  let startX = 0, startY = 0, origX = 0, origY = 0, dragging = false;
+  handle.addEventListener('mousedown', (e) => {
+    if (window.innerWidth <= 480) return;
+    if (e.target.closest('.toolbox-tab') || e.target.closest('.toolbox-close')) return;
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    const rect = box.getBoundingClientRect();
+    origX = rect.left; origY = rect.top;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const nx = clampToolboxX(origX + (e.clientX - startX));
+    const ny = clampToolboxY(origY + (e.clientY - startY));
+    box.style.left = nx + 'px';
+    box.style.top = ny + 'px';
+    box.style.right = 'auto';
+    box.style.bottom = 'auto';
+  });
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    const rect = box.getBoundingClientRect();
+    if (!state.toolbox) state.toolbox = {};
+    state.toolbox.x = rect.left;
+    state.toolbox.y = rect.top;
+    saveState();
+  });
+}
+
+/* ---- Duration math ---- */
+
+function parseDuration(s) {
+  if (!s || typeof s !== 'string') return null;
+  // Replace `<n><suffix>` tokens with milliseconds in parens.
+  const converted = s.replace(/(\d*\.?\d+)\s*(ms|s|m|h|d)\b/gi, (_, n, u) => {
+    const mult = { ms: 1, s: 1000, m: 60000, h: 3600000, d: 86400000 }[u.toLowerCase()];
+    return '(' + (Number(n) * mult) + ')';
+  });
+  const sanitized = converted.replace(/[^0-9+\-*/.() ]/g, '').trim();
+  if (!sanitized) return null;
+  try {
+    const v = Function('"use strict"; return (' + sanitized + ')')();
+    return typeof v === 'number' && Number.isFinite(v) ? v : null;
+  } catch { return null; }
+}
+
+function formatDurationMs(ms) {
+  if (ms == null || !Number.isFinite(ms)) return 'invalid';
+  if (ms < 0) return '-' + formatDurationMs(-ms);
+  let rem = Math.round(ms);
+  const d = Math.floor(rem / 86400000); rem -= d * 86400000;
+  const h = Math.floor(rem / 3600000);  rem -= h * 3600000;
+  const m = Math.floor(rem / 60000);    rem -= m * 60000;
+  const s = Math.floor(rem / 1000);     rem -= s * 1000;
+  const parts = [];
+  if (d) parts.push(d + 'd');
+  if (h) parts.push(h + 'h');
+  if (m) parts.push(m + 'm');
+  if (s) parts.push(s + 's');
+  if (rem) parts.push(rem + 'ms');
+  return parts.join(' ') || '0s';
+}
+
+function renderDuration(host) {
+  host.innerHTML = `
+    <div class="tool-duration">
+      <input type="text" class="tool-input" id="durInput" placeholder="e.g. 30s + 5m*3 + 1h">
+      <div class="tool-output">
+        <div class="tool-output-row"><span>ms</span><span id="durMs">&mdash;</span></div>
+        <div class="tool-output-row"><span>human</span><span id="durHuman">&mdash;</span></div>
+      </div>
+      <p class="tool-hint">Suffixes: ms s m h d. Example: <code>2h + 30m*3</code>.</p>
+    </div>
+  `;
+  const inp = document.getElementById('durInput');
+  const msEl = document.getElementById('durMs');
+  const humanEl = document.getElementById('durHuman');
+  const paint = () => {
+    const ms = parseDuration(inp.value);
+    msEl.textContent = ms == null ? '\u2014' : String(Math.round(ms));
+    humanEl.textContent = ms == null ? '\u2014' : formatDurationMs(ms);
+  };
+  inp.addEventListener('input', paint);
+  inp.focus();
+}
+
+/* ---- Timer ---- */
+
+let timerState = { qStart: null, sessionStart: null, tickHandle: null };
+
+let scratchText = ''; // per-question scratch, resets in showQuestion
+
+function renderTimer(host) {
+  host.innerHTML = `
+    <div class="tool-timer">
+      <div class="tool-timer-row"><span>This question</span><span id="timerQ">0s</span></div>
+      <div class="tool-timer-row"><span>This session</span><span id="timerS">0s</span></div>
+      <p class="tool-hint">Timers reset each question / session automatically.</p>
+    </div>
+  `;
+  if (timerState.tickHandle) clearInterval(timerState.tickHandle);
+  const tick = () => {
+    const qEl = document.getElementById('timerQ');
+    const sEl = document.getElementById('timerS');
+    if (!qEl || !sEl) {
+      clearInterval(timerState.tickHandle);
+      timerState.tickHandle = null;
+      return;
+    }
+    const q = timerState.qStart ? Date.now() - timerState.qStart : 0;
+    const s = timerState.sessionStart ? Date.now() - timerState.sessionStart : 0;
+    qEl.textContent = fmtSessionDuration(q);
+    sEl.textContent = fmtSessionDuration(s);
+  };
+  tick();
+  timerState.tickHandle = setInterval(tick, 500);
+}
+
+/* ---- Scratchpad ---- */
+
+function renderScratch(host) {
+  host.innerHTML = `
+    <div class="tool-scratch">
+      <textarea class="tool-textarea" id="scratchArea"
+                placeholder="Scratch space. Clears each question."></textarea>
+      <div class="tool-actions">
+        <button class="btn btn-ghost" id="scratchSaveBtn" title="Save to question note">Save to note</button>
+      </div>
+    </div>
+  `;
+  const ta = document.getElementById('scratchArea');
+  ta.value = scratchText;
+  ta.addEventListener('input', () => { scratchText = ta.value; });
+  document.getElementById('scratchSaveBtn').addEventListener('click', saveScratchToNote);
+}
+
+function saveScratchToNote() {
+  if (!scratchText.trim()) return;
+  const q = questions[currentIndex];
+  if (!q) return;
+  const key = hashQuestion(q.question);
+  const prev = state.questionNotes[key];
+  const now = Date.now();
+  state.questionNotes[key] = {
+    hash: key,
+    note: prev ? (prev.note + '\n\n' + scratchText) : scratchText,
+    question: q.question,
+    source_doc: q.source_doc || '',
+    category: q.category || '',
+    created_at: prev?.created_at ?? now,
+    updated_at: now
+  };
+  saveState();
+  const btn = document.getElementById('scratchSaveBtn');
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = 'Saved \u2713';
+    setTimeout(() => { if (btn) btn.textContent = orig; }, 1200);
+  }
+}
+
+/* ---- Cheat sheet ---- */
+
+const CHEAT_SHEET = [
+  { topic: 'Default Activity timeouts', body: 'ScheduleToCloseTimeout: none by default. You must set StartToCloseTimeout OR ScheduleToCloseTimeout.' },
+  { topic: 'Default RetryPolicy', body: 'InitialInterval=1s, BackoffCoefficient=2.0, MaximumInterval=100*InitialInterval, MaximumAttempts=unlimited.' },
+  { topic: 'Parent Close Policies', body: 'TERMINATE (default), ABANDON (orphan child), REQUEST_CANCEL (best-effort cancel).' },
+  { topic: 'Signals vs Updates', body: 'Signals are async, no return value. Updates are sync, return a value, can validate input before accepting.' },
+  { topic: 'Deterministic constraints', body: 'No time.Now(), no random, no network, no goroutines outside workflow.Go. Use workflow.Now, workflow.SideEffect.' },
+  { topic: 'Workflow replay', body: 'Replay must match event history. Non-deterministic changes break replay. Use versioning (GetVersion) for migrations.' },
+  { topic: 'Worker task queues', body: 'Workers poll a named task queue. Activities and workflows can be on different queues. Sticky queue for workflow tasks.' },
+  { topic: 'Heartbeat timeout', body: 'For long activities, set HeartbeatTimeout and call RecordHeartbeat periodically. If missed, activity task fails.' },
+  { topic: 'Search attributes', body: 'Typed key/value on a workflow. Indexable via ElasticSearch / SQL visibility. Mutable via UpsertSearchAttributes.' },
+  { topic: 'Continue-As-New', body: 'Resets workflow history to keep it small. Same workflow ID, new run ID. Common for long-running cron-like workflows.' },
+  { topic: 'Side effects', body: 'workflow.SideEffect captures a value once, replays deterministically. workflow.MutableSideEffect for values that can change.' },
+  { topic: 'Nexus operations', body: 'Cross-namespace / cross-service calls over a typed contract. Sync or async. Use endpoints to target.' },
+  { topic: 'Cron schedules', body: 'Run workflows on cron. Use ScheduleWorkflowOptions or the newer Schedules API. Schedules support pausing, backfill, jitter.' },
+  { topic: 'Task timeouts', body: 'Workflow task timeout: time to complete a single task. Default 10s. Activity task timeouts are separate.' },
+  { topic: 'Visibility queries', body: 'SQL-ish: SELECT * FROM workflows WHERE Status="Completed" ORDER BY StartTime. Use search attributes for custom fields.' }
+];
+
+function renderCheat(host) {
+  host.innerHTML = `
+    <div class="tool-cheat">
+      <input type="text" class="tool-input" id="cheatQuery" placeholder="Search...">
+      <div class="tool-cheat-list" id="cheatList"></div>
+    </div>
+  `;
+  const list = document.getElementById('cheatList');
+  const q = document.getElementById('cheatQuery');
+  const paint = () => {
+    const term = (q.value || '').toLowerCase().trim();
+    const filtered = term
+      ? CHEAT_SHEET.filter(e => e.topic.toLowerCase().includes(term) || e.body.toLowerCase().includes(term))
+      : CHEAT_SHEET;
+    list.innerHTML = filtered.length === 0
+      ? '<p class="history-empty">No matches.</p>'
+      : filtered.map(e => `
+          <details class="cheat-item">
+            <summary>${escapeHtml(e.topic)}</summary>
+            <div class="cheat-body">${escapeHtml(e.body)}</div>
+          </details>
+        `).join('');
+  };
+  paint();
+  q.addEventListener('input', paint);
+  q.focus();
+}
+
+function renderCalc(host) {
+  host.innerHTML = `
+    <div class="tool-calc">
+      <input type="text" class="calc-display" id="calcDisplay" readonly>
+      <div class="calc-buttons" id="calcButtons">
+        <button data-calc="7">7</button>
+        <button data-calc="8">8</button>
+        <button data-calc="9">9</button>
+        <button data-calc="/">/</button>
+        <button data-calc="4">4</button>
+        <button data-calc="5">5</button>
+        <button data-calc="6">6</button>
+        <button data-calc="*">*</button>
+        <button data-calc="1">1</button>
+        <button data-calc="2">2</button>
+        <button data-calc="3">3</button>
+        <button data-calc="-">-</button>
+        <button data-calc="0">0</button>
+        <button data-calc=".">.</button>
+        <button id="calcEvalBtn">=</button>
+        <button data-calc="+">+</button>
+        <button id="calcClearBtn" class="calc-clear">C</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('calcButtons').addEventListener('click', (e) => {
+    if (e.target.dataset.calc) {
+      document.getElementById('calcDisplay').value += e.target.dataset.calc;
+    }
+  });
+  document.getElementById('calcEvalBtn').addEventListener('click', () => {
+    const d = document.getElementById('calcDisplay');
+    try {
+      const s = d.value.replace(/[^0-9+\-*/.() ]/g, '');
+      d.value = Function('"use strict"; return (' + s + ')')();
+    } catch { d.value = 'Error'; }
+  });
+  document.getElementById('calcClearBtn').addEventListener('click', () => {
+    document.getElementById('calcDisplay').value = '';
+  });
 }
 
 /* ---- Boot ---- */

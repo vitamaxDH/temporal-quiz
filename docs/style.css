@@ -677,34 +677,7 @@ code {
   line-height: 1.5;
 }
 
-/* Calculator */
-.calculator-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 50;
-}
-.btn-calc-toggle {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-}
-.calculator {
-  position: absolute;
-  bottom: 56px;
-  right: 0;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px;
-  width: 220px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-}
+/* Calculator (shared styles used by .tool-calc inside the toolbox) */
 .calc-display {
   width: 100%;
   background: var(--bg-surface);
@@ -1224,4 +1197,220 @@ code {
   font-size: 12px;
   line-height: 1.5;
   white-space: pre-wrap;
+}
+
+.toolbox-launcher {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 40;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--accent-bright);
+  font-size: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.toolbox-launcher:hover {
+  border-color: var(--accent);
+}
+
+.toolbox {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 280px;
+  z-index: 50;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+.toolbox-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  cursor: grab;
+  user-select: none;
+}
+.toolbox-header:active { cursor: grabbing; }
+.toolbox-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+.toolbox-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+}
+.toolbox-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 3px 6px;
+  font-size: 13px;
+  line-height: 1;
+}
+.toolbox-tab:hover { background: var(--bg-hover); }
+.toolbox-tab.active {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+.toolbox-close {
+  padding: 2px 8px;
+  font-size: 16px;
+  line-height: 1;
+}
+.toolbox-body {
+  padding: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.tool-calc .calc-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-top: 8px;
+}
+.tool-calc .calc-display {
+  width: 100%;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.tool-hint {
+  margin-top: 8px;
+  font-size: 10px;
+  opacity: 0.5;
+  font-family: var(--font-mono);
+}
+
+.tool-input {
+  width: 100%;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.tool-output {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tool-output-row, .tool-timer-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.tool-output-row > span:first-child,
+.tool-timer-row > span:first-child {
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+}
+
+.tool-scratch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tool-textarea {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  min-height: 140px;
+  resize: vertical;
+}
+.tool-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.tool-cheat-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cheat-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+}
+.cheat-item summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  list-style: none;
+}
+.cheat-item summary::-webkit-details-marker { display: none; }
+.cheat-item summary::before {
+  content: '\25B8';
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 10px;
+  opacity: 0.5;
+  transition: transform 0.15s ease;
+}
+.cheat-item[open] summary::before { transform: rotate(90deg); }
+.cheat-body {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .toolbox {
+    right: 10px;
+    left: 10px;
+    width: auto;
+    bottom: 70px;
+  }
+  .toolbox-header {
+    cursor: default;
+  }
+  .toolbox-launcher {
+    bottom: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
 }
