@@ -349,8 +349,8 @@ function renderLanding() {
       <div class="landing-title">Today's Quiz</div>
       <div class="landing-meta">${totalCount} questions · ${runLabel}</div>
       <div class="landing-actions">
-        <button class="btn btn-primary landing-start" id="landingStartBtn">Start</button>
-        <button class="btn btn-ghost landing-customize" id="landingCustomizeBtn">Customize</button>
+        <button class="btn btn-primary landing-start" id="landingStartBtn">Daily Mix</button>
+        <button class="btn btn-ghost landing-customize" id="landingCustomizeBtn">Pick Topics</button>
       </div>
       <div class="landing-hint">Press Enter to start</div>
     </div>
@@ -1306,7 +1306,7 @@ function renderHistory() {
       const diffPart = diffs === 0 ? 'all diff' : `${diffs} diff`;
       summary = `Custom · ${catPart} · ${diffPart}`;
     } else {
-      summary = 'Auto session';
+      summary = 'Daily Mix';
     }
 
     const inner = s.history.length === 0
