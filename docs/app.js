@@ -2297,4 +2297,84 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') persistCurrentLap(true);
 });
 
+/* ---- Pull-to-refresh (mobile) ----
+   Lets the user pull down from the top of the page to reload. We replace
+   the browser-native pull gesture (which varies across mobile browsers)
+   with a consistent custom one that drives the #ptrIndicator. The pull is
+   only active when the page is already scrolled to the top, the initial
+   touch clearly moves downward, and we have touch support at all. */
+(function initPullToRefresh() {
+  if (!('ontouchstart' in window)) return;
+  const THRESHOLD = 70; // px the user must pull past to trigger reload
+  const MAX_PULL = 130; // clamp so the indicator never escapes the viewport
+  const DRAG_RATIO = 0.5; // rubber-band: indicator moves at half finger speed
+
+  let startY = 0;
+  let pulling = false;
+  let pulled = 0;
+  let indicator = null;
+
+  const getIndicator = () => indicator || (indicator = document.getElementById('ptrIndicator'));
+
+  const show = (y) => {
+    const el = getIndicator();
+    if (!el) return;
+    // y here is "pull distance"; nudge indicator down as we pull, capping at 20px
+    // above the indicator's resting position so it feels anchored.
+    const visible = Math.min(y - 40, 20);
+    el.style.transform = `translate(-50%, ${visible}px)`;
+    el.style.opacity = String(Math.min(1, y / THRESHOLD));
+  };
+
+  const hide = () => {
+    const el = getIndicator();
+    if (!el) return;
+    el.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+    el.style.transform = 'translate(-50%, -100%)';
+    el.style.opacity = '0';
+    setTimeout(() => { el.style.transition = ''; }, 220);
+  };
+
+  document.addEventListener('touchstart', (e) => {
+    if (window.scrollY > 0) return;
+    startY = e.touches[0].clientY;
+    pulling = true;
+    pulled = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!pulling) return;
+    // If the page scrolled (e.g. user released near top then kept going),
+    // bail and restore the indicator.
+    if (window.scrollY > 0) { pulling = false; hide(); return; }
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 0) return; // finger moving up or sideways; let native scroll handle it
+    // Take over the gesture so the browser's own pull-to-refresh doesn't fire.
+    e.preventDefault();
+    pulled = Math.min(MAX_PULL, dy * DRAG_RATIO);
+    show(pulled);
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false;
+    if (pulled >= THRESHOLD) {
+      const el = getIndicator();
+      // Flush any in-progress lap time so reload picks up where we left off.
+      persistCurrentLap(true);
+      if (el) el.classList.add('refreshing');
+      // Tiny delay so the user sees the spinner lock in before the reload wipes it.
+      setTimeout(() => window.location.reload(), 150);
+      return;
+    }
+    hide();
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => {
+    if (!pulling) return;
+    pulling = false;
+    hide();
+  }, { passive: true });
+})();
+
 init();
