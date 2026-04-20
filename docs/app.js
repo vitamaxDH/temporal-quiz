@@ -1630,11 +1630,19 @@ function fmtSessionDateTime(ms) {
 
 function fmtSessionDuration(ms) {
   if (!ms || ms <= 0) return '0s';
-  const s = Math.round(ms / 1000);
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  const rs = s % 60;
-  return `${m}m ${rs < 10 ? '0' + rs : rs}s`;
+  const totalSec = Math.round(ms / 1000);
+  if (totalSec < 60) return `${totalSec}s`;
+
+  const totalMin = Math.floor(totalSec / 60);
+  const secs = totalSec % 60;
+  const pad = (n) => (n < 10 ? '0' + n : '' + n);
+
+  if (totalMin < 60) {
+    return `${totalMin}m ${pad(secs)}s`;
+  }
+  const hours = Math.floor(totalMin / 60);
+  const mins = totalMin % 60;
+  return `${hours}h ${pad(mins)}m ${pad(secs)}s`;
 }
 
 /* ---- Modal (custom confirm) ---- */
