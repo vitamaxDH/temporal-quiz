@@ -510,7 +510,13 @@ function resumeSession(sess) {
   // Jump past already-answered questions
   currentIndex = Math.min(sess.history.length, questions.length);
   timerState.sessionStart = sess.started_at || Date.now();
-  timerState.qStart = Date.now();
+  // Restore the current question's lap time. When the session was last saved
+  // (tab close / visibilitychange / tick persist), we stashed how long the
+  // user had already spent on this question; pick up where they left off
+  // instead of resetting the lap to 0 on resume.
+  const resumedLapMs = Number.isFinite(sess.currentQElapsedMs) ? sess.currentQElapsedMs : 0;
+  timerState.qStart = Date.now() - Math.max(0, resumedLapMs);
+  resumingSession = true;
   mode = 'quiz';
 
   if (currentIndex >= questions.length) {
@@ -1029,7 +1035,15 @@ function startSession(qs, length, meta = {}) {
 function showQuestion() {
   if (!questions.length) return;
   if (mode !== 'quiz') mode = 'quiz';
-  timerState.qStart = Date.now();
+  // resumeSession() pre-seeds qStart with the saved lap offset before
+  // calling showQuestion() so the lap picks up where it left off. For
+  // every other call path (normal flow, next question, restart), start
+  // a fresh lap and clear any stale persisted elapsed.
+  if (!resumingSession) {
+    timerState.qStart = Date.now();
+    resetCurrentLap();
+  }
+  resumingSession = false;
   startMainTimer();
   showQuizControls();
   scratchText = '';
@@ -2075,8 +2089,38 @@ function renderDuration(host) {
 /* ---- Timer ---- */
 
 let timerState = { qStart: null, sessionStart: null };
+// One-shot flag so showQuestion() leaves the resumed lap offset intact on
+// the first render after resumeSession(); it's cleared immediately after.
+let resumingSession = false;
 
 let mainTimerHandle = null;
+// Tick-level persist throttle: we only write currentQElapsedMs to storage
+// every ~2s to keep localStorage writes cheap while still saving enough
+// lap detail that a crash or accidental tab-close barely loses anything.
+let lastLapPersistAt = 0;
+
+// Persist the active session's current-question elapsed time so it survives
+// tab close / refresh / resume. Force=true ignores the throttle (used for
+// pagehide / visibilitychange where we may not get another tick).
+function persistCurrentLap(force = false) {
+  if (!timerState.qStart) return;
+  const activeSess = state.sessions && state.sessions[0];
+  if (!activeSess || activeSess.ended_at !== null) return;
+  const now = Date.now();
+  if (!force && now - lastLapPersistAt < 2000) return;
+  activeSess.currentQElapsedMs = now - timerState.qStart;
+  lastLapPersistAt = now;
+  saveState();
+}
+
+function resetCurrentLap() {
+  lastLapPersistAt = 0;
+  const activeSess = state.sessions && state.sessions[0];
+  if (activeSess && activeSess.ended_at === null && activeSess.currentQElapsedMs) {
+    activeSess.currentQElapsedMs = 0;
+    saveState();
+  }
+}
 
 function startMainTimer() {
   if (mainTimerHandle) return;
@@ -2088,6 +2132,7 @@ function startMainTimer() {
     const sMs = timerState.sessionStart ? Date.now() - timerState.sessionStart : 0;
     if (qEl) qEl.textContent = fmtSessionDuration(qMs);
     if (sEl) sEl.textContent = fmtSessionDuration(sMs);
+    persistCurrentLap();
   };
   tick();
   mainTimerHandle = setInterval(tick, 500);
@@ -2242,5 +2287,14 @@ function renderCalc(host) {
 }
 
 /* ---- Boot ---- */
+
+// Force-persist the current question's lap time right before we lose control
+// of the page. pagehide fires on close/navigation (more reliable than
+// beforeunload on mobile); visibilitychange catches tab-backgrounding on
+// iOS Safari where pagehide sometimes skips.
+window.addEventListener('pagehide', () => persistCurrentLap(true));
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') persistCurrentLap(true);
+});
 
 init();
