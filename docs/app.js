@@ -253,6 +253,7 @@ async function init() {
     if (e.target.id === 'modalBackdrop') closeModal(false);
   });
   document.getElementById('restartBtn').addEventListener('click', restartSession);
+  document.getElementById('scopeBtn').addEventListener('click', showSessionScope);
   document.getElementById('quitBtn').addEventListener('click', quitSession);
   document.getElementById('sidebarOverlay').addEventListener('click', toggleSidebar);
   document.getElementById('toolboxLauncher').addEventListener('click', toggleToolbox);
@@ -568,6 +569,58 @@ async function restartSession() {
   startSession(originalQueue, sess.planned || originalQueue.length, {
     mode: sess.mode || 'auto',
     config: sess.config || null
+  });
+}
+
+function showSessionScope() {
+  if (mode !== 'quiz') return;
+  const sess = state.sessions && state.sessions[0];
+
+  const fallbackCatList = (manifest?.categories ?? []).map(c => c.category);
+
+  const modeLabel = sess?.mode === 'custom' ? 'Custom' : 'Daily Mix';
+
+  const catIds = sess?.config?.categories?.length
+    ? sess.config.categories
+    : (sess?.mode === 'custom' ? fallbackCatList : fallbackCatList);
+  const catsDisplay = (sess?.config?.categories?.length)
+    ? sess.config.categories.map(formatCategoryLabel).join(', ')
+    : `All categories (${fallbackCatList.length})`;
+
+  const diffsDisplay = sess?.config?.difficulties?.length
+    ? sess.config.difficulties.join(', ')
+    : 'All difficulties';
+
+  const lengthDisplay = Number.isFinite(sess?.planned)
+    ? `${sess.planned} questions`
+    : 'Unlimited';
+
+  const progressDisplay = sess
+    ? `${sess.total ?? 0} / ${sess?.planned ?? (Array.isArray(sess?.queue) ? sess.queue.length : '?')} answered`
+    : 'no active session';
+
+  const row = (label, value) => `
+    <div class="scope-row">
+      <div class="scope-label">${escapeHtml(label)}</div>
+      <div class="scope-value">${escapeHtml(value)}</div>
+    </div>`;
+
+  const body = `
+    <div class="scope-list">
+      ${row('Mode', modeLabel)}
+      ${row('Categories', catsDisplay)}
+      ${row('Difficulty', diffsDisplay)}
+      ${row('Length', lengthDisplay)}
+      ${row('Progress', progressDisplay)}
+    </div>
+  `;
+
+  showConfirm({
+    title: 'Session scope',
+    body,
+    html: true,
+    info: true,
+    cancelLabel: 'Close'
   });
 }
 
@@ -1589,7 +1642,7 @@ function fmtSessionDuration(ms) {
 let modalResolver = null;
 let modalKeyHandler = null;
 
-function showConfirm({ title = 'Are you sure?', body = '', confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false } = {}) {
+function showConfirm({ title = 'Are you sure?', body = '', html = false, confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false, info = false } = {}) {
   return new Promise(resolve => {
     const backdrop = document.getElementById('modalBackdrop');
     const titleEl = document.getElementById('modalTitle');
@@ -1599,20 +1652,21 @@ function showConfirm({ title = 'Are you sure?', body = '', confirmLabel = 'Confi
     if (!backdrop) { resolve(false); return; }
 
     titleEl.textContent = title;
-    bodyEl.textContent = body;
+    if (html) bodyEl.innerHTML = body; else bodyEl.textContent = body;
     confirmBtn.textContent = confirmLabel;
-    cancelBtn.textContent = cancelLabel;
+    cancelBtn.textContent = info ? (cancelLabel === 'Cancel' ? 'Close' : cancelLabel) : cancelLabel;
     confirmBtn.classList.toggle('btn-danger', !!danger);
+    confirmBtn.style.display = info ? 'none' : '';
 
     backdrop.style.display = 'flex';
     modalResolver = resolve;
 
-    // Focus the cancel button by default for safety on destructive prompts.
-    setTimeout(() => (danger ? cancelBtn : confirmBtn).focus(), 0);
+    // Focus the safe/close action by default on destructive or info prompts.
+    setTimeout(() => ((danger || info) ? cancelBtn : confirmBtn).focus(), 0);
 
     modalKeyHandler = (e) => {
       if (e.key === 'Escape') { e.preventDefault(); closeModal(false); }
-      else if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') { e.preventDefault(); closeModal(true); }
+      else if (!info && e.key === 'Enter' && e.target.tagName !== 'BUTTON') { e.preventDefault(); closeModal(true); }
     };
     document.addEventListener('keydown', modalKeyHandler);
   });
@@ -1621,6 +1675,9 @@ function showConfirm({ title = 'Are you sure?', body = '', confirmLabel = 'Confi
 function closeModal(result) {
   const backdrop = document.getElementById('modalBackdrop');
   if (backdrop) backdrop.style.display = 'none';
+  // Reset confirm button visibility so subsequent confirm() calls show it again.
+  const confirmBtn = document.getElementById('modalConfirmBtn');
+  if (confirmBtn) confirmBtn.style.display = '';
   if (modalKeyHandler) {
     document.removeEventListener('keydown', modalKeyHandler);
     modalKeyHandler = null;
