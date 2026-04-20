@@ -395,11 +395,25 @@ function resumableSession() {
   return s;
 }
 
-// On load, auto-complete any fully-answered session that never hit recap.
-// (User closed the tab after the last answer but before the Next click.)
+// A session is "valid" if it has the minimum fields needed to render
+// a usable row in the history drawer. Anything missing started_at or id
+// is garbage (usually from an aborted startSession path or schema drift).
+function isValidSession(s) {
+  return s
+    && typeof s.id === 'string'
+    && Number.isFinite(s.started_at);
+}
+
+// On load, auto-complete any fully-answered session that never hit recap,
+// and drop any malformed sessions that would render as "Invalid Date".
 function sweepCompletedUnstamped() {
   if (!Array.isArray(state.sessions)) return;
   let dirty = false;
+
+  const before = state.sessions.length;
+  state.sessions = state.sessions.filter(isValidSession);
+  if (state.sessions.length !== before) dirty = true;
+
   for (const s of state.sessions) {
     if (s.ended_at === null
         && Array.isArray(s.queue)
@@ -1640,7 +1654,7 @@ async function resetHistory() {
 
 function renderHistory() {
   const list = document.getElementById('historyList');
-  const sessions = (state.sessions || []).slice();
+  const sessions = (state.sessions || []).filter(isValidSession);
 
   if (sessions.length === 0) {
     const resetAt = state.historyResetAt
