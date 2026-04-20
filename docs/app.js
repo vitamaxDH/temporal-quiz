@@ -527,9 +527,16 @@ function hideQuizControls() {
   if (el) el.style.display = 'none';
 }
 
-function restartSession() {
+async function restartSession() {
   if (mode !== 'quiz') return;
-  if (!confirm('Restart this session from question 1? Your current answers will be recorded as an abandoned attempt.')) return;
+  const ok = await showConfirm({
+    title: 'Start over?',
+    body: 'Restart this session from question 1. Your current answers will be kept as an abandoned attempt in the history drawer.',
+    confirmLabel: 'Start over',
+    cancelLabel: 'Cancel',
+    danger: true
+  });
+  if (!ok) return;
   const sess = state.sessions && state.sessions[0];
   if (!sess) { renderLanding(); return; }
 
@@ -546,9 +553,16 @@ function restartSession() {
   });
 }
 
-function quitSession() {
+async function quitSession() {
   if (mode !== 'quiz') return;
-  if (!confirm('End this session and go back? Your answers are kept as an abandoned attempt.')) return;
+  const ok = await showConfirm({
+    title: 'Quit this session?',
+    body: 'End this session and return to the landing screen. Your answers stay in history as an abandoned attempt.',
+    confirmLabel: 'Quit',
+    cancelLabel: 'Keep going',
+    danger: true
+  });
+  if (!ok) return;
   abandonUnfinishedSession();
 }
 
