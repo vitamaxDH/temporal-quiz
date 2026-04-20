@@ -1319,25 +1319,15 @@ code {
   stroke: var(--bg-surface);
   stroke-width: 14;
 }
+/* Arc stroke color, width, dasharray, and cap all live as inline SVG
+   attributes now (see renderRecap). Keeping them off CSS sidesteps two
+   WebKit quirks we hit: CSS-declared stroke: url(#gradient) sometimes
+   silently falling back to stroke:none, and an opacity animation with
+   fill-mode: both occasionally parking opacity at 0 and never running. */
 .recap-donut-correct,
 .recap-donut-wrong {
-  fill: none;
-  stroke-width: 14;
-  stroke-linecap: round;
-  transition: stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: stroke-dasharray 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
-  /* Fade the arcs in on render. The old animation also morphed
-     stroke-dashoffset from 1000 to "unspecified", which on some WebKit
-     builds left the arc stuck at offset 1000 and invisible — only the
-     background ring would render. Animating opacity alone sidesteps that
-     while keeping the soft appearance. */
-  animation: recap-arc-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-.recap-donut-correct { stroke: url(#recapGradCorrect); }
-.recap-donut-wrong   { stroke: url(#recapGradWrong); animation-delay: 0.18s; }
-@keyframes recap-arc-in {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
 }
 .recap-donut-pct {
   font-family: var(--font-display);

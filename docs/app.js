@@ -1424,25 +1424,14 @@ function renderRecap() {
 
       <div class="recap-chart">
         <svg class="recap-donut" width="180" height="180" viewBox="0 0 180 180">
-          <defs>
-            <linearGradient id="recapGradCorrect" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#22c55e"/>
-              <stop offset="100%" stop-color="#10b981"/>
-            </linearGradient>
-            <linearGradient id="recapGradWrong" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#ef4444"/>
-              <stop offset="100%" stop-color="#b91c1c"/>
-            </linearGradient>
-            <filter id="recapArcGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="1.4"/>
-            </filter>
-          </defs>
           <circle cx="90" cy="90" r="${R}" class="recap-donut-bg"></circle>
           <circle cx="90" cy="90" r="${R}" class="recap-donut-correct"
+                  stroke="#22c55e" fill="none" stroke-width="14" stroke-linecap="round"
                   stroke-dasharray="${correctLen} ${CIRC - correctLen}"
                   stroke-dashoffset="0"
                   transform="rotate(-90 90 90)"></circle>
           <circle cx="90" cy="90" r="${R}" class="recap-donut-wrong"
+                  stroke="#ef4444" fill="none" stroke-width="14" stroke-linecap="round"
                   stroke-dasharray="${wrongLen} ${CIRC - wrongLen}"
                   stroke-dashoffset="-${correctLen}"
                   transform="rotate(-90 90 90)"></circle>
