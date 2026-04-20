@@ -7,8 +7,8 @@
   <link rel="icon" href="favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5">
-  <script src="app.js?v=5" defer></script>
+  <link rel="stylesheet" href="style.css?v=18">
+  <script src="app.js?v=18" defer></script>
 </head>
 <body>
 <div class="app">
@@ -18,13 +18,18 @@
     </div>
     <h1>temporal.quiz</h1>
     <div class="tagline">test your workflow knowledge</div>
-    <button class="btn btn-ghost btn-history" id="historyBtn">History</button>
+    <nav class="header-nav">
+      <button class="btn btn-ghost btn-theme" id="themeBtn" aria-label="Toggle theme" title="Toggle light/dark">&#9790;</button>
+      <button class="btn btn-ghost" id="aboutBtn">About</button>
+      <a class="btn btn-ghost btn-link" href="https://docs.temporal.io/" target="_blank" rel="noopener noreferrer">Docs &#8599;</a>
+      <a class="btn btn-ghost btn-link" href="https://temporal.io" target="_blank" rel="noopener noreferrer">temporal.io &#8599;</a>
+      <button class="btn btn-ghost" id="notesBtn">Notes</button>
+      <button class="btn btn-ghost btn-history" id="historyBtn">History</button>
+    </nav>
   </div>
 
-  <div class="section-label">Category</div>
-  <div class="categories"></div>
-  <div class="section-label">Difficulty</div>
-  <div class="difficulty-filter"></div>
+  <div class="section-label run-section-label" style="display:none;">Run</div>
+  <div class="run-picker" style="display:none;"></div>
 
   <div class="stats">
     <div class="progress-ring">
@@ -45,7 +50,7 @@
   </div>
 
   <div class="question-card">
-    <p class="question-text">Select a category to begin</p>
+    <p class="question-text">Loading…</p>
   </div>
 
   <div class="answers"></div>
@@ -72,6 +77,18 @@
     <button class="btn btn-ghost btn-close" id="sidebarCloseBtn">Close</button>
   </div>
   <div class="sidebar-list" id="historyList"></div>
+</div>
+
+<div class="sidebar-overlay" id="notesSidebarOverlay"></div>
+<div class="sidebar" id="notesSidebar">
+  <div class="sidebar-header">
+    <h2>Notes</h2>
+    <div class="sidebar-header-actions">
+      <button class="btn btn-ghost" id="notesExportBtn" title="Export as markdown">Export</button>
+      <button class="btn btn-ghost btn-close" id="notesCloseBtn">Close</button>
+    </div>
+  </div>
+  <div class="sidebar-list" id="notesList"></div>
 </div>
 
 <div class="calculator-container">

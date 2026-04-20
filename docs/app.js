@@ -8,8 +8,30 @@ let questions = [];
 let currentIndex = 0;
 let selectedKey = null;
 let revealed = false;
-let currentCategory = null;
-let currentDifficulty = null; // null = all difficulties
+
+// Session state
+let mode = 'landing';          // 'landing' | 'quiz' | 'recap'
+let sessionLength = 10;        // 5 | 10 | 20 | Infinity
+let sessionAnswered = 0;
+let sessionCorrect = 0;
+let sessionWrongItems = []; // [{ question, choices, answer, selectedKey, difficulty, category, source_doc }]
+
+// Custom config (persisted to localStorage via saveState)
+let customConfig = {
+  categories: [],
+  difficulties: [],
+  length: 10,
+};
+
+// Run history: list of { date, generated_at, total_count } sorted newest-first.
+// currentRun is the YYYY-MM-DD of the active run, or null when we're falling
+// back to the legacy flat layout (no runs.json on the server).
+let runs = [];
+let currentRun = null;
+const MAX_RUNS_VISIBLE = 7;
+
+// Notes UI state (session-only, not persisted)
+let notesActiveCategory = null;
 
 // State persisted to localStorage
 let state = {
@@ -17,7 +39,10 @@ let state = {
   totalAnswered: 0,
   totalCorrect: 0,
   categoryStats: {}, // { category: { answered: N, correct: N } }
-  history: []         // [{ question, category, difficulty, correct, selectedKey, answer, timestamp }]
+  sessions: [],       // [{ id, started_at, ended_at, mode, config, planned, total, correct, history:[...] }]
+  theme: 'dark',      // 'dark' | 'light'
+  categoryNotes: {},  // { category: 'markdown text' }
+  questionNotes: {}   // { <hash>: { hash, note, question, source_doc, category, created_at, updated_at } }
 };
 
 /* ---- Persistence ---- */
@@ -28,6 +53,12 @@ function loadState() {
     if (raw) {
       const parsed = JSON.parse(raw);
       state = { ...state, ...parsed };
+      if (!state.categoryNotes) state.categoryNotes = {};
+      if (!state.questionNotes) state.questionNotes = {};
+      if (parsed.customConfig) {
+        customConfig = { ...customConfig, ...parsed.customConfig };
+        if (customConfig.length === null) customConfig.length = Infinity;
+      }
     }
   } catch (e) {
     console.warn('Failed to load state from localStorage', e);
@@ -36,10 +67,30 @@ function loadState() {
 
 function saveState() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const blob = { ...state, customConfig };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(blob));
   } catch (e) {
     console.warn('Failed to save state to localStorage', e);
   }
+}
+
+/* ---- Theme ---- */
+
+function applyTheme() {
+  const theme = state.theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = theme;
+  const btn = document.getElementById('themeBtn');
+  if (btn) {
+    // Show the mode you'd switch TO
+    btn.innerHTML = theme === 'dark' ? '\u2600' : '\u263E';
+    btn.title = theme === 'dark' ? 'Switch to light' : 'Switch to dark';
+  }
+}
+
+function toggleTheme() {
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  saveState();
+  applyTheme();
 }
 
 /* ---- Shuffle ---- */
@@ -51,6 +102,34 @@ function shuffle(arr) {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  };
+}
+
+function normalizeQuestionText(q) {
+  return (q || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function hashQuestion(questionText) {
+  // DJB2 hash. Returns 8 hex chars. Sufficient as a dict key for personal use.
+  const s = normalizeQuestionText(questionText);
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+function escapeHtml(s) {
+  return (s || '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
 }
 
 /* ---- Format helpers ---- */
@@ -90,6 +169,28 @@ function formatCategoryLabel(category) {
      develop_dotnet_activities_async.html  -> "Async"
    The category chip already gives broader context, so we keep
    only the last underscore-separated segment for brevity. */
+/* Resolve the URL prefix for fetching quiz data. When a run is active,
+   pull from quizzes/runs/<date>/; otherwise fall back to the flat layout. */
+function quizPath(suffix) {
+  if (currentRun) return `quizzes/runs/${currentRun}/${suffix}`;
+  return `quizzes/${suffix}`;
+}
+
+/* Human-friendly label for a YYYY-MM-DD run date.
+   Today / Yesterday / "Apr 17". Falls back to the raw date on parse error. */
+function formatRunDate(dateStr) {
+  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr || '');
+  if (!parts) return dateStr || '';
+  const [_, y, m, d] = parts;
+  const runDate = new Date(Number(y), Number(m) - 1, Number(d));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((today - runDate) / (24 * 3600 * 1000));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return runDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 function formatSubcategory(sourceDoc) {
   if (!sourceDoc) return '';
   let name = sourceDoc.replace(/\.html?$/i, '');
@@ -103,72 +204,25 @@ function formatSubcategory(sourceDoc) {
     .join(' ');
 }
 
-/* ---- Category groups ----
-   Order matters: more important groups come first.
-   Each entry can be a string (uses default label) or
-   { id, label } to override the in-group display label. */
-
-const CATEGORY_GROUPS = [
-  {
-    label: 'Features',
-    categories: [
-      { id: 'Features_Workflows',              label: 'Workflows' },
-      { id: 'Features_Activities',             label: 'Activities' },
-      { id: 'Features_Workers_and_Routing',    label: 'Workers & Routing' },
-      { id: 'Features_Messaging_and_Visibility', label: 'Messaging & Visibility' },
-      { id: 'Features_Data_and_Security',      label: 'Data & Security' },
-      { id: 'Features_Nexus',                  label: 'Nexus' },
-      { id: 'Tags',                            label: 'Tags' },
-      { id: 'Features_Other',                  label: 'Other' },
-    ],
-  },
-  {
-    label: 'Develop (SDKs)',
-    categories: [
-      { id: 'Develop',            label: 'Develop' },
-      { id: 'Develop_General',    label: 'General' },
-      { id: 'Develop_Go',         label: 'Go' },
-      { id: 'Develop_Java',       label: 'Java' },
-      { id: 'Develop_Python',     label: 'Python' },
-      { id: 'Develop_TypeScript', label: 'TypeScript' },
-      { id: 'Develop_Other_SDKs', label: 'Other SDKs' },
-    ],
-  },
-  {
-    label: 'Concepts & Tooling',
-    categories: [
-      { id: 'Evaluate_and_Concepts', label: 'Evaluate & Concepts' },
-      { id: 'CLI_and_References',    label: 'CLI & References' },
-      { id: 'AI_and_Cookbook',       label: 'AI & Cookbook' },
-    ],
-  },
-  {
-    label: 'Operations',
-    categories: [
-      { id: 'Self_Hosted_and_Ops', label: 'Self Hosted & Ops' },
-      { id: 'Temporal_Cloud',      label: 'Temporal Cloud' },
-    ],
-  },
-  {
-    label: 'Other',
-    categories: [
-      { id: 'Miscellaneous', label: 'Miscellaneous' },
-    ],
-  },
-];
-
 /* ---- Init ---- */
 
 async function init() {
   loadState();
+  applyTheme();
   updateStats();
 
   // Wire up buttons
+  document.getElementById('themeBtn').addEventListener('click', toggleTheme);
   document.getElementById('skipBtn').addEventListener('click', skipQuestion);
   document.getElementById('submitBtn').addEventListener('click', () => {
     if (revealed) { nextQuestion(); } else { submitAnswer(); }
   });
   document.getElementById('historyBtn').addEventListener('click', toggleSidebar);
+  document.getElementById('aboutBtn').addEventListener('click', renderAbout);
+  document.getElementById('notesBtn').addEventListener('click', toggleNotes);
+  document.getElementById('notesCloseBtn').addEventListener('click', toggleNotes);
+  document.getElementById('notesSidebarOverlay').addEventListener('click', toggleNotes);
+  document.getElementById('notesExportBtn').addEventListener('click', exportNotes);
   document.getElementById('sidebarCloseBtn').addEventListener('click', toggleSidebar);
   document.getElementById('sidebarOverlay').addEventListener('click', toggleSidebar);
   document.getElementById('calcToggleBtn').addEventListener('click', toggleCalculator);
@@ -179,201 +233,370 @@ async function init() {
   });
 
   try {
-    const res = await fetch('quizzes/manifest.json');
-    manifest = await res.json();
-    renderCategories();
-    renderDifficultyFilter();
+    await loadRuns();
+    await loadManifest();
+    renderLanding();
   } catch (e) {
-    console.error('Failed to load manifest', e);
+    console.error('Failed to initialize quiz data', e);
   }
 }
 
-/* ---- Categories ---- */
+/* Load the list of available runs. Missing runs.json is not an error —
+   it just means the server hasn't been migrated to the snapshot layout
+   yet, and we fall back to the flat quizzes/ files. */
+async function loadRuns() {
+  try {
+    const res = await fetch('quizzes/runs.json', { cache: 'no-store' });
+    if (!res.ok) {
+      runs = [];
+      currentRun = null;
+      return;
+    }
+    const data = await res.json();
+    runs = Array.isArray(data.runs) ? data.runs : [];
+    currentRun = runs.length > 0 ? runs[0].date : null;
+  } catch (e) {
+    runs = [];
+    currentRun = null;
+  }
+  renderRunPicker();
+}
 
-function renderCategories() {
-  const container = document.querySelector('.categories');
+async function loadManifest() {
+  const res = await fetch(quizPath('manifest.json'), { cache: 'no-store' });
+  manifest = await res.json();
+}
+
+/* ---- Run picker ---- */
+
+function renderRunPicker() {
+  const labelEl = document.querySelector('.run-section-label');
+  const container = document.querySelector('.run-picker');
+  if (!container || !labelEl) return;
+
+  // Hide the picker entirely when there's nothing meaningful to switch to.
+  if (runs.length < 2) {
+    container.style.display = 'none';
+    labelEl.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+
+  container.style.display = '';
+  labelEl.style.display = '';
   container.innerHTML = '';
 
-  // Index manifest categories for quick lookup + uncategorized detection.
-  const manifestIds = new Set(manifest.categories.map(c => c.category));
-  const groupedIds = new Set();
-  CATEGORY_GROUPS.forEach(g => g.categories.forEach(c => groupedIds.add(c.id)));
-
-  // "All" pill — its own row at the top.
-  const allRow = document.createElement('div');
-  allRow.className = 'category-row category-row-all';
-  const allPill = document.createElement('div');
-  allPill.className = 'pill pill-all';
-  allPill.textContent = 'All';
-  allPill.addEventListener('click', () => loadCategory('all'));
-  allRow.appendChild(allPill);
-  container.appendChild(allRow);
-
-  // Render each group as a labeled section.
-  CATEGORY_GROUPS.forEach(group => {
-    const visible = group.categories.filter(c => manifestIds.has(c.id));
-    if (visible.length === 0) return;
-
-    const groupEl = document.createElement('div');
-    groupEl.className = 'category-group';
-
-    const labelEl = document.createElement('div');
-    labelEl.className = 'category-group-label';
-    labelEl.textContent = group.label;
-    groupEl.appendChild(labelEl);
-
-    const rowEl = document.createElement('div');
-    rowEl.className = 'category-row';
-    visible.forEach(cat => {
-      const pill = document.createElement('div');
-      pill.className = 'pill';
-      pill.textContent = cat.label || formatCategoryLabel(cat.id);
-      pill.dataset.category = cat.id;
-      pill.title = formatCategoryLabel(cat.id);
-      pill.addEventListener('click', () => loadCategory(cat.id));
-      rowEl.appendChild(pill);
-    });
-    groupEl.appendChild(rowEl);
-    container.appendChild(groupEl);
-  });
-
-  // Catch-all: anything in the manifest that isn't grouped yet.
-  const ungrouped = manifest.categories
-    .filter(c => !groupedIds.has(c.category))
-    .sort((a, b) => a.category.localeCompare(b.category));
-  if (ungrouped.length > 0) {
-    const groupEl = document.createElement('div');
-    groupEl.className = 'category-group';
-
-    const labelEl = document.createElement('div');
-    labelEl.className = 'category-group-label';
-    labelEl.textContent = 'More';
-    groupEl.appendChild(labelEl);
-
-    const rowEl = document.createElement('div');
-    rowEl.className = 'category-row';
-    ungrouped.forEach(cat => {
-      const pill = document.createElement('div');
-      pill.className = 'pill';
-      pill.textContent = formatCategoryLabel(cat.category);
-      pill.dataset.category = cat.category;
-      pill.addEventListener('click', () => loadCategory(cat.category));
-      rowEl.appendChild(pill);
-    });
-    groupEl.appendChild(rowEl);
-    container.appendChild(groupEl);
-  }
-}
-
-function setActivePill(category) {
-  // Only clear category pills, not difficulty pills
-  document.querySelectorAll('.categories .pill').forEach(p => p.classList.remove('active'));
-  if (category === 'all') {
-    document.querySelector('.categories .pill').classList.add('active');
-  } else {
-    const pill = document.querySelector(`.categories .pill[data-category="${category}"]`);
-    if (pill) pill.classList.add('active');
-  }
-}
-
-/* ---- Difficulty filter ---- */
-
-const DIFFICULTIES = ['easy', 'med', 'hard', 'nightmare'];
-
-function renderDifficultyFilter() {
-  const container = document.querySelector('.difficulty-filter');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const allPill = document.createElement('div');
-  allPill.className = 'pill pill-diff active';
-  allPill.textContent = 'All';
-  allPill.addEventListener('click', () => setDifficulty(null));
-  container.appendChild(allPill);
-
-  DIFFICULTIES.forEach(d => {
+  const visible = runs.slice(0, MAX_RUNS_VISIBLE);
+  visible.forEach(run => {
     const pill = document.createElement('div');
-    pill.className = 'pill pill-diff';
-    pill.dataset.difficulty = d;
-    pill.innerHTML = difficultyDots(d);
-    pill.addEventListener('click', () => setDifficulty(d));
+    pill.className = 'pill pill-run';
+    if (run.date === currentRun) pill.classList.add('active');
+    pill.dataset.run = run.date;
+    pill.textContent = formatRunDate(run.date);
+    pill.title = run.generated_at
+      ? `${run.date} · ${run.total_count} questions · ${run.generated_at}`
+      : run.date;
+    pill.addEventListener('click', () => setRun(run.date));
     container.appendChild(pill);
   });
 }
 
-function setDifficulty(difficulty) {
-  currentDifficulty = difficulty;
+async function setRun(dateStr) {
+  if (!dateStr || dateStr === currentRun) return;
+  currentRun = dateStr;
+  renderRunPicker();
 
-  document.querySelectorAll('.difficulty-filter .pill').forEach(p => p.classList.remove('active'));
-  if (difficulty === null) {
-    document.querySelector('.difficulty-filter .pill').classList.add('active');
-  } else {
-    const pill = document.querySelector(`.difficulty-filter .pill[data-difficulty="${difficulty}"]`);
-    if (pill) pill.classList.add('active');
+  // Reload the manifest + categories from the new run, then reset
+  // the active question card so the user picks fresh from this day.
+  try {
+    await loadManifest();
+  } catch (e) {
+    console.error('Failed to load manifest for run', dateStr, e);
+    return;
   }
+  questions = [];
+  currentIndex = 0;
+  selectedKey = null;
+  revealed = false;
 
-  // Reload current category with new filter
-  if (currentCategory) loadCategory(currentCategory);
-}
-
-function filterByDifficulty(qs) {
-  if (!currentDifficulty) return qs;
-  return qs.filter(q => q.difficulty === currentDifficulty);
+  renderLanding();
+  updateProgress();
 }
 
 /* ---- Load questions ---- */
 
 async function fetchCategoryQuestions(category) {
-  const res = await fetch(`quizzes/${category}.json`);
+  const res = await fetch(quizPath(`${category}.json`), { cache: 'no-store' });
   const data = await res.json();
   return data.questions || [];
 }
 
-async function loadCategory(category) {
-  currentCategory = category;
-  setActivePill(category);
+/* ---- Landing ---- */
 
-  try {
-    if (category === 'all') {
-      // Load all categories with weak-area weighting
-      const allQuestions = [];
-      for (const cat of manifest.categories) {
-        const catQuestions = await fetchCategoryQuestions(cat.category);
-        const catStats = state.categoryStats[cat.category];
-        const accuracy = catStats && catStats.answered > 0
-          ? catStats.correct / catStats.answered
-          : 1;
-        // Categories below 70% accuracy get 2x weight
-        if (accuracy < 0.7) {
-          allQuestions.push(...catQuestions, ...catQuestions);
-        } else {
-          allQuestions.push(...catQuestions);
-        }
-      }
-      questions = shuffle(filterByDifficulty(allQuestions));
-    } else {
-      const catQuestions = await fetchCategoryQuestions(category);
-      questions = shuffle(filterByDifficulty(catQuestions));
-    }
+function renderLanding() {
+  mode = 'landing';
+  const card = document.querySelector('.question-card');
+  const totalCount = manifest?.categories?.reduce((n, c) => n + c.question_count, 0) ?? 0;
+  const runLabel = currentRun ? formatRunDate(currentRun) : 'latest';
 
-    currentIndex = 0;
-    if (questions.length > 0) {
-      showQuestion();
-    } else {
-      document.querySelector('.question-card').innerHTML =
-        '<p class="question-text">No questions match this filter.</p>';
-      document.querySelector('.answers').innerHTML = '';
-      document.getElementById('explanation').style.display = 'none';
+  card.innerHTML = `
+    <div class="landing">
+      <div class="landing-title">Today's Quiz</div>
+      <div class="landing-meta">${totalCount} questions · ${runLabel}</div>
+      <div class="landing-actions">
+        <button class="btn btn-primary landing-start" id="landingStartBtn">Start</button>
+        <button class="btn btn-ghost landing-customize" id="landingCustomizeBtn">Customize</button>
+      </div>
+      <div class="landing-hint">Press Enter to start</div>
+    </div>
+  `;
+
+  document.querySelector('.answers').innerHTML = '';
+  document.getElementById('explanation').style.display = 'none';
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submit';
+
+  document.getElementById('landingStartBtn').addEventListener('click', startAutoSession);
+  document.getElementById('landingCustomizeBtn').addEventListener('click', openCustomize);
+}
+
+function renderAbout() {
+  mode = 'landing';
+  const card = document.querySelector('.question-card');
+  card.innerHTML = `
+    <div class="about">
+      <div class="about-header">
+        <span class="about-title">About temporal.quiz</span>
+        <button class="btn btn-ghost" id="aboutBackBtn">Back</button>
+      </div>
+      <p class="about-lead">A self-evaluation tool to gauge how well you actually know Temporal.</p>
+      <p>Reading the docs feels like understanding them. Answering questions is how you find out. I built this so I (and anyone else who works with Temporal) can spot the gaps before they turn into 3am production pages.</p>
+      <p>Questions are generated daily from the <a href="https://docs.temporal.io/" target="_blank" rel="noopener noreferrer">official Temporal docs</a>, spanning Workflows, Activities, Workers, Nexus, SDKs, Cloud, and self-hosting. Every run is archived so you can revisit earlier quizzes via the Run picker.</p>
+      <p>Four difficulty tiers, from warmup to nightmare. Your streak and per-category accuracy live in your browser only. Nothing leaves your device.</p>
+      <p class="about-muted">Not affiliated with Temporal Technologies. Built with Claude + a lot of curiosity.</p>
+      <div class="about-actions">
+        <button class="btn btn-primary" id="aboutStartBtn">Got it, let's quiz</button>
+      </div>
+    </div>
+  `;
+  document.querySelector('.answers').innerHTML = '';
+  document.getElementById('explanation').style.display = 'none';
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submit';
+
+  document.getElementById('aboutBackBtn').addEventListener('click', renderLanding);
+  document.getElementById('aboutStartBtn').addEventListener('click', renderLanding);
+}
+
+function openCustomize() {
+  mode = 'landing';
+  const card = document.querySelector('.question-card');
+
+  card.innerHTML = `
+    <div class="customize">
+      <div class="customize-header">
+        <span class="customize-title">Customize Session</span>
+        <button class="btn btn-ghost" id="customizeBackBtn">Back</button>
+      </div>
+
+      <div class="customize-row">
+        <div class="customize-label">Categories <span class="customize-hint">(empty = all)</span></div>
+        <div class="customize-grid" id="customCats"></div>
+      </div>
+
+      <div class="customize-row">
+        <div class="customize-label">Difficulty <span class="customize-hint">(empty = all)</span></div>
+        <div class="customize-grid" id="customDiffs"></div>
+      </div>
+
+      <div class="customize-row">
+        <div class="customize-label">Length</div>
+        <div class="customize-grid" id="customLens"></div>
+      </div>
+
+      <div class="customize-actions">
+        <button class="btn btn-primary" id="customizeStartBtn">Start</button>
+      </div>
+    </div>
+  `;
+
+  document.querySelector('.answers').innerHTML = '';
+  document.getElementById('explanation').style.display = 'none';
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submit';
+
+  renderCustomCategories();
+  renderCustomDifficulties();
+  renderCustomLengths();
+
+  document.getElementById('customizeBackBtn').addEventListener('click', renderLanding);
+  document.getElementById('customizeStartBtn').addEventListener('click', startCustomSession);
+}
+
+function toggleChip(arr, value) {
+  const i = arr.indexOf(value);
+  if (i >= 0) arr.splice(i, 1);
+  else arr.push(value);
+  saveState();
+}
+
+function renderCustomCategories() {
+  const host = document.getElementById('customCats');
+  if (!host) return;
+  host.innerHTML = '';
+  const cats = manifest?.categories?.map(c => c.category) ?? [];
+  cats.forEach(cat => {
+    const pill = document.createElement('div');
+    pill.className = 'pill';
+    if (customConfig.categories.includes(cat)) pill.classList.add('active');
+    pill.textContent = formatCategoryLabel(cat);
+    pill.title = formatCategoryLabel(cat);
+    pill.addEventListener('click', () => {
+      toggleChip(customConfig.categories, cat);
+      pill.classList.toggle('active');
+    });
+    host.appendChild(pill);
+  });
+}
+
+function renderCustomDifficulties() {
+  const host = document.getElementById('customDiffs');
+  if (!host) return;
+  host.innerHTML = '';
+  const diffs = ['easy', 'med', 'hard', 'nightmare'];
+  diffs.forEach(d => {
+    const pill = document.createElement('div');
+    pill.className = 'pill';
+    if (customConfig.difficulties.includes(d)) pill.classList.add('active');
+    pill.innerHTML = difficultyDots(d);
+    pill.addEventListener('click', () => {
+      toggleChip(customConfig.difficulties, d);
+      pill.classList.toggle('active');
+    });
+    host.appendChild(pill);
+  });
+}
+
+function renderCustomLengths() {
+  const host = document.getElementById('customLens');
+  if (!host) return;
+  host.innerHTML = '';
+  const options = [
+    { value: 5,        label: '5'  },
+    { value: 10,       label: '10' },
+    { value: 20,       label: '20' },
+    { value: Infinity, label: '∞'  },
+  ];
+  options.forEach(opt => {
+    const pill = document.createElement('div');
+    pill.className = 'pill';
+    if (customConfig.length === opt.value) pill.classList.add('active');
+    pill.textContent = opt.label;
+    pill.addEventListener('click', () => {
+      customConfig.length = opt.value;
+      saveState();
+      renderCustomLengths();
+    });
+    host.appendChild(pill);
+  });
+}
+
+async function startCustomSession() {
+  const chosenCats = customConfig.categories.length > 0
+    ? customConfig.categories
+    : (manifest?.categories?.map(c => c.category) ?? []);
+
+  let pool = [];
+  for (const cat of chosenCats) {
+    try {
+      const qs = await fetchCategoryQuestions(cat);
+      pool.push(...qs);
+    } catch (e) {
+      console.error('Failed to load category for custom session', cat, e);
     }
-  } catch (e) {
-    console.error('Failed to load category', category, e);
   }
+
+  if (customConfig.difficulties.length > 0) {
+    pool = pool.filter(q => customConfig.difficulties.includes(q.difficulty));
+  }
+
+  if (pool.length === 0) {
+    openCustomize();
+    const host = document.querySelector('.customize');
+    if (host) {
+      const msg = document.createElement('div');
+      msg.className = 'customize-empty';
+      msg.textContent = 'No questions match this filter. Widen selection.';
+      host.appendChild(msg);
+    }
+    return;
+  }
+
+  startSession(shuffle(pool), customConfig.length, {
+    mode: 'custom',
+    config: {
+      categories: [...customConfig.categories],
+      difficulties: [...customConfig.difficulties],
+      length: customConfig.length
+    }
+  });
+}
+
+/* ---- Session ---- */
+
+async function startAutoSession() {
+  const all = [];
+  for (const cat of manifest.categories) {
+    const qs = await fetchCategoryQuestions(cat.category);
+    const stats = state.categoryStats[cat.category];
+    const accuracy = stats && stats.answered > 0 ? stats.correct / stats.answered : 1;
+    if (accuracy < 0.7) all.push(...qs, ...qs);
+    else all.push(...qs);
+  }
+  startSession(shuffle(all), sessionLength, { mode: 'auto' });
+}
+
+function startSession(qs, length, meta = {}) {
+  sessionLength = length;
+  sessionAnswered = 0;
+  sessionCorrect = 0;
+  sessionWrongItems = [];
+  questions = Number.isFinite(length) ? qs.slice(0, length) : qs;
+  currentIndex = 0;
+  mode = 'quiz';
+  if (questions.length === 0) {
+    renderLanding();
+    return;
+  }
+
+  // Create a new session record at the front of state.sessions
+  if (!state.sessions) state.sessions = [];
+  const sess = {
+    id: String(Date.now()) + '-' + Math.random().toString(36).slice(2, 6),
+    started_at: Date.now(),
+    ended_at: null,
+    mode: meta.mode || 'auto',
+    config: meta.config || null,
+    planned: questions.length,
+    total: 0,
+    correct: 0,
+    history: []
+  };
+  state.sessions.unshift(sess);
+  if (state.sessions.length > 50) state.sessions.length = 50;
+  saveState();
+
+  showQuestion();
 }
 
 /* ---- Display question ---- */
 
 function showQuestion() {
   if (!questions.length) return;
+  if (mode !== 'quiz') mode = 'quiz';
 
   const q = questions[currentIndex];
   revealed = false;
@@ -463,6 +686,21 @@ function submitAnswer() {
     state.streak = 0;
   }
 
+  sessionAnswered++;
+  if (isCorrect) {
+    sessionCorrect++;
+  } else {
+    sessionWrongItems.push({
+      question: q.question,
+      choices: q.choices,
+      answer: q.answer,
+      selectedKey,
+      difficulty: q.difficulty,
+      category: q.category,
+      source_doc: q.source_doc || ''
+    });
+  }
+
   // Category stats
   if (!state.categoryStats[q.category]) {
     state.categoryStats[q.category] = { answered: 0, correct: 0 };
@@ -472,19 +710,22 @@ function submitAnswer() {
     state.categoryStats[q.category].correct++;
   }
 
-  // History
-  if (!state.history) state.history = [];
-  state.history.unshift({
-    question: q.question.substring(0, 150),
-    category: q.category,
-    subcategory: formatSubcategory(q.source_doc),
-    difficulty: q.difficulty,
-    correct: isCorrect,
-    selectedKey,
-    answer: q.answer,
-    timestamp: Date.now()
-  });
-  if (state.history.length > 200) state.history.pop();
+  // Session history (append to the active session record)
+  const activeSess = state.sessions && state.sessions[0];
+  if (activeSess) {
+    activeSess.history.push({
+      question: q.question.substring(0, 150),
+      category: q.category,
+      subcategory: formatSubcategory(q.source_doc),
+      difficulty: q.difficulty,
+      correct: isCorrect,
+      selectedKey,
+      answer: q.answer,
+      timestamp: Date.now()
+    });
+    activeSess.total++;
+    if (isCorrect) activeSess.correct++;
+  }
 
   saveState();
   updateStats();
@@ -510,6 +751,66 @@ function submitAnswer() {
     <div class="explanation-text">${formatQuestion(q.explanation)}</div>
   `;
 
+  // Inline per-question note block (Phase 3)
+  const qnKey = hashQuestion(q.question);
+  const qnExisting = state.questionNotes[qnKey];
+
+  const qnBlock = document.createElement('div');
+  qnBlock.className = 'qn-block';
+  qnBlock.innerHTML = `
+    <button class="btn btn-ghost qn-toggle" id="qnToggleBtn">
+      ${qnExisting ? '&#128221; Edit note' : '&#128221; Add note'}
+    </button>
+    <div class="qn-editor" id="qnEditor" style="display:none;">
+      <textarea class="notes-textarea qn-text" id="qnText" rows="4"
+                placeholder="What made this tricky? What to remember next time?"></textarea>
+      <div class="qn-actions">
+        <button class="btn btn-ghost qn-delete" id="qnDeleteBtn">Delete</button>
+      </div>
+    </div>
+  `;
+  explanation.appendChild(qnBlock);
+
+  const qnEditor = document.getElementById('qnEditor');
+  const qnTa = document.getElementById('qnText');
+  const qnToggle = document.getElementById('qnToggleBtn');
+  const qnDel = document.getElementById('qnDeleteBtn');
+
+  qnTa.value = qnExisting?.note ?? '';
+  qnToggle.addEventListener('click', () => {
+    qnEditor.style.display = qnEditor.style.display === 'none' ? 'block' : 'none';
+    if (qnEditor.style.display !== 'none') qnTa.focus();
+  });
+
+  qnTa.addEventListener('input', debounce(() => {
+    const text = qnTa.value;
+    if (!text.trim()) {
+      delete state.questionNotes[qnKey];
+    } else {
+      const now = Date.now();
+      const prev = state.questionNotes[qnKey];
+      state.questionNotes[qnKey] = {
+        hash: qnKey,
+        note: text,
+        question: q.question,
+        source_doc: q.source_doc || '',
+        category: q.category || '',
+        created_at: prev?.created_at ?? now,
+        updated_at: now
+      };
+    }
+    saveState();
+    qnToggle.innerHTML = state.questionNotes[qnKey] ? '&#128221; Edit note' : '&#128221; Add note';
+  }, 300));
+
+  qnDel.addEventListener('click', () => {
+    delete state.questionNotes[qnKey];
+    qnTa.value = '';
+    saveState();
+    qnToggle.innerHTML = '&#128221; Add note';
+    qnEditor.style.display = 'none';
+  });
+
   // Switch button to Next
   const btn = document.getElementById('submitBtn');
   btn.textContent = 'Next';
@@ -521,11 +822,115 @@ function submitAnswer() {
 function nextQuestion() {
   currentIndex++;
   if (currentIndex >= questions.length) {
-    // Reshuffle and restart
+    if (Number.isFinite(sessionLength)) {
+      renderRecap();
+      return;
+    }
+    // Infinite session: reshuffle and restart
     questions = shuffle(questions);
     currentIndex = 0;
   }
   showQuestion();
+}
+
+function renderRecap() {
+  mode = 'recap';
+  // Stamp the session's end time if not already stamped
+  const activeSess = state.sessions && state.sessions[0];
+  if (activeSess && activeSess.ended_at === null) {
+    activeSess.ended_at = Date.now();
+    saveState();
+  }
+  const card = document.querySelector('.question-card');
+  const total = sessionAnswered;
+  const correct = sessionCorrect;
+  const wrong = Math.max(0, total - correct);
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  // Donut chart: two arcs along a circle of radius 42 (circumference ~263.9)
+  const R = 42;
+  const CIRC = 2 * Math.PI * R;
+  const correctLen = total > 0 ? (correct / total) * CIRC : 0;
+  const wrongLen = total > 0 ? (wrong / total) * CIRC : 0;
+
+  const wrongListHtml = sessionWrongItems.length === 0 ? '' : `
+    <div class="recap-wrong-list">
+      <div class="recap-wrong-label">Wrong answers (${sessionWrongItems.length})</div>
+      ${sessionWrongItems.map(w => {
+        const userChoice = (w.choices.find(c => c.key === w.selectedKey) || {}).text || '';
+        const correctChoice = (w.choices.find(c => c.key === w.answer) || {}).text || '';
+        return `
+          <div class="recap-wrong-item">
+            <div class="recap-wrong-meta">
+              <span>${escapeHtml(formatCategoryLabel(w.category || ''))}</span>
+              <span>${difficultyDots(w.difficulty)}</span>
+            </div>
+            <div class="recap-wrong-q">${formatQuestion(w.question)}</div>
+            <div class="recap-wrong-answers">
+              <div class="recap-wrong-row wrong">
+                <span class="recap-key">${escapeHtml(w.selectedKey)}</span>
+                <span class="recap-tag">your answer</span>
+                <span class="recap-text">${formatQuestion(userChoice)}</span>
+              </div>
+              <div class="recap-wrong-row correct">
+                <span class="recap-key">${escapeHtml(w.answer)}</span>
+                <span class="recap-tag">correct</span>
+                <span class="recap-text">${formatQuestion(correctChoice)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  card.innerHTML = `
+    <div class="landing recap">
+      <div class="landing-title">Session complete</div>
+
+      <div class="recap-chart">
+        <svg class="recap-donut" width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="${R}" class="recap-donut-bg"></circle>
+          <circle cx="60" cy="60" r="${R}" class="recap-donut-correct"
+                  stroke-dasharray="${correctLen} ${CIRC - correctLen}"
+                  stroke-dashoffset="0"
+                  transform="rotate(-90 60 60)"></circle>
+          <circle cx="60" cy="60" r="${R}" class="recap-donut-wrong"
+                  stroke-dasharray="${wrongLen} ${CIRC - wrongLen}"
+                  stroke-dashoffset="-${correctLen}"
+                  transform="rotate(-90 60 60)"></circle>
+          <text x="60" y="58" class="recap-donut-pct" text-anchor="middle">${pct}%</text>
+          <text x="60" y="75" class="recap-donut-sub" text-anchor="middle">${correct}/${total}</text>
+        </svg>
+        <div class="recap-legend">
+          <div class="recap-legend-row correct">
+            <span class="recap-legend-dot"></span>
+            <span class="recap-legend-label">Correct</span>
+            <span class="recap-legend-value">${correct}</span>
+          </div>
+          <div class="recap-legend-row wrong">
+            <span class="recap-legend-dot"></span>
+            <span class="recap-legend-label">Wrong</span>
+            <span class="recap-legend-value">${wrong}</span>
+          </div>
+        </div>
+      </div>
+
+      ${wrongListHtml}
+
+      <div class="landing-actions">
+        <button class="btn btn-primary" id="recapAgainBtn">Start again</button>
+      </div>
+    </div>
+  `;
+  document.querySelector('.answers').innerHTML = '';
+  const explanation = document.getElementById('explanation');
+  explanation.style.display = 'none';
+  explanation.innerHTML = '';
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submit';
+  document.getElementById('recapAgainBtn').addEventListener('click', renderLanding);
 }
 
 function skipQuestion() {
@@ -558,6 +963,29 @@ document.addEventListener('keydown', (e) => {
   // Ignore if user is typing in an input
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
+  if ((e.key === 'n' || e.key === 'N') && (mode === 'landing' || mode === 'recap' || revealed)) {
+    toggleNotes();
+    e.preventDefault();
+    return;
+  }
+
+  if (mode === 'landing' && e.key === 'Enter') {
+    const startBtn = document.getElementById('landingStartBtn');
+    if (startBtn) {
+      startBtn.click();
+      e.preventDefault();
+      return;
+    }
+  }
+  if (mode === 'recap' && e.key === 'Enter') {
+    const againBtn = document.getElementById('recapAgainBtn');
+    if (againBtn) {
+      againBtn.click();
+      e.preventDefault();
+      return;
+    }
+  }
+
   const key = e.key.toUpperCase();
   if (['A', 'B', 'C', 'D'].includes(key) && !revealed) {
     selectAnswer(key);
@@ -580,29 +1008,236 @@ function toggleSidebar() {
   }
 }
 
-function renderHistory() {
-  const list = document.getElementById('historyList');
-  const items = state.history || [];
+function toggleNotes() {
+  const open = document.getElementById('notesSidebar').classList.toggle('open');
+  document.getElementById('notesSidebarOverlay').classList.toggle('open');
+  if (open) renderNotes();
+}
 
-  if (items.length === 0) {
-    list.innerHTML = '<p class="history-empty">No questions answered yet.</p>';
+function renderNotes() {
+  const list = document.getElementById('notesList');
+  const cats = manifest?.categories?.map(c => c.category).sort() ?? [];
+
+  if (cats.length === 0) {
+    list.innerHTML = '<p class="history-empty">Load some quiz data first.</p>';
     return;
   }
 
-  list.innerHTML = items.map(h => {
-    const sub = h.subcategory ? ` &middot; ${h.subcategory}` : '';
-    return `
-    <div class="history-item ${h.correct ? 'correct' : 'wrong'}">
-      <div class="history-meta">
-        <span>${formatCategoryLabel(h.category)}${sub}</span>
-        <span>${difficultyDots(h.difficulty)}</span>
+  if (!notesActiveCategory || !cats.includes(notesActiveCategory)) {
+    notesActiveCategory = cats[0];
+  }
+
+  list.innerHTML = `
+    <div class="notes-pane">
+      <div class="notes-section">
+        <div class="notes-section-header">
+          <label for="notesCategorySelect" class="notes-label">Category notes</label>
+          <select id="notesCategorySelect" class="notes-select"></select>
+        </div>
+        <textarea id="notesCategoryText"
+                  class="notes-textarea"
+                  placeholder="Cheat sheet for this category. Markdown is fine."
+                  rows="10"></textarea>
       </div>
-      <div class="history-question">${h.question}</div>
-      <div class="history-result ${h.correct ? 'correct' : 'wrong'}">
-        ${h.correct ? 'Correct' : 'Wrong (' + h.selectedKey + ' instead of ' + h.answer + ')'}
+
+      <div class="notes-section">
+        <div class="notes-section-header">
+          <span class="notes-label">Question notes</span>
+          <span class="notes-count" id="notesQuestionCount"></span>
+        </div>
+        <div id="notesQuestionList" class="notes-question-list"></div>
       </div>
     </div>
   `;
+
+  const select = document.getElementById('notesCategorySelect');
+  cats.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = formatCategoryLabel(cat);
+    if (cat === notesActiveCategory) opt.selected = true;
+    select.appendChild(opt);
+  });
+  select.addEventListener('change', () => {
+    notesActiveCategory = select.value;
+    syncCategoryTextarea();
+  });
+
+  syncCategoryTextarea();
+  renderQuestionNotes();
+}
+
+function syncCategoryTextarea() {
+  const ta = document.getElementById('notesCategoryText');
+  if (!ta) return;
+  ta.value = state.categoryNotes[notesActiveCategory] ?? '';
+  ta.oninput = debounce(() => {
+    state.categoryNotes[notesActiveCategory] = ta.value;
+    saveState();
+  }, 300);
+}
+
+function renderQuestionNotes() {
+  const host = document.getElementById('notesQuestionList');
+  const countEl = document.getElementById('notesQuestionCount');
+  if (!host) return;
+
+  const notes = Object.values(state.questionNotes || {})
+    .sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0));
+
+  if (countEl) countEl.textContent = `${notes.length} saved`;
+
+  if (notes.length === 0) {
+    host.innerHTML = '<p class="history-empty qn-empty">No question notes yet. Answer a question and click the note button.</p>';
+    return;
+  }
+
+  host.innerHTML = notes.map(n => {
+    const safeCat = escapeHtml(formatCategoryLabel(n.category || ''));
+    const safeQ = escapeHtml(n.question);
+    const safeNote = escapeHtml(n.note);
+    return `
+      <div class="qn-item" data-hash="${n.hash}">
+        <div class="qn-item-meta">
+          <span>${safeCat}</span>
+          <button class="qn-item-del" data-hash="${n.hash}" title="Delete">&times;</button>
+        </div>
+        <div class="qn-item-question">${safeQ}</div>
+        <div class="qn-item-note">${safeNote}</div>
+      </div>
+    `;
+  }).join('');
+
+  host.querySelectorAll('.qn-item-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const h = btn.dataset.hash;
+      delete state.questionNotes[h];
+      saveState();
+      renderQuestionNotes();
+    });
+  });
+}
+
+function exportNotes() {
+  const cats = Object.keys(state.categoryNotes || {})
+    .filter(k => (state.categoryNotes[k] || '').trim())
+    .sort();
+  const qNotes = Object.values(state.questionNotes || {})
+    .sort((a, b) => (a.category || '').localeCompare(b.category || ''));
+
+  if (cats.length === 0 && qNotes.length === 0) {
+    alert('No notes to export yet.');
+    return;
+  }
+
+  const lines = [`# temporal.quiz notes`, `Exported ${new Date().toISOString()}`, ''];
+
+  if (cats.length > 0) {
+    lines.push('## Category notes', '');
+    for (const cat of cats) {
+      lines.push(`### ${formatCategoryLabel(cat)}`, '', state.categoryNotes[cat].trim(), '');
+    }
+  }
+
+  if (qNotes.length > 0) {
+    lines.push('## Question notes', '');
+    let lastCat = null;
+    for (const n of qNotes) {
+      if (n.category !== lastCat) {
+        lines.push(`### ${formatCategoryLabel(n.category || 'Uncategorized')}`, '');
+        lastCat = n.category;
+      }
+      lines.push(`**Q:** ${n.question}`);
+      if (n.source_doc) lines.push(`_source: ${n.source_doc}_`);
+      lines.push('', n.note.trim(), '');
+    }
+  }
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `temporal-quiz-notes-${new Date().toISOString().slice(0,10)}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function fmtSessionDateTime(ms) {
+  const d = new Date(ms);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' +
+         d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtSessionDuration(ms) {
+  if (!ms || ms <= 0) return '0s';
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rs = s % 60;
+  return `${m}m ${rs < 10 ? '0' + rs : rs}s`;
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const sessions = (state.sessions || []).slice();
+
+  if (sessions.length === 0) {
+    list.innerHTML = '<p class="history-empty">No sessions yet.</p>';
+    return;
+  }
+
+  list.innerHTML = sessions.map((s, idx) => {
+    const started = fmtSessionDateTime(s.started_at);
+    const dur = s.ended_at
+      ? fmtSessionDuration(s.ended_at - s.started_at)
+      : 'in progress';
+    const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+    let summary;
+    if (s.mode === 'custom') {
+      const cats = s.config?.categories?.length || 0;
+      const diffs = s.config?.difficulties?.length || 0;
+      const catPart = cats === 0 ? 'all cats' : `${cats} cat${cats === 1 ? '' : 's'}`;
+      const diffPart = diffs === 0 ? 'all diff' : `${diffs} diff`;
+      summary = `Custom · ${catPart} · ${diffPart}`;
+    } else {
+      summary = 'Auto session';
+    }
+
+    const inner = s.history.length === 0
+      ? '<p class="history-empty">No questions answered.</p>'
+      : s.history.map(h => {
+          const sub = h.subcategory ? ` &middot; ${escapeHtml(h.subcategory)}` : '';
+          return `
+            <div class="history-item ${h.correct ? 'correct' : 'wrong'}">
+              <div class="history-meta">
+                <span>${escapeHtml(formatCategoryLabel(h.category))}${sub}</span>
+                <span>${difficultyDots(h.difficulty)}</span>
+              </div>
+              <div class="history-question">${escapeHtml(h.question)}</div>
+              <div class="history-result ${h.correct ? 'correct' : 'wrong'}">
+                ${h.correct ? 'Correct' : 'Wrong (' + escapeHtml(h.selectedKey) + ' instead of ' + escapeHtml(h.answer) + ')'}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+    return `
+      <details class="session-block" ${idx === 0 ? 'open' : ''}>
+        <summary class="session-summary">
+          <div class="session-summary-top">
+            <span class="session-time">${escapeHtml(started)}</span>
+            <span class="session-score">${s.correct}/${s.total} &middot; ${pct}%</span>
+          </div>
+          <div class="session-summary-sub">
+            <span class="session-mode">${escapeHtml(summary)}</span>
+            <span class="session-dur">${escapeHtml(dur)}</span>
+          </div>
+        </summary>
+        <div class="session-history">${inner}</div>
+      </details>
+    `;
   }).join('');
 }
 
