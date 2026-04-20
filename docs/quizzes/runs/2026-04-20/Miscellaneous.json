@@ -2,88 +2,60 @@
   "category": "Miscellaneous",
   "questions": [
     {
-      "id": "miscellaneous_easy_001",
-      "category": "Miscellaneous",
-      "difficulty": "easy",
-      "question": "Which of the following programming languages does Temporal NOT currently offer an official SDK for?",
-      "choices": [
-        {
-          "key": "A",
-          "text": "Python"
-        },
-        {
-          "key": "B",
-          "text": "Rust"
-        },
-        {
-          "key": "C",
-          "text": "TypeScript"
-        },
-        {
-          "key": "D",
-          "text": "Go"
-        }
-      ],
-      "answer": "B",
-      "explanation": "Temporal offers SDKs for .NET, Go, Java, PHP, Python, Ruby, and TypeScript. Rust is not among the supported languages. SDKs are important because they provide the tools and libraries you need to build Temporal applications in your preferred programming language.",
-      "source_doc": "getting-started.html",
-      "generated_at": "2026-04-20T05:01:13Z"
-    },
-    {
-      "id": "miscellaneous_easy_002",
-      "category": "Miscellaneous",
-      "difficulty": "easy",
-      "question": "What is the main purpose of a Temporal SDK?",
-      "choices": [
-        {
-          "key": "A",
-          "text": "To host the Temporal server on your own machine"
-        },
-        {
-          "key": "B",
-          "text": "To monitor the performance of your running workflows"
-        },
-        {
-          "key": "C",
-          "text": "To help you build Temporal applications in a specific programming language"
-        },
-        {
-          "key": "D",
-          "text": "To replace your existing database with Temporal storage"
-        }
-      ],
-      "answer": "C",
-      "explanation": "A Temporal SDK (Software Development Kit) is a set of libraries and tools that makes it easier to build Temporal applications in a particular programming language. Each SDK is tailored to a specific language, so Go developers use the Go SDK, Python developers use the Python SDK, and so on.",
-      "source_doc": "getting-started.html",
-      "generated_at": "2026-04-20T05:01:13Z"
-    },
-    {
       "id": "miscellaneous_nightmare_001",
       "category": "Miscellaneous",
       "difficulty": "nightmare",
-      "question": "Your team is building a multi-region order fulfillment system in Go. A parent workflow orchestrates three child workflows (inventory, payment, shipping) using `workflow.ExecuteChildWorkflow`. The parent has a 24-hour `WorkflowExecutionTimeout`. During a deployment, you use `GetVersion` to handle a logic change in how the parent coordinates child results. A child workflow is mid-execution when `continue-as-new` is triggered on the parent to reset its event history. After the continue-as-new, the parent re-executes and calls `GetVersion` again for the same changeID. What is the most critical production risk in this scenario, and what is the correct behavior?",
+      "question": "A platform team is migrating a large Temporal deployment from an open-source cluster to Temporal Cloud. Their Go workers currently use mTLS certificates issued by an internal PKI for both the frontend gRPC connection and inter-service communication. On Temporal Cloud, the team discovers that their existing certificate rotation tooling—which issues short-lived 24-hour certificates and rotates them by restarting workers—causes periodic workflow task timeouts during the rotation window, even though the new certificates are valid. Which architectural difference between self-hosted Temporal mTLS and Temporal Cloud's certificate handling most directly explains this failure mode?",
       "choices": [
         {
           "key": "A",
-          "text": "The child workflows are automatically cancelled when the parent calls continue-as-new, because child workflow lifetime is bound to the parent's current execution run, not the workflow ID chain."
+          "text": "Temporal Cloud enforces a minimum certificate validity period of 72 hours; certificates with a 24-hour TTL are rejected at the TLS handshake layer, causing gRPC connections to fail entirely rather than producing task timeouts."
         },
         {
           "key": "B",
-          "text": "After continue-as-new, the new parent run has no history of the previous GetVersion call for that changeID, so GetVersion will return the maxSupported version — but if the worker code path for that version differs from what the still-running child workflow expects as a callback, you can get inconsistent orchestration state that is silent and difficult to debug."
+          "text": "Temporal Cloud authenticates the worker's namespace-scoped identity at the certificate level on every new gRPC connection; restarting workers to rotate certificates drops in-flight sticky task queue assignments, forcing workflow tasks to time out waiting for rescheduling onto the new worker pool before the normal sticky schedule-to-start timeout elapses."
         },
         {
           "key": "C",
-          "text": "continue-as-new is forbidden when child workflows are still running; Temporal will return an error and the parent must wait for all children to complete before calling ContinueAsNew."
+          "text": "Self-hosted clusters allow certificate hot-reload via SIGHUP on the frontend service, but Temporal Cloud requires a full namespace suspension during certificate rotation; the suspension window is what causes the observed task timeouts rather than any sticky scheduling behavior."
         },
         {
           "key": "D",
-          "text": "GetVersion state is stored in the Temporal server and persists across continue-as-new boundaries, so the new parent run will receive the same version integer that was recorded before the continue-as-new, ensuring deterministic replay."
+          "text": "Temporal Cloud uses certificate fingerprints as part of the task queue routing key; when a new certificate is presented after rotation, the Cloud router treats it as a different logical worker and places tasks in a separate internal partition, causing the old partition's tasks to expire before being drained."
         }
       ],
       "answer": "B",
-      "explanation": "This scenario exposes a subtle but dangerous interaction between three features: child workflows, GetVersion, and continue-as-new.\n\n**continue-as-new and child workflows**: When a parent calls ContinueAsNew, the NEW run starts fresh with an empty event history. Critically, child workflows that were started by the OLD run continue executing independently — they are NOT cancelled. They remain associated with the parent workflow ID chain, and their completion callbacks (if any) are routed to the new run. This means the new parent run must be designed to handle completion events from children it never 'saw' start.\n\n**GetVersion after continue-as-new**: GetVersion works by recording a marker event in the workflow history the FIRST time it is called for a given changeID. On replay, Temporal reads that marker to return the same version. After continue-as-new, the new run's history is empty — there is no marker. So when the new run calls GetVersion for the same changeID, it behaves as a 'first call' and returns maxSupported. If your code branched differently for an older version in the pre-CAN run, the new run will now execute the new code path, but any in-flight children from the old run were LAUNCHED under old coordination logic. The result is silent state divergence: the parent thinks it's on the new code path, but the children are operating under old assumptions.\n\n**Why A is wrong**: Children are NOT automatically cancelled on continue-as-new. They are detached from the old run's event loop but continue running. ParentClosePolicy controls what happens on parent CLOSE (not continue-as-new), and the default is ABANDON or TERMINATE depending on SDK version.\n\n**Why C is wrong**: Temporal does not block ContinueAsNew when children are running. This is legal and common in long-running orchestrators.\n\n**Why D is wrong**: GetVersion state lives ONLY in workflow history as marker events. It has no server-side persistence across runs. Each new run starts with zero version markers.\n\n**Production lesson**: Before calling ContinueAsNew in a parent that uses GetVersion, you must either (1) wait for all children to complete, (2) pass version state explicitly as the new workflow's input arguments, or (3) architect child workflows to be stateless with respect to parent versioning. Teams that miss this often see non-determinism errors appear sporadically after deployments, only on workflows that crossed a continue-as-new boundary during the rollout window.",
+      "explanation": "The core issue is the interaction between worker restarts (used as a certificate rotation mechanism) and Temporal's sticky task queue behavior. When a workflow task is dispatched to a worker, Temporal records that worker's sticky task queue so subsequent tasks for the same workflow execution are routed preferentially back to that specific worker—this avoids replaying the full event history from scratch on every task and dramatically reduces latency. The sticky queue is tied to the worker process identity (specifically its sticky queue name, which is typically derived from the worker's host and process). When you restart workers to rotate certificates, you destroy the in-memory state and effectively abandon the sticky queue. Temporal's server will wait up to the StickyScheduleToStartTimeout before concluding the sticky worker is gone and re-dispatching to the normal task queue. On a self-hosted cluster, operators control this timeout and can tune it aggressively, and certificate rotation can often be done with zero-downtime rolling restarts where at least some workers holding the sticky assignments stay alive. On Temporal Cloud, the namespace's sticky timeout is fixed and workers don't have the same control over rolling restart coordination. The rotation strategy of 'restart all workers simultaneously' creates a gap where no worker is available to pick up the sticky-queued tasks, and those tasks sit until the sticky timeout fires and they fall back to the normal queue—this manifests as task timeouts from the application's perspective. The fix is to implement hot certificate reloading (using Go's tls.Config GetClientCertificate callback to reload certs without restarting) or to perform rolling restarts where a portion of workers with old certs stays alive long enough to drain sticky assignments before shutdown. Choice A is wrong because Temporal Cloud does not enforce a minimum certificate TTL at the handshake layer in this way. Choice C is wrong because Temporal Cloud does not require namespace suspension for certificate rotation. Choice D is wrong because certificate fingerprints are not used as task queue routing keys in Temporal's architecture.",
       "source_doc": "getting-started.html",
-      "generated_at": "2026-04-20T05:01:13Z"
+      "generated_at": "2026-04-20T05:57:50Z"
+    },
+    {
+      "id": "miscellaneous_nightmare_002",
+      "category": "Miscellaneous",
+      "difficulty": "nightmare",
+      "question": "A team running a Python Temporal application uses a single namespace across three regions via Temporal Cloud's multi-region namespace feature. Their workflow uses `workflow.execute_activity` with a `start_to_close_timeout` of 30 seconds and no retry policy override, relying on the SDK default. During a regional failover test, they observe that some activity executions are duplicated—the activity function runs to completion in the original region, but after failover the workflow retries it and it runs again in the new region. They assumed Temporal's exactly-once execution guarantee would prevent this. Which statement correctly identifies why this occurs and what the team must do to restore their expected behavior?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Multi-region namespaces replicate workflow history but use region-local activity task queues; after failover, the new region's workers have no visibility into which activities completed in the other region, so the server reissues all pending activity tasks. The fix is to use cross-region activity task queues backed by a globally replicated broker."
+        },
+        {
+          "key": "B",
+          "text": "Temporal guarantees at-least-once activity execution, not exactly-once; the exactly-once property only applies to workflow state transitions recorded in the event history. If an activity completes but its completion event has not yet been replicated to the failover region before the cutover, the new region's server has no record of the completion and will re-schedule the activity. Activities must be idempotent, and the team should use idempotency keys tied to the workflow and activity ID to deduplicate side effects."
+        },
+        {
+          "key": "C",
+          "text": "The Python SDK's default retry policy sets `maximum_attempts` to 1, meaning no retries are issued; the duplication is actually caused by the SDK's automatic continue-as-new triggering during failover, which resets the activity schedule counter and re-issues all activities from the beginning of the current run."
+        },
+        {
+          "key": "D",
+          "text": "Multi-region namespaces perform synchronous replication of activity completion events before acknowledging the worker's response; the duplication indicates a bug in the Python SDK's activity completion path where the SDK sends the completion twice under network partition conditions, which can be fixed by upgrading to the latest SDK patch release."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question targets a fundamental and commonly misunderstood aspect of Temporal's execution guarantees. Temporal provides exactly-once *workflow state progression*—meaning the workflow's event history is the source of truth and each state transition is recorded durably before the workflow code observes it. However, activities are external side-effectful operations, and Temporal's contract for activities is at-least-once execution. The reason is the inherent two-general's problem: the server cannot simultaneously guarantee that (a) it has delivered the task to a worker, (b) the worker has executed it, and (c) the completion has been durably recorded—all atomically. In a multi-region namespace, Temporal Cloud asynchronously replicates history events from the active region to passive regions. There is a replication lag window. If an activity completes in Region A and the `ActivityTaskCompleted` event is written to Region A's history but hasn't replicated to Region B before a failover is triggered, Region B's server sees the activity as still in-flight (it only has the `ActivityTaskScheduled` and `ActivityTaskStarted` events, or possibly just `ActivityTaskScheduled`). After failover, Region B becomes active and, seeing no completion, re-schedules the activity. The worker in Region B (or even Region A's worker reconnecting) will execute it again. This is not a bug—it's the documented behavior. The correct operational response is to make all activities idempotent. A best practice is to construct idempotency keys from the workflow ID, run ID, and activity ID (or attempt number, carefully), and use these when calling downstream APIs. Choice A is wrong because activity task queues in multi-region namespaces are not region-local in the way described, and there is no 'globally replicated broker' concept to apply here. Choice C is wrong on two counts: the Python SDK default retry policy does allow retries (unlimited by default), and continue-as-new does not re-issue completed activities—it carries forward only the inputs to the new run. Choice D is wrong because multi-region replication is asynchronous, not synchronous, and the behavior described is not an SDK bug but expected system behavior under replication lag.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T05:57:50Z"
     }
   ]
 }
