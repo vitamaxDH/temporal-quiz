@@ -40,6 +40,7 @@ let state = {
   totalCorrect: 0,
   categoryStats: {}, // { category: { answered: N, correct: N } }
   sessions: [],       // [{ id, started_at, ended_at, mode, config, planned, total, correct, history:[...] }]
+  historyResetAt: null, // ms timestamp of last Reset (null = never reset)
   theme: 'dark',      // 'dark' | 'light'
   categoryNotes: {},  // { category: 'markdown text' }
   questionNotes: {},  // { <hash>: { hash, note, question, source_doc, category, created_at, updated_at } }
@@ -225,6 +226,14 @@ async function init() {
   document.getElementById('notesSidebarOverlay').addEventListener('click', toggleNotes);
   document.getElementById('notesExportBtn').addEventListener('click', exportNotes);
   document.getElementById('sidebarCloseBtn').addEventListener('click', toggleSidebar);
+  document.getElementById('historyResetBtn').addEventListener('click', resetHistory);
+  document.getElementById('modalConfirmBtn').addEventListener('click', () => closeModal(true));
+  document.getElementById('modalCancelBtn').addEventListener('click', () => closeModal(false));
+  document.getElementById('modalBackdrop').addEventListener('click', (e) => {
+    if (e.target.id === 'modalBackdrop') closeModal(false);
+  });
+  document.getElementById('restartBtn').addEventListener('click', restartSession);
+  document.getElementById('quitBtn').addEventListener('click', quitSession);
   document.getElementById('sidebarOverlay').addEventListener('click', toggleSidebar);
   document.getElementById('toolboxLauncher').addEventListener('click', toggleToolbox);
   document.getElementById('toolboxClose').addEventListener('click', closeToolbox);
@@ -236,6 +245,8 @@ async function init() {
   applyToolboxPosition();
   window.addEventListener('resize', applyToolboxPosition);
   if (state.toolbox?.open) openToolbox();
+
+  sweepCompletedUnstamped();
 
   try {
     await loadRuns();
@@ -270,6 +281,19 @@ async function loadRuns() {
 async function loadManifest() {
   const res = await fetch(quizPath('manifest.json'), { cache: 'no-store' });
   manifest = await res.json();
+  updateGeneratedBadge();
+}
+
+function updateGeneratedBadge() {
+  const el = document.getElementById('quizGenerated');
+  if (!el) return;
+  const ts = manifest?.generated_at;
+  if (!ts) { el.textContent = ''; return; }
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) { el.textContent = ''; return; }
+  const datePart = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const timePart = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  el.textContent = `Generated ${datePart} · ${timePart}`;
 }
 
 /* ---- Run picker ---- */
@@ -338,14 +362,78 @@ async function fetchCategoryQuestions(category) {
 
 /* ---- Landing ---- */
 
+function resumableSession() {
+  const s = state.sessions && state.sessions[0];
+  if (!s) return null;
+  if (s.ended_at !== null) return null;
+  if (s.abandoned) return null;
+  if (!Array.isArray(s.queue) || s.queue.length === 0) return null;
+  if (!Array.isArray(s.history) || s.history.length === 0) return null;
+  // history.length === queue.length is ALLOWED: clicking Resume falls
+  // through to renderRecap so the user still gets their results screen.
+  if (s.history.length > s.queue.length) return null;
+  return s;
+}
+
+// On load, auto-complete any fully-answered session that never hit recap.
+// (User closed the tab after the last answer but before the Next click.)
+function sweepCompletedUnstamped() {
+  if (!Array.isArray(state.sessions)) return;
+  let dirty = false;
+  for (const s of state.sessions) {
+    if (s.ended_at === null
+        && Array.isArray(s.queue)
+        && Array.isArray(s.history)
+        && s.history.length > 0
+        && s.history.length >= s.queue.length) {
+      const last = s.history[s.history.length - 1];
+      s.ended_at = last && last.timestamp ? last.timestamp : Date.now();
+      dirty = true;
+    }
+  }
+  if (dirty) saveState();
+}
+
+function fmtRelative(ms) {
+  const diff = Date.now() - ms;
+  if (diff < 0) return 'just now';
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return 'just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
 function renderLanding() {
   mode = 'landing';
+  stopMainTimer(true);
+  hideQuizControls();
   const card = document.querySelector('.question-card');
   const totalCount = manifest?.categories?.reduce((n, c) => n + c.question_count, 0) ?? 0;
   const runLabel = currentRun ? formatRunDate(currentRun) : 'latest';
 
+  const resumable = resumableSession();
+  const resumeBannerHtml = resumable ? `
+    <div class="resume-banner">
+      <div class="resume-banner-title">Resume unfinished session?</div>
+      <div class="resume-banner-meta">
+        ${resumable.mode === 'custom' ? 'Custom' : 'Daily Mix'}
+        &middot; ${resumable.history.length}/${resumable.planned}
+        &middot; started ${escapeHtml(fmtRelative(resumable.started_at))}
+      </div>
+      <div class="resume-banner-actions">
+        <button class="btn btn-primary" id="resumeSessionBtn">Resume</button>
+        <button class="btn btn-ghost" id="abandonSessionBtn">Start fresh</button>
+      </div>
+    </div>
+  ` : '';
+
   card.innerHTML = `
     <div class="landing">
+      ${resumeBannerHtml}
       <div class="landing-title">Today's Quiz</div>
       <div class="landing-meta">${totalCount} questions · ${runLabel}</div>
       <div class="landing-actions">
@@ -364,10 +452,89 @@ function renderLanding() {
 
   document.getElementById('landingStartBtn').addEventListener('click', startAutoSession);
   document.getElementById('landingCustomizeBtn').addEventListener('click', openCustomize);
+  if (resumable) {
+    document.getElementById('resumeSessionBtn').addEventListener('click', resumeSession);
+    document.getElementById('abandonSessionBtn').addEventListener('click', abandonUnfinishedSession);
+  }
+}
+
+function resumeSession(sess) {
+  sess = sess || resumableSession();
+  if (!sess) { renderLanding(); return; }
+  // Make sure the session being resumed is at state.sessions[0] so
+  // submitAnswer / nextQuestion target the right record.
+  if (state.sessions && state.sessions[0] !== sess) {
+    state.sessions = [sess, ...state.sessions.filter(s => s !== sess)];
+    saveState();
+  }
+  sessionLength = sess.planned || 10;
+  sessionAnswered = sess.total || sess.history.length || 0;
+  sessionCorrect = sess.correct || 0;
+  sessionWrongItems = Array.isArray(sess.wrongItems) ? sess.wrongItems.slice() : [];
+  questions = sess.queue.slice();
+  // Jump past already-answered questions
+  currentIndex = Math.min(sess.history.length, questions.length);
+  timerState.sessionStart = sess.started_at || Date.now();
+  timerState.qStart = Date.now();
+  mode = 'quiz';
+
+  if (currentIndex >= questions.length) {
+    renderRecap();
+    return;
+  }
+
+  startMainTimer();
+  showQuestion();
+}
+
+function abandonUnfinishedSession() {
+  const sess = state.sessions && state.sessions[0];
+  if (sess && sess.ended_at === null) {
+    sess.ended_at = Date.now();
+    sess.abandoned = true;
+    saveState();
+  }
+  renderLanding();
+}
+
+function showQuizControls() {
+  const el = document.getElementById('quizControls');
+  if (el) el.style.display = 'flex';
+}
+
+function hideQuizControls() {
+  const el = document.getElementById('quizControls');
+  if (el) el.style.display = 'none';
+}
+
+function restartSession() {
+  if (mode !== 'quiz') return;
+  if (!confirm('Restart this session from question 1? Your current answers will be recorded as an abandoned attempt.')) return;
+  const sess = state.sessions && state.sessions[0];
+  if (!sess) { renderLanding(); return; }
+
+  // Close out the current attempt.
+  const originalQueue = Array.isArray(sess.queue) ? sess.queue.slice() : questions.slice();
+  sess.ended_at = Date.now();
+  sess.abandoned = true;
+  saveState();
+
+  // Kick off a fresh run with the same queue + config.
+  startSession(originalQueue, sess.planned || originalQueue.length, {
+    mode: sess.mode || 'auto',
+    config: sess.config || null
+  });
+}
+
+function quitSession() {
+  if (mode !== 'quiz') return;
+  if (!confirm('End this session and go back? Your answers are kept as an abandoned attempt.')) return;
+  abandonUnfinishedSession();
 }
 
 function renderAbout() {
   mode = 'landing';
+  hideQuizControls();
   const card = document.querySelector('.question-card');
   card.innerHTML = `
     <div class="about">
@@ -397,12 +564,13 @@ function renderAbout() {
 
 function openCustomize() {
   mode = 'landing';
+  hideQuizControls();
   const card = document.querySelector('.question-card');
 
   card.innerHTML = `
     <div class="customize">
       <div class="customize-header">
-        <span class="customize-title">Customize Session</span>
+        <span class="customize-title">Build Your Session</span>
         <button class="btn btn-ghost" id="customizeBackBtn">Back</button>
       </div>
 
@@ -670,8 +838,16 @@ function startSession(qs, length, meta = {}) {
     return;
   }
 
-  // Create a new session record at the front of state.sessions
+  // Close out any prior unfinished session so it shows up correctly in history.
   if (!state.sessions) state.sessions = [];
+  const prev = state.sessions[0];
+  if (prev && prev.ended_at === null) {
+    prev.ended_at = Date.now();
+    if (prev.history && prev.history.length < (prev.planned || prev.queue?.length || 0)) {
+      prev.abandoned = true;
+    }
+  }
+
   const sess = {
     id: String(Date.now()) + '-' + Math.random().toString(36).slice(2, 6),
     started_at: Date.now(),
@@ -681,7 +857,11 @@ function startSession(qs, length, meta = {}) {
     planned: questions.length,
     total: 0,
     correct: 0,
-    history: []
+    history: [],
+    queue: questions.slice(),     // full question objects for resume
+    currentIndex: 0,
+    wrongItems: [],
+    abandoned: false
   };
   state.sessions.unshift(sess);
   if (state.sessions.length > 50) state.sessions.length = 50;
@@ -696,6 +876,8 @@ function showQuestion() {
   if (!questions.length) return;
   if (mode !== 'quiz') mode = 'quiz';
   timerState.qStart = Date.now();
+  startMainTimer();
+  showQuizControls();
   scratchText = '';
   if (state.toolbox?.open && state.toolbox?.tab === 'scratch') {
     renderToolboxBody('scratch');
@@ -828,6 +1010,8 @@ function submitAnswer() {
     });
     activeSess.total++;
     if (isCorrect) activeSess.correct++;
+    activeSess.wrongItems = sessionWrongItems.slice();
+    activeSess.currentIndex = currentIndex;
   }
 
   saveState();
@@ -924,6 +1108,11 @@ function submitAnswer() {
 
 function nextQuestion() {
   currentIndex++;
+  const activeSess = state.sessions && state.sessions[0];
+  if (activeSess && activeSess.ended_at === null) {
+    activeSess.currentIndex = currentIndex;
+    saveState();
+  }
   if (currentIndex >= questions.length) {
     if (Number.isFinite(sessionLength)) {
       renderRecap();
@@ -932,6 +1121,11 @@ function nextQuestion() {
     // Infinite session: reshuffle and restart
     questions = shuffle(questions);
     currentIndex = 0;
+    if (activeSess && activeSess.ended_at === null) {
+      activeSess.queue = questions.slice();
+      activeSess.currentIndex = 0;
+      saveState();
+    }
   }
   showQuestion();
 }
@@ -939,6 +1133,8 @@ function nextQuestion() {
 function renderRecap() {
   mode = 'recap';
   timerState.qStart = null;
+  stopMainTimer();
+  hideQuizControls();
   // Stamp the session's end time if not already stamped
   const activeSess = state.sessions && state.sessions[0];
   if (activeSess && activeSess.ended_at === null) {
@@ -950,6 +1146,10 @@ function renderRecap() {
   const correct = sessionCorrect;
   const wrong = Math.max(0, total - correct);
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const durationMs = (activeSess && activeSess.started_at && activeSess.ended_at)
+    ? activeSess.ended_at - activeSess.started_at
+    : 0;
+  const durationStr = durationMs > 0 ? fmtSessionDuration(durationMs) : '';
 
   // Donut chart: two arcs along a circle of radius 42 (circumference ~263.9)
   const R = 42;
@@ -991,6 +1191,7 @@ function renderRecap() {
   card.innerHTML = `
     <div class="landing recap">
       <div class="landing-title">Session complete</div>
+      ${durationStr ? `<div class="recap-took">Took ${escapeHtml(durationStr)}</div>` : ''}
 
       <div class="recap-chart">
         <svg class="recap-donut" width="120" height="120" viewBox="0 0 120 120">
@@ -1283,20 +1484,98 @@ function fmtSessionDuration(ms) {
   return `${m}m ${rs < 10 ? '0' + rs : rs}s`;
 }
 
+/* ---- Modal (custom confirm) ---- */
+
+let modalResolver = null;
+let modalKeyHandler = null;
+
+function showConfirm({ title = 'Are you sure?', body = '', confirmLabel = 'Confirm', cancelLabel = 'Cancel', danger = false } = {}) {
+  return new Promise(resolve => {
+    const backdrop = document.getElementById('modalBackdrop');
+    const titleEl = document.getElementById('modalTitle');
+    const bodyEl = document.getElementById('modalBody');
+    const confirmBtn = document.getElementById('modalConfirmBtn');
+    const cancelBtn = document.getElementById('modalCancelBtn');
+    if (!backdrop) { resolve(false); return; }
+
+    titleEl.textContent = title;
+    bodyEl.textContent = body;
+    confirmBtn.textContent = confirmLabel;
+    cancelBtn.textContent = cancelLabel;
+    confirmBtn.classList.toggle('btn-danger', !!danger);
+
+    backdrop.style.display = 'flex';
+    modalResolver = resolve;
+
+    // Focus the cancel button by default for safety on destructive prompts.
+    setTimeout(() => (danger ? cancelBtn : confirmBtn).focus(), 0);
+
+    modalKeyHandler = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); closeModal(false); }
+      else if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') { e.preventDefault(); closeModal(true); }
+    };
+    document.addEventListener('keydown', modalKeyHandler);
+  });
+}
+
+function closeModal(result) {
+  const backdrop = document.getElementById('modalBackdrop');
+  if (backdrop) backdrop.style.display = 'none';
+  if (modalKeyHandler) {
+    document.removeEventListener('keydown', modalKeyHandler);
+    modalKeyHandler = null;
+  }
+  if (modalResolver) {
+    const r = modalResolver;
+    modalResolver = null;
+    r(result);
+  }
+}
+
+async function resetHistory() {
+  const ok = await showConfirm({
+    title: 'Reset history?',
+    body: 'Streak, accuracy, category stats, and the session list will be cleared. Notes are kept.',
+    confirmLabel: 'Reset',
+    cancelLabel: 'Cancel',
+    danger: true
+  });
+  if (!ok) return;
+  state.streak = 0;
+  state.totalAnswered = 0;
+  state.totalCorrect = 0;
+  state.categoryStats = {};
+  state.sessions = [];
+  state.historyResetAt = Date.now();
+  saveState();
+  updateStats();
+  renderHistory();
+}
+
 function renderHistory() {
   const list = document.getElementById('historyList');
   const sessions = (state.sessions || []).slice();
 
   if (sessions.length === 0) {
-    list.innerHTML = '<p class="history-empty">No sessions yet.</p>';
+    const resetAt = state.historyResetAt
+      ? `<p class="history-empty-meta">Last reset: ${escapeHtml(fmtSessionDateTime(state.historyResetAt))}</p>`
+      : '';
+    const headline = state.historyResetAt
+      ? 'No sessions since reset.'
+      : 'Never taken a quiz yet.';
+    list.innerHTML = `
+      <p class="history-empty">${headline}</p>
+      ${resetAt}
+    `;
     return;
   }
 
   list.innerHTML = sessions.map((s, idx) => {
     const started = fmtSessionDateTime(s.started_at);
-    const dur = s.ended_at
-      ? fmtSessionDuration(s.ended_at - s.started_at)
-      : 'in progress';
+    const rawDur = s.ended_at ? fmtSessionDuration(s.ended_at - s.started_at) : '';
+    const dur = s.abandoned
+      ? `${rawDur} · abandoned`
+      : (s.ended_at ? rawDur : 'in progress');
     const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
     let summary;
     if (s.mode === 'custom') {
@@ -1327,12 +1606,22 @@ function renderHistory() {
           `;
         }).join('');
 
+    const canContinue = s.ended_at === null
+      && !s.abandoned
+      && Array.isArray(s.queue) && s.queue.length > 0
+      && Array.isArray(s.history) && s.history.length < s.queue.length;
+    const continueBtn = canContinue
+      ? `<button class="session-continue" data-session-id="${escapeHtml(s.id)}" title="Resume this session">Continue</button>`
+      : '';
+
     return `
       <details class="session-block" ${idx === 0 ? 'open' : ''}>
         <summary class="session-summary">
           <div class="session-summary-top">
             <span class="session-time">${escapeHtml(started)}</span>
             <span class="session-score">${s.correct}/${s.total} &middot; ${pct}%</span>
+            ${continueBtn}
+            <button class="session-delete" data-session-id="${escapeHtml(s.id)}" title="Delete this session">&times;</button>
           </div>
           <div class="session-summary-sub">
             <span class="session-mode">${escapeHtml(summary)}</span>
@@ -1343,6 +1632,32 @@ function renderHistory() {
       </details>
     `;
   }).join('');
+
+  list.querySelectorAll('.session-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const id = btn.dataset.sessionId;
+      state.sessions = (state.sessions || []).filter(s => s.id !== id);
+      saveState();
+      renderHistory();
+    });
+  });
+
+  list.querySelectorAll('.session-continue').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const id = btn.dataset.sessionId;
+      const target = (state.sessions || []).find(s => s.id === id);
+      if (!target) return;
+      // Close the drawer first so the quiz is visible.
+      if (document.getElementById('sidebar').classList.contains('open')) {
+        toggleSidebar();
+      }
+      resumeSession(target);
+    });
+  });
 }
 
 /* ---- Toolbox ---- */
@@ -1357,7 +1672,9 @@ function openToolbox() {
   state.toolbox.open = true;
   saveState();
   document.getElementById('toolbox').style.display = 'flex';
-  setToolboxTab(state.toolbox.tab || 'calc');
+  const validTabs = ['calc', 'duration', 'scratch', 'cheat'];
+  const tab = validTabs.includes(state.toolbox.tab) ? state.toolbox.tab : 'calc';
+  setToolboxTab(tab);
 }
 
 function closeToolbox() {
@@ -1382,7 +1699,6 @@ function renderToolboxBody(tab) {
   host.innerHTML = '';
   if (tab === 'calc') renderCalc(host);
   else if (tab === 'duration') renderDuration(host);
-  else if (tab === 'timer') renderTimer(host);
   else if (tab === 'scratch') renderScratch(host);
   else if (tab === 'cheat') renderCheat(host);
 }
@@ -1511,35 +1827,39 @@ function renderDuration(host) {
 
 /* ---- Timer ---- */
 
-let timerState = { qStart: null, sessionStart: null, tickHandle: null };
+let timerState = { qStart: null, sessionStart: null };
 
-let scratchText = ''; // per-question scratch, resets in showQuestion
+let mainTimerHandle = null;
 
-function renderTimer(host) {
-  host.innerHTML = `
-    <div class="tool-timer">
-      <div class="tool-timer-row"><span>This question</span><span id="timerQ">0s</span></div>
-      <div class="tool-timer-row"><span>This session</span><span id="timerS">0s</span></div>
-      <p class="tool-hint">Timers reset each question / session automatically.</p>
-    </div>
-  `;
-  if (timerState.tickHandle) clearInterval(timerState.tickHandle);
+function startMainTimer() {
+  if (mainTimerHandle) return;
   const tick = () => {
-    const qEl = document.getElementById('timerQ');
-    const sEl = document.getElementById('timerS');
-    if (!qEl || !sEl) {
-      clearInterval(timerState.tickHandle);
-      timerState.tickHandle = null;
-      return;
-    }
-    const q = timerState.qStart ? Date.now() - timerState.qStart : 0;
-    const s = timerState.sessionStart ? Date.now() - timerState.sessionStart : 0;
-    qEl.textContent = fmtSessionDuration(q);
-    sEl.textContent = fmtSessionDuration(s);
+    const qEl = document.getElementById('statTime');
+    const sEl = document.getElementById('statSession');
+    if (!qEl && !sEl) return;
+    const qMs = timerState.qStart ? Date.now() - timerState.qStart : 0;
+    const sMs = timerState.sessionStart ? Date.now() - timerState.sessionStart : 0;
+    if (qEl) qEl.textContent = fmtSessionDuration(qMs);
+    if (sEl) sEl.textContent = fmtSessionDuration(sMs);
   };
   tick();
-  timerState.tickHandle = setInterval(tick, 500);
+  mainTimerHandle = setInterval(tick, 500);
 }
+
+function stopMainTimer(resetSession = false) {
+  if (mainTimerHandle) {
+    clearInterval(mainTimerHandle);
+    mainTimerHandle = null;
+  }
+  const qEl = document.getElementById('statTime');
+  if (qEl) qEl.textContent = '0s';
+  if (resetSession) {
+    const sEl = document.getElementById('statSession');
+    if (sEl) sEl.textContent = '0s';
+  }
+}
+
+let scratchText = ''; // per-question scratch, resets in showQuestion
 
 /* ---- Scratchpad ---- */
 

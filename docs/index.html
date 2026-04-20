@@ -7,10 +7,11 @@
   <link rel="icon" href="favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=24">
-  <script src="app.js?v=24" defer></script>
+  <link rel="stylesheet" href="style.css?v=37">
+  <script src="app.js?v=37" defer></script>
 </head>
 <body>
+<div class="quiz-generated" id="quizGenerated" title="When the current quiz run was generated"></div>
 <div class="app">
   <div class="header">
     <div class="logo-mark">
@@ -47,6 +48,12 @@
     <div class="stat">
       <span>Accuracy <span class="stat-value accuracy">0%</span></span>
     </div>
+    <div class="stat">
+      <span>Question <span class="stat-value" id="statTime">0s</span></span>
+    </div>
+    <div class="stat">
+      <span>Session <span class="stat-value" id="statSession">0s</span></span>
+    </div>
   </div>
 
   <div class="question-card">
@@ -58,8 +65,14 @@
   <div class="explanation" id="explanation" style="display:none;"></div>
 
   <div class="actions">
-    <button class="btn btn-ghost" id="skipBtn">Skip</button>
-    <button class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+    <div class="quiz-controls" id="quizControls" style="display:none;">
+      <button class="btn btn-ghost quiz-control-btn" id="restartBtn" title="Restart this session from question 1">Start over</button>
+      <button class="btn btn-ghost quiz-control-btn quiz-control-quit" id="quitBtn" title="End this session and go back to landing">Quit</button>
+    </div>
+    <div class="quiz-main-actions">
+      <button class="btn btn-ghost" id="skipBtn">Skip</button>
+      <button class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+    </div>
   </div>
 
   <div class="footer">
@@ -70,11 +83,25 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="modalBackdrop" style="display:none;">
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modalCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="modalConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <div class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <h2>History</h2>
-    <button class="btn btn-ghost btn-close" id="sidebarCloseBtn">Close</button>
+    <div class="sidebar-header-actions">
+      <button class="btn btn-ghost" id="historyResetBtn" title="Reset streak, stats, and session list">Reset</button>
+      <button class="btn btn-ghost btn-close" id="sidebarCloseBtn">Close</button>
+    </div>
   </div>
   <div class="sidebar-list" id="historyList"></div>
 </div>
@@ -99,7 +126,6 @@
     <div class="toolbox-tabs" id="toolboxTabs">
       <button class="toolbox-tab" data-tab="calc" title="Calculator">&#128178;</button>
       <button class="toolbox-tab" data-tab="duration" title="Duration math">&#9203;</button>
-      <button class="toolbox-tab" data-tab="timer" title="Timer">&#128337;</button>
       <button class="toolbox-tab" data-tab="scratch" title="Scratchpad">&#128393;</button>
       <button class="toolbox-tab" data-tab="cheat" title="Cheat sheet">&#128214;</button>
     </div>
