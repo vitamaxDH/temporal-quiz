@@ -719,43 +719,62 @@ function toggleChip(arr, value) {
 
 const CUSTOM_CATEGORY_GROUPS = [
   {
-    label: 'Features',
+    label: 'Core Features',
     categories: [
       { id: 'Features_Workflows',               label: 'Workflows' },
       { id: 'Features_Activities',              label: 'Activities' },
-      { id: 'Features_Workers_and_Routing',     label: 'Workers & Routing' },
-      { id: 'Features_Messaging_and_Visibility', label: 'Messaging & Visibility' },
-      { id: 'Features_Data_and_Security',       label: 'Data & Security' },
+      { id: 'Features_Workers',                 label: 'Workers' },
+      { id: 'Features_TaskQueues',              label: 'Task Queues' },
+      { id: 'Features_Signals_Queries_Updates', label: 'Signals / Queries / Updates' },
+      { id: 'Features_Schedules',               label: 'Schedules' },
+      { id: 'Features_Timers_Retries',          label: 'Timers & Retries' },
       { id: 'Features_Nexus',                   label: 'Nexus' },
-      { id: 'Tags',                             label: 'Tags' },
-      { id: 'Features_Other',                   label: 'Other' },
     ],
   },
   {
-    label: 'Develop (SDKs)',
+    label: 'Execution & State',
     categories: [
-      { id: 'Develop',            label: 'Develop' },
-      { id: 'Develop_General',    label: 'General' },
-      { id: 'Develop_Go',         label: 'Go' },
-      { id: 'Develop_Java',       label: 'Java' },
-      { id: 'Develop_Python',     label: 'Python' },
-      { id: 'Develop_TypeScript', label: 'TypeScript' },
-      { id: 'Develop_Other_SDKs', label: 'Other SDKs' },
+      { id: 'Features_History',          label: 'History & Replay' },
+      { id: 'Features_WorkerVersioning', label: 'Worker Versioning' },
+      { id: 'Features_Composition',      label: 'Composition' },
+      { id: 'Features_Visibility',       label: 'Visibility' },
+      { id: 'Features_Export',           label: 'Export' },
     ],
   },
   {
-    label: 'Concepts & Tooling',
+    label: 'Data & Security',
     categories: [
-      { id: 'Evaluate_and_Concepts', label: 'Evaluate & Concepts' },
-      { id: 'CLI_and_References',    label: 'CLI & References' },
-      { id: 'AI_and_Cookbook',       label: 'AI & Cookbook' },
+      { id: 'Features_DataConversion',    label: 'Data Conversion' },
+      { id: 'Features_Security',          label: 'Security' },
+      { id: 'Features_ConnectivityRules', label: 'Connectivity Rules' },
     ],
   },
   {
     label: 'Operations',
     categories: [
-      { id: 'Self_Hosted_and_Ops', label: 'Self Hosted & Ops' },
-      { id: 'Temporal_Cloud',      label: 'Temporal Cloud' },
+      { id: 'Features_Namespaces',      label: 'Namespaces' },
+      { id: 'Operations_TemporalCloud', label: 'Temporal Cloud' },
+      { id: 'Operations_SelfHosted',    label: 'Self Hosted' },
+    ],
+  },
+  {
+    label: 'SDKs',
+    categories: [
+      { id: 'Develop', label: 'Develop (General)' },
+    ],
+  },
+  {
+    label: 'Tooling',
+    categories: [
+      { id: 'Tooling_CLI',         label: 'CLI' },
+      { id: 'Tooling_WebUI_API',   label: 'Web UI & API' },
+      { id: 'Tooling_AI_Cookbook', label: 'AI & Cookbook' },
+    ],
+  },
+  {
+    label: 'Concepts',
+    categories: [
+      { id: 'General_Concepts', label: 'General Concepts' },
     ],
   },
   {
