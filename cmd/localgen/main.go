@@ -25,9 +25,7 @@ func main() {
 	flag.Parse()
 
 	a := &scraper.Activities{
-		OutputDir: scraper.OutputDir,
-		Domain:    scraper.Domain,
-		Client:    &http.Client{},
+		Client: &http.Client{},
 	}
 
 	var docsPath string

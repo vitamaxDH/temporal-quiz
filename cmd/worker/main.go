@@ -24,8 +24,6 @@ func main() {
 	fmt.Println("Connected to Temporal!")
 
 	activities := &scraper.Activities{
-		OutputDir: scraper.OutputDir,
-		Domain:    scraper.Domain,
 		Client: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},

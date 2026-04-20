@@ -4,13 +4,10 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,137 +50,14 @@ type ActivitiesTestSuite struct {
 func (s *ActivitiesTestSuite) SetupTest() {
 	s.env = s.NewTestActivityEnvironment()
 	s.act = &Activities{
-		OutputDir: s.T().TempDir(),
-		Domain:    "127.0.0.1",
-		Client:    &http.Client{},
+		Client: &http.Client{},
 	}
-	s.env.RegisterActivity(s.act.FetchAndParse)
-	s.env.RegisterActivity(s.act.ProcessHTMLToText)
 	s.env.RegisterActivity(s.act.FetchDocsRepo)
 	s.env.RegisterActivity(s.act.ReadLocalDocs)
 }
 
 func TestActivitiesTestSuite(t *testing.T) {
 	suite.Run(t, new(ActivitiesTestSuite))
-}
-
-func (s *ActivitiesTestSuite) TestFetchAndParse_Success() {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, `<html><body>
-			<a href="/page1">Page 1</a>
-			<a href="/page2">Page 2</a>
-			<a href="https://external.com/nope">External</a>
-		</body></html>`)
-	}))
-	s.T().Cleanup(server.Close)
-
-	// Domain must include the port to match the test server's host.
-	parsed, _ := url.Parse(server.URL)
-	s.act.Domain = parsed.Host
-	val, err := s.env.ExecuteActivity(s.act.FetchAndParse, server.URL)
-	require.NoError(s.T(), err)
-
-	var urls []string
-	require.NoError(s.T(), val.Get(&urls))
-	assert.Len(s.T(), urls, 2)
-
-	files, _ := filepath.Glob(filepath.Join(s.act.OutputDir, "*.html"))
-	assert.Len(s.T(), files, 1)
-}
-
-func (s *ActivitiesTestSuite) TestFetchAndParse_NonHTML() {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{"not":"html"}`)
-	}))
-	s.T().Cleanup(server.Close)
-
-	val, err := s.env.ExecuteActivity(s.act.FetchAndParse, server.URL)
-	require.NoError(s.T(), err)
-
-	var urls []string
-	require.NoError(s.T(), val.Get(&urls))
-	assert.Empty(s.T(), urls)
-}
-
-func (s *ActivitiesTestSuite) TestFetchAndParse_404() {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	s.T().Cleanup(server.Close)
-
-	val, err := s.env.ExecuteActivity(s.act.FetchAndParse, server.URL)
-	require.NoError(s.T(), err)
-
-	var urls []string
-	require.NoError(s.T(), val.Get(&urls))
-	assert.Empty(s.T(), urls)
-}
-
-func (s *ActivitiesTestSuite) TestFetchAndParse_FiltersExtensions() {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, `<html><body>
-			<a href="/good-page">Good</a>
-			<a href="/image.png">PNG</a>
-			<a href="/doc.pdf">PDF</a>
-			<a href="/archive.zip">ZIP</a>
-			<a href="/page#section">With Fragment</a>
-		</body></html>`)
-	}))
-	s.T().Cleanup(server.Close)
-
-	parsed, _ := url.Parse(server.URL)
-	s.act.Domain = parsed.Host
-	val, err := s.env.ExecuteActivity(s.act.FetchAndParse, server.URL)
-	require.NoError(s.T(), err)
-
-	var urls []string
-	require.NoError(s.T(), val.Get(&urls))
-	assert.Len(s.T(), urls, 2)
-	for _, u := range urls {
-		assert.NotContains(s.T(), u, "#")
-		assert.NotContains(s.T(), u, ".png")
-		assert.NotContains(s.T(), u, ".pdf")
-		assert.NotContains(s.T(), u, ".zip")
-	}
-}
-
-func (s *ActivitiesTestSuite) TestProcessHTMLToText_Success() {
-	html1 := `<html><head><title>Develop Go Workers</title></head>
-		<body><main><h1>Go Workers</h1><p>Content about workers.</p></main>
-		<nav>nav stuff</nav></body></html>`
-	html2 := `<html><head><title>Cloud Overview</title></head>
-		<body><main><h1>Cloud</h1><p>Cloud content.</p></main></body></html>`
-
-	require.NoError(s.T(), os.WriteFile(
-		filepath.Join(s.act.OutputDir, "develop_go_workers.html"),
-		[]byte(html1), 0o644))
-	require.NoError(s.T(), os.WriteFile(
-		filepath.Join(s.act.OutputDir, "cloud-overview.html"),
-		[]byte(html2), 0o644))
-
-	val, err := s.env.ExecuteActivity(s.act.ProcessHTMLToText)
-	require.NoError(s.T(), err)
-
-	var result string
-	require.NoError(s.T(), val.Get(&result))
-	assert.Contains(s.T(), result, "2 HTML files")
-	assert.Contains(s.T(), result, "2 Markdown buckets")
-
-	txtDir := strings.TrimSuffix(s.act.OutputDir, "_html") + "_txt"
-	files, _ := filepath.Glob(filepath.Join(txtDir, "*.txt"))
-	assert.Len(s.T(), files, 2)
-}
-
-func (s *ActivitiesTestSuite) TestProcessHTMLToText_NoFiles() {
-	val, err := s.env.ExecuteActivity(s.act.ProcessHTMLToText)
-	require.NoError(s.T(), err)
-
-	var result string
-	require.NoError(s.T(), val.Get(&result))
-	assert.Contains(s.T(), result, "No HTML files")
 }
 
 func (s *ActivitiesTestSuite) TestFetchDocsRepo_Success() {
