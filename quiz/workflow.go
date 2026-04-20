@@ -8,6 +8,89 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+// CategoryPipelineWorkflow runs GenerateQuiz for a single category and, as
+// soon as those questions land, fans out EvaluateQuiz batches for just that
+// category. Running this per-category means evaluation for finished
+// categories overlaps with still-running generation elsewhere, shaving the
+// total wall-clock down to max(gen_i + eval_i) instead of
+// max(gen) + max(eval_batches).
+func CategoryPipelineWorkflow(ctx workflow.Context, input CategoryPipelineInput) (CategoryPipelineResult, error) {
+	logger := workflow.GetLogger(ctx)
+
+	genOpts := workflow.ActivityOptions{
+		StartToCloseTimeout: 5 * time.Minute,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 3,
+			InitialInterval: 5 * time.Second,
+		},
+	}
+	evalOpts := workflow.ActivityOptions{
+		StartToCloseTimeout: 5 * time.Minute,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 2,
+			InitialInterval: 5 * time.Second,
+		},
+	}
+
+	result := CategoryPipelineResult{Category: input.Bucket.Category}
+
+	genCtx := workflow.WithActivityOptions(ctx, genOpts)
+	var questions []QuizQuestion
+	if err := workflow.ExecuteActivity(genCtx, "GenerateQuiz", input.Bucket).Get(ctx, &questions); err != nil {
+		return result, err
+	}
+	result.PreEval = questions
+
+	if input.SkipEval || len(questions) == 0 {
+		result.Passed = questions
+		result.PassedCount = len(questions)
+		return result, nil
+	}
+
+	// Fan out eval batches for this category only. Each batch is its own
+	// activity so Claude calls run in parallel.
+	evalCtx := workflow.WithActivityOptions(ctx, evalOpts)
+	var evalFutures []workflow.Future
+	for i := 0; i < len(questions); i += EvalBatchSize {
+		end := i + EvalBatchSize
+		if end > len(questions) {
+			end = len(questions)
+		}
+		evalFutures = append(evalFutures, workflow.ExecuteActivity(evalCtx, "EvaluateQuiz", questions[i:end]))
+	}
+
+	var passed []QuizQuestion
+	passedCount, failedCount := 0, 0
+	evalHadFailure := false
+	for _, f := range evalFutures {
+		var out EvalOutput
+		if err := f.Get(ctx, &out); err != nil {
+			logger.Warn("Eval batch failed, keeping questions unfiltered for this batch",
+				"category", input.Bucket.Category, "error", err)
+			evalHadFailure = true
+			continue
+		}
+		passed = append(passed, out.Passed...)
+		passedCount += len(out.Passed)
+		failedCount += len(out.Failed)
+	}
+
+	if evalHadFailure && passedCount == 0 {
+		// Eval fully failed for this category — fall back to the pre-eval set
+		// so we don't lose the whole category on a transient Claude hiccup.
+		logger.Warn("All eval batches failed for category; using unfiltered set",
+			"category", input.Bucket.Category)
+		result.Passed = questions
+		result.PassedCount = len(questions)
+		return result, nil
+	}
+
+	result.Passed = passed
+	result.PassedCount = passedCount
+	result.FailedCount = failedCount
+	return result, nil
+}
+
 // QuizGeneratorWorkflow generates quiz questions for all doc categories.
 // params controls difficulty mix, question counts, and category filters.
 func QuizGeneratorWorkflow(ctx workflow.Context, params QuizGenParams) (int, error) {
@@ -44,14 +127,6 @@ func QuizGeneratorWorkflow(ctx workflow.Context, params QuizGenParams) (int, err
 		RetryPolicy:         &temporal.RetryPolicy{MaximumAttempts: 2},
 	}
 
-	genOpts := workflow.ActivityOptions{
-		StartToCloseTimeout: 5 * time.Minute,
-		RetryPolicy: &temporal.RetryPolicy{
-			MaximumAttempts: 3,
-			InitialInterval: 5 * time.Second,
-		},
-	}
-
 	writeOpts := workflow.ActivityOptions{
 		StartToCloseTimeout: 1 * time.Minute,
 		RetryPolicy:         &temporal.RetryPolicy{MaximumAttempts: 2},
@@ -81,10 +156,10 @@ func QuizGeneratorWorkflow(ctx workflow.Context, params QuizGenParams) (int, err
 
 	logger.Info("Generating quizzes", "categories", len(buckets), "easy", params.EasyCount, "med", params.MedCount, "hard", params.HardCount, "nightmare", params.NightmareCount)
 
-	// Step 2: Fan-out quiz generation per category
-	// Priority categories get a larger pool so more questions survive eval.
-	genCtx := workflow.WithActivityOptions(ctx, genOpts)
-	futures := make([]workflow.Future, len(buckets))
+	// Step 2: Fan out one child workflow per category. Each child owns its
+	// own gen → eval pipeline, so category A's eval can start the instant
+	// category A's gen finishes without waiting for the rest.
+	childFutures := make([]workflow.ChildWorkflowFuture, len(buckets))
 	for i, bucket := range buckets {
 		mult := 1
 		if IsPriorityCategory(bucket.Category) {
@@ -95,62 +170,61 @@ func QuizGeneratorWorkflow(ctx workflow.Context, params QuizGenParams) (int, err
 		bucket.HardCount = params.HardCount * mult
 		bucket.NightmareCount = params.NightmareCount * mult
 		buckets[i] = bucket
-		futures[i] = workflow.ExecuteActivity(genCtx, "GenerateQuiz", bucket)
+
+		childOpts := workflow.ChildWorkflowOptions{
+			WorkflowID: fmt.Sprintf("category-pipeline-%s-%s", bucket.Category, workflow.GetInfo(ctx).WorkflowExecution.RunID),
+			RetryPolicy: &temporal.RetryPolicy{
+				MaximumAttempts: 2,
+			},
+		}
+		childCtx := workflow.WithChildOptions(ctx, childOpts)
+		childFutures[i] = workflow.ExecuteChildWorkflow(childCtx, "CategoryPipelineWorkflow", CategoryPipelineInput{
+			Bucket:   bucket,
+			SkipEval: params.SkipEval,
+		})
 	}
 
-	// Step 3: Fan-in results, keeping per-category bucketing for later recovery.
+	// Step 3: Fan in child workflow results.
 	var allQuestions []QuizQuestion
 	preEvalByCategory := make(map[string][]QuizQuestion)
-	for i, f := range futures {
-		var questions []QuizQuestion
-		if err := f.Get(ctx, &questions); err != nil {
-			logger.Warn("Failed to generate quiz", "category", buckets[i].Category, "error", err)
+	totalPassed, totalFailed := 0, 0
+	for i, f := range childFutures {
+		var res CategoryPipelineResult
+		if err := f.Get(ctx, &res); err != nil {
+			logger.Warn("Category pipeline failed", "category", buckets[i].Category, "error", err)
 			continue
 		}
-		preEvalByCategory[buckets[i].Category] = questions
-		allQuestions = append(allQuestions, questions...)
+		preEvalByCategory[res.Category] = res.PreEval
+		allQuestions = append(allQuestions, res.Passed...)
+		totalPassed += res.PassedCount
+		totalFailed += res.FailedCount
 	}
 
 	if len(allQuestions) == 0 {
 		return 0, nil
 	}
 
-	// Step 3.5: Evaluate quality (unless skipped)
 	if !params.SkipEval {
-		evalOpts := workflow.ActivityOptions{
-			StartToCloseTimeout: 10 * time.Minute,
-			RetryPolicy: &temporal.RetryPolicy{
-				MaximumAttempts: 2,
-				InitialInterval: 5 * time.Second,
-			},
-		}
-		evalCtx := workflow.WithActivityOptions(ctx, evalOpts)
-		var evalOutput EvalOutput
-		if err := workflow.ExecuteActivity(evalCtx, "EvaluateQuiz", allQuestions).Get(ctx, &evalOutput); err != nil {
-			logger.Warn("Quiz evaluation failed, using unfiltered questions", "error", err)
-		} else {
-			logger.Info("Quiz evaluation complete", "passed", len(evalOutput.Passed), "failed", len(evalOutput.Failed))
-			allQuestions = evalOutput.Passed
+		logger.Info("Quiz evaluation complete", "passed", totalPassed, "failed", totalFailed)
 
-			// Recovery: if a priority category lost ALL its questions to the
-			// eval filter, restore its pre-eval set so daily runs always show
-			// the core topics even when eval is strict.
-			passedCats := make(map[string]bool)
-			for _, q := range allQuestions {
-				passedCats[q.Category] = true
+		// Recovery: if a priority category lost ALL its questions to the
+		// eval filter, restore its pre-eval set so daily runs always show
+		// the core topics even when eval is strict.
+		passedCats := make(map[string]bool)
+		for _, q := range allQuestions {
+			passedCats[q.Category] = true
+		}
+		for _, pri := range PriorityCategories {
+			if passedCats[pri] {
+				continue
 			}
-			for _, pri := range PriorityCategories {
-				if passedCats[pri] {
-					continue
-				}
-				recovered := preEvalByCategory[pri]
-				if len(recovered) == 0 {
-					continue
-				}
-				logger.Warn("Priority category lost all questions to eval; restoring pre-eval set",
-					"category", pri, "restored", len(recovered))
-				allQuestions = append(allQuestions, recovered...)
+			recovered := preEvalByCategory[pri]
+			if len(recovered) == 0 {
+				continue
 			}
+			logger.Warn("Priority category lost all questions to eval; restoring pre-eval set",
+				"category", pri, "restored", len(recovered))
+			allQuestions = append(allQuestions, recovered...)
 		}
 	}
 

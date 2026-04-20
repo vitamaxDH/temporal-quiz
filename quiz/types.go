@@ -102,15 +102,52 @@ type GenerateQuizInput struct {
 	NightmareCount int
 }
 
+// CategoryPipelineInput drives the per-category child workflow that runs
+// GenerateQuiz followed immediately by EvaluateQuiz batches for just that
+// category, so evaluation for finished categories overlaps with still-running
+// generation elsewhere.
+type CategoryPipelineInput struct {
+	Bucket   GenerateQuizInput
+	SkipEval bool
+}
+
+// CategoryPipelineResult is what each CategoryPipelineWorkflow child returns.
+// PreEval is the raw generated set, kept so the parent can recover priority
+// categories that lose everything to the eval filter. Passed is the post-eval
+// filtered set (or the raw set when SkipEval is true).
+type CategoryPipelineResult struct {
+	Category    string
+	PreEval     []QuizQuestion
+	Passed      []QuizQuestion
+	PassedCount int
+	FailedCount int
+}
+
 type claudeRequest struct {
-	Model       string           `json:"model"`
-	MaxTokens   int              `json:"max_tokens"`
-	Messages    []claudeMessage  `json:"messages"`
+	Model     string              `json:"model"`
+	MaxTokens int                 `json:"max_tokens"`
+	System    []claudeSystemBlock `json:"system,omitempty"`
+	Messages  []claudeMessage     `json:"messages"`
 }
 
 type claudeMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
+}
+
+// claudeSystemBlock holds one entry of the system prompt array. When
+// CacheControl is set to {Type: "ephemeral"}, Anthropic caches the block
+// (and everything before it) for ~5 minutes at ~10% of the normal input
+// rate. We use a single cacheable block for the stable generation /
+// evaluation instructions; the variable user message is left uncached.
+type claudeSystemBlock struct {
+	Type         string              `json:"type"`
+	Text         string              `json:"text"`
+	CacheControl *claudeCacheControl `json:"cache_control,omitempty"`
+}
+
+type claudeCacheControl struct {
+	Type string `json:"type"` // "ephemeral"
 }
 
 type claudeResponse struct {

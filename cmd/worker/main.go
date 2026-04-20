@@ -48,6 +48,7 @@ func main() {
 	}
 
 	w.RegisterWorkflow(quiz.QuizGeneratorWorkflow)
+	w.RegisterWorkflow(quiz.CategoryPipelineWorkflow)
 	w.RegisterWorkflow(quiz.DailyPipelineWorkflow)
 	w.RegisterActivity(quizActivities)
 

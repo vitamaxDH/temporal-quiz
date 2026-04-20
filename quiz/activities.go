@@ -64,29 +64,30 @@ func (a *QuizActivities) GenerateQuiz(ctx context.Context, input GenerateQuizInp
 	}
 
 	bucketText := string(data)
-	if len(bucketText) > 30000 {
-		bucketText = bucketText[:30000]
+	// Cap per-call context. 20k is plenty of material for a single bucket
+	// at our question counts, and keeps input-token costs in check.
+	if len(bucketText) > 20000 {
+		bucketText = bucketText[:20000]
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	categoryLower := strings.ToLower(strings.ReplaceAll(input.Category, " ", "_"))
 
 	type diffSpec struct {
-		name   string
-		count  int
-		prompt func(int, string) string
+		name  string
+		count int
 	}
 
 	diffs := []diffSpec{
-		{"easy", input.EasyCount, EasyPrompt},
-		{"med", input.MedCount, MedPrompt},
-		{"hard", input.HardCount, HardPrompt},
-		{"nightmare", input.NightmareCount, NightmarePrompt},
+		{"easy", input.EasyCount},
+		{"med", input.MedCount},
+		{"hard", input.HardCount},
+		{"nightmare", input.NightmareCount},
 	}
 
 	var questions []QuizQuestion
 	for _, d := range diffs {
-		raw, err := a.callClaude(ctx, d.prompt(d.count, bucketText))
+		raw, err := a.callClaudeCached(ctx, GenerationSystem(d.name), GenerationUserMsg(d.count, d.name, bucketText))
 		if err != nil {
 			// If Claude can't generate questions (e.g. thin content), skip this tier
 			fmt.Printf("Warning: skipping %s for %s: %v\n", d.name, input.Category, err)
@@ -110,14 +111,27 @@ func (a *QuizActivities) GenerateQuiz(ctx context.Context, input GenerateQuizInp
 	return questions, nil
 }
 
-// callClaudeRaw sends a prompt to the Anthropic Messages API and returns
-// the cleaned JSON array string from the response.
-func (a *QuizActivities) callClaudeRaw(ctx context.Context, prompt string) (string, error) {
+// callClaudeCachedRaw sends a system + user prompt to the Anthropic Messages
+// API and returns the cleaned JSON array string from the response.
+//
+// The system prompt is sent as a cacheable block. Anthropic caches stable
+// system content for ~5 minutes at ~10% of normal input cost, which lets
+// us reuse the ~1.5k-token instruction block across 100+ calls per
+// pipeline run. The variable user message (bucket text or questions JSON)
+// is left uncached.
+func (a *QuizActivities) callClaudeCachedRaw(ctx context.Context, systemPrompt, userMsg string) (string, error) {
 	reqBody := claudeRequest{
 		Model:     a.Model,
 		MaxTokens: 8192,
+		System: []claudeSystemBlock{
+			{
+				Type:         "text",
+				Text:         systemPrompt,
+				CacheControl: &claudeCacheControl{Type: "ephemeral"},
+			},
+		},
 		Messages: []claudeMessage{
-			{Role: "user", Content: prompt},
+			{Role: "user", Content: userMsg},
 		},
 	}
 
@@ -187,9 +201,10 @@ func (a *QuizActivities) callClaudeRaw(ctx context.Context, prompt string) (stri
 	return cleaned, nil
 }
 
-// callClaude sends a prompt and parses the returned JSON array of rawQuestion.
-func (a *QuizActivities) callClaude(ctx context.Context, prompt string) ([]rawQuestion, error) {
-	cleaned, err := a.callClaudeRaw(ctx, prompt)
+// callClaudeCached calls the Messages API with a cacheable system prompt
+// and returns a parsed slice of rawQuestion.
+func (a *QuizActivities) callClaudeCached(ctx context.Context, systemPrompt, userMsg string) ([]rawQuestion, error) {
+	cleaned, err := a.callClaudeCachedRaw(ctx, systemPrompt, userMsg)
 	if err != nil {
 		return nil, err
 	}
@@ -202,90 +217,78 @@ func (a *QuizActivities) callClaude(ctx context.Context, prompt string) ([]rawQu
 	return raw, nil
 }
 
-const evalBatchSize = 10
+// EvalBatchSize is the max questions the workflow bundles into a single
+// EvaluateQuiz activity call. Chosen to keep each Claude call well under
+// the 5-minute activity timeout while still amortizing prompt-cache hits
+// across a meaningful chunk of questions.
+const EvalBatchSize = 20
 
-// EvaluateQuiz sends questions to Claude for quality evaluation in batches.
-// Returns passed/failed questions and detailed eval results.
+// EvaluateQuiz sends a single batch of questions to Claude for quality
+// evaluation and returns the passed/failed split plus per-question scores.
+// The workflow is responsible for splitting the full set into batches of
+// size <= EvalBatchSize and fanning them out in parallel.
 func (a *QuizActivities) EvaluateQuiz(ctx context.Context, questions []QuizQuestion) (EvalOutput, error) {
-	var allResults []EvalResult
-
-	// Build a map for quick lookup
-	byID := make(map[string]QuizQuestion, len(questions))
-	for _, q := range questions {
-		byID[q.ID] = q
+	if len(questions) == 0 {
+		return EvalOutput{}, nil
 	}
 
-	// Process in batches
-	for i := 0; i < len(questions); i += evalBatchSize {
-		end := i + evalBatchSize
-		if end > len(questions) {
-			end = len(questions)
+	// Build a compact JSON representation for evaluation
+	type evalInput struct {
+		ID          string   `json:"id"`
+		Difficulty  string   `json:"difficulty"`
+		Question    string   `json:"question"`
+		Choices     []Choice `json:"choices"`
+		Answer      string   `json:"answer"`
+		Explanation string   `json:"explanation"`
+	}
+	inputs := make([]evalInput, len(questions))
+	for j, q := range questions {
+		inputs[j] = evalInput{
+			ID:          q.ID,
+			Difficulty:  q.Difficulty,
+			Question:    q.Question,
+			Choices:     q.Choices,
+			Answer:      q.Answer,
+			Explanation: q.Explanation,
 		}
-		batch := questions[i:end]
+	}
 
-		// Build a compact JSON representation for evaluation
-		type evalInput struct {
-			ID          string `json:"id"`
-			Difficulty  string `json:"difficulty"`
-			Question    string `json:"question"`
-			Choices     []Choice `json:"choices"`
-			Answer      string `json:"answer"`
-			Explanation string `json:"explanation"`
-		}
-		inputs := make([]evalInput, len(batch))
-		for j, q := range batch {
-			inputs[j] = evalInput{
-				ID:          q.ID,
-				Difficulty:  q.Difficulty,
-				Question:    q.Question,
-				Choices:     q.Choices,
-				Answer:      q.Answer,
-				Explanation: q.Explanation,
-			}
-		}
+	inputJSON, err := json.Marshal(inputs)
+	if err != nil {
+		return EvalOutput{}, fmt.Errorf("marshal eval input: %w", err)
+	}
 
-		inputJSON, err := json.Marshal(inputs)
-		if err != nil {
-			return EvalOutput{}, fmt.Errorf("marshal eval input: %w", err)
+	results := make([]EvalResult, 0, len(questions))
+	cleaned, err := a.callClaudeCachedRaw(ctx, EvalSystem, EvalUserMsg(string(inputJSON)))
+	if err != nil {
+		fmt.Printf("Warning: eval batch of %d failed: %v, passing all\n", len(questions), err)
+		for _, q := range questions {
+			results = append(results, EvalResult{
+				QuestionID: q.ID,
+				Scores:     EvalScores{3, 3, 3, 3, 3},
+				Pass:       true,
+			})
 		}
-
-		cleaned, err := a.callClaudeRaw(ctx, EvalPrompt(string(inputJSON)))
-		if err != nil {
-			fmt.Printf("Warning: eval batch %d-%d failed: %v, passing all\n", i, end, err)
-			for _, q := range batch {
-				allResults = append(allResults, EvalResult{
-					QuestionID: q.ID,
-					Scores:     EvalScores{3, 3, 3, 3, 3},
-					Pass:       true,
-				})
-			}
-			continue
+	} else if err := json.Unmarshal([]byte(cleaned), &results); err != nil {
+		fmt.Printf("Warning: eval batch of %d parse failed: %v, passing all\n", len(questions), err)
+		results = results[:0]
+		for _, q := range questions {
+			results = append(results, EvalResult{
+				QuestionID: q.ID,
+				Scores:     EvalScores{3, 3, 3, 3, 3},
+				Pass:       true,
+			})
 		}
-
-		var batchResults []EvalResult
-		if err := json.Unmarshal([]byte(cleaned), &batchResults); err != nil {
-			fmt.Printf("Warning: eval batch %d-%d parse failed: %v, passing all\n", i, end, err)
-			for _, q := range batch {
-				allResults = append(allResults, EvalResult{
-					QuestionID: q.ID,
-					Scores:     EvalScores{3, 3, 3, 3, 3},
-					Pass:       true,
-				})
-			}
-			continue
-		}
-
-		allResults = append(allResults, batchResults...)
 	}
 
 	// Split into passed/failed
-	passSet := make(map[string]bool, len(allResults))
-	for _, r := range allResults {
+	passSet := make(map[string]bool, len(results))
+	for _, r := range results {
 		passSet[r.QuestionID] = r.Pass
 	}
 
 	var output EvalOutput
-	output.Results = allResults
+	output.Results = results
 	for _, q := range questions {
 		if passSet[q.ID] {
 			output.Passed = append(output.Passed, q)
