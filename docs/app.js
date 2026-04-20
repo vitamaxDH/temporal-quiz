@@ -448,23 +448,115 @@ function toggleChip(arr, value) {
   saveState();
 }
 
+const CUSTOM_CATEGORY_GROUPS = [
+  {
+    label: 'Features',
+    categories: [
+      { id: 'Features_Workflows',               label: 'Workflows' },
+      { id: 'Features_Activities',              label: 'Activities' },
+      { id: 'Features_Workers_and_Routing',     label: 'Workers & Routing' },
+      { id: 'Features_Messaging_and_Visibility', label: 'Messaging & Visibility' },
+      { id: 'Features_Data_and_Security',       label: 'Data & Security' },
+      { id: 'Features_Nexus',                   label: 'Nexus' },
+      { id: 'Tags',                             label: 'Tags' },
+      { id: 'Features_Other',                   label: 'Other' },
+    ],
+  },
+  {
+    label: 'Develop (SDKs)',
+    categories: [
+      { id: 'Develop',            label: 'Develop' },
+      { id: 'Develop_General',    label: 'General' },
+      { id: 'Develop_Go',         label: 'Go' },
+      { id: 'Develop_Java',       label: 'Java' },
+      { id: 'Develop_Python',     label: 'Python' },
+      { id: 'Develop_TypeScript', label: 'TypeScript' },
+      { id: 'Develop_Other_SDKs', label: 'Other SDKs' },
+    ],
+  },
+  {
+    label: 'Concepts & Tooling',
+    categories: [
+      { id: 'Evaluate_and_Concepts', label: 'Evaluate & Concepts' },
+      { id: 'CLI_and_References',    label: 'CLI & References' },
+      { id: 'AI_and_Cookbook',       label: 'AI & Cookbook' },
+    ],
+  },
+  {
+    label: 'Operations',
+    categories: [
+      { id: 'Self_Hosted_and_Ops', label: 'Self Hosted & Ops' },
+      { id: 'Temporal_Cloud',      label: 'Temporal Cloud' },
+    ],
+  },
+  {
+    label: 'Other',
+    categories: [
+      { id: 'Miscellaneous', label: 'Miscellaneous' },
+    ],
+  },
+];
+
 function renderCustomCategories() {
   const host = document.getElementById('customCats');
   if (!host) return;
   host.innerHTML = '';
-  const cats = manifest?.categories?.map(c => c.category) ?? [];
-  cats.forEach(cat => {
+
+  const manifestIds = new Set((manifest?.categories ?? []).map(c => c.category));
+  const renderedIds = new Set();
+
+  const makePill = (id, label) => {
     const pill = document.createElement('div');
     pill.className = 'pill';
-    if (customConfig.categories.includes(cat)) pill.classList.add('active');
-    pill.textContent = formatCategoryLabel(cat);
-    pill.title = formatCategoryLabel(cat);
+    if (customConfig.categories.includes(id)) pill.classList.add('active');
+    pill.textContent = label;
+    pill.title = formatCategoryLabel(id);
     pill.addEventListener('click', () => {
-      toggleChip(customConfig.categories, cat);
+      toggleChip(customConfig.categories, id);
       pill.classList.toggle('active');
     });
-    host.appendChild(pill);
+    return pill;
+  };
+
+  CUSTOM_CATEGORY_GROUPS.forEach(group => {
+    const present = group.categories.filter(c => manifestIds.has(c.id));
+    if (present.length === 0) return;
+
+    const groupEl = document.createElement('div');
+    groupEl.className = 'customize-group';
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'customize-group-label';
+    labelEl.textContent = group.label;
+    groupEl.appendChild(labelEl);
+
+    const row = document.createElement('div');
+    row.className = 'customize-group-row';
+    present.forEach(c => {
+      row.appendChild(makePill(c.id, c.label));
+      renderedIds.add(c.id);
+    });
+    groupEl.appendChild(row);
+    host.appendChild(groupEl);
   });
+
+  // Catch-all: any manifest category not in any known group
+  const ungrouped = [...manifestIds].filter(id => !renderedIds.has(id)).sort();
+  if (ungrouped.length > 0) {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'customize-group';
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'customize-group-label';
+    labelEl.textContent = 'More';
+    groupEl.appendChild(labelEl);
+
+    const row = document.createElement('div');
+    row.className = 'customize-group-row';
+    ungrouped.forEach(id => row.appendChild(makePill(id, formatCategoryLabel(id))));
+    groupEl.appendChild(row);
+    host.appendChild(groupEl);
+  }
 }
 
 function renderCustomDifficulties() {
