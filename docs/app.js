@@ -1674,9 +1674,10 @@ function renderHistory() {
       summary = 'Daily Mix';
     }
 
-    const inner = s.history.length === 0
+    const hist = Array.isArray(s.history) ? s.history : [];
+    const inner = hist.length === 0
       ? '<p class="history-empty">No questions answered.</p>'
-      : s.history.map(h => {
+      : hist.map(h => {
           const sub = h.subcategory ? ` &middot; ${escapeHtml(h.subcategory)}` : '';
           return `
             <div class="history-item ${h.correct ? 'correct' : 'wrong'}">
