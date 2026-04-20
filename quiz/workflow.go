@@ -82,24 +82,32 @@ func QuizGeneratorWorkflow(ctx workflow.Context, params QuizGenParams) (int, err
 	logger.Info("Generating quizzes", "categories", len(buckets), "easy", params.EasyCount, "med", params.MedCount, "hard", params.HardCount, "nightmare", params.NightmareCount)
 
 	// Step 2: Fan-out quiz generation per category
+	// Priority categories get a larger pool so more questions survive eval.
 	genCtx := workflow.WithActivityOptions(ctx, genOpts)
 	futures := make([]workflow.Future, len(buckets))
 	for i, bucket := range buckets {
-		bucket.EasyCount = params.EasyCount
-		bucket.MedCount = params.MedCount
-		bucket.HardCount = params.HardCount
-		bucket.NightmareCount = params.NightmareCount
+		mult := 1
+		if IsPriorityCategory(bucket.Category) {
+			mult = PriorityCountMultiplier
+		}
+		bucket.EasyCount = params.EasyCount * mult
+		bucket.MedCount = params.MedCount * mult
+		bucket.HardCount = params.HardCount * mult
+		bucket.NightmareCount = params.NightmareCount * mult
+		buckets[i] = bucket
 		futures[i] = workflow.ExecuteActivity(genCtx, "GenerateQuiz", bucket)
 	}
 
-	// Step 3: Fan-in results
+	// Step 3: Fan-in results, keeping per-category bucketing for later recovery.
 	var allQuestions []QuizQuestion
+	preEvalByCategory := make(map[string][]QuizQuestion)
 	for i, f := range futures {
 		var questions []QuizQuestion
 		if err := f.Get(ctx, &questions); err != nil {
 			logger.Warn("Failed to generate quiz", "category", buckets[i].Category, "error", err)
 			continue
 		}
+		preEvalByCategory[buckets[i].Category] = questions
 		allQuestions = append(allQuestions, questions...)
 	}
 
@@ -123,6 +131,26 @@ func QuizGeneratorWorkflow(ctx workflow.Context, params QuizGenParams) (int, err
 		} else {
 			logger.Info("Quiz evaluation complete", "passed", len(evalOutput.Passed), "failed", len(evalOutput.Failed))
 			allQuestions = evalOutput.Passed
+
+			// Recovery: if a priority category lost ALL its questions to the
+			// eval filter, restore its pre-eval set so daily runs always show
+			// the core topics even when eval is strict.
+			passedCats := make(map[string]bool)
+			for _, q := range allQuestions {
+				passedCats[q.Category] = true
+			}
+			for _, pri := range PriorityCategories {
+				if passedCats[pri] {
+					continue
+				}
+				recovered := preEvalByCategory[pri]
+				if len(recovered) == 0 {
+					continue
+				}
+				logger.Warn("Priority category lost all questions to eval; restoring pre-eval set",
+					"category", pri, "restored", len(recovered))
+				allQuestions = append(allQuestions, recovered...)
+			}
 		}
 	}
 

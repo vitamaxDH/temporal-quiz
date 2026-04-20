@@ -1,12 +1,52 @@
 package quiz
 
+import "slices"
+
 const (
 	TaskQueue              = "scraper-task-queue"
 	DefaultModel           = "claude-sonnet-4-6"
 	DefaultQuestionsPerCat = 10
 	DefaultOutputDir       = "web/quizzes"
 	BucketDir              = "temporal_docs_txt"
+
+	// Multiplier applied to per-difficulty counts for PriorityCategories.
+	// Bigger pool -> more questions survive the eval filter -> priority
+	// categories keep showing up in daily runs.
+	PriorityCountMultiplier = 2
 )
+
+// PriorityCategories are the core Temporal topics that MUST have coverage
+// in every daily run. Based on the structure of
+// https://github.com/temporalio/documentation and the concepts every
+// Temporal developer encounters first:
+//
+//   - Workflows (the primitive)
+//   - Activities (the other half)
+//   - Workers & Routing (where code runs)
+//   - Messaging & Visibility (signals / queries / updates / search attrs)
+//   - Data & Security (data converter, payload codec, auth)
+//   - Nexus (cross-namespace typed RPCs)
+//   - Features Other (retry policies, schedules, patching)
+//   - Evaluate & Concepts (foundational encyclopedia)
+//
+// QuizGeneratorWorkflow generates more questions per priority bucket and
+// falls back to pre-eval output if the eval filter zeros a priority
+// category, so coverage is guaranteed even when eval is strict.
+var PriorityCategories = []string{
+	"Features_Workflows",
+	"Features_Activities",
+	"Features_Workers_and_Routing",
+	"Features_Messaging_and_Visibility",
+	"Features_Data_and_Security",
+	"Features_Nexus",
+	"Features_Other",
+	"Evaluate_and_Concepts",
+}
+
+// IsPriorityCategory reports whether the given category is in PriorityCategories.
+func IsPriorityCategory(cat string) bool {
+	return slices.Contains(PriorityCategories, cat)
+}
 
 type Choice struct {
 	Key  string `json:"key"`

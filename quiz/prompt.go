@@ -18,6 +18,10 @@ CHOICE QUALITY (critical — avoid these MCQ tells):
 - The correct answer must NOT be the longest, most hedged, most qualified, or most "textbook-sounding" option. Wrong answers should not be noticeably terser.
 - Rotate which letter is correct across the question set so A/B/C/D are roughly evenly distributed. Do NOT default to a single letter.
 
+TOPICAL SPREAD:
+- If the documentation covers a core Temporal primitive (Workflows, Activities, Workers, Task Queues, Signals, Queries, Updates, Nexus, Data Converter, Retry Policies, Schedules, Child Workflows, Continue-As-New, Versioning, etc.), spread the questions across a diverse set of sub-topics — definition, lifecycle, common APIs, typical usage, and common pitfalls — rather than clustering on one narrow aspect.
+- Operator-facing concepts matter too. When the docs touch on Namespaces, connectivity and TLS, mTLS client certificates, Temporal Cloud networking, private link / IP allowlists, cluster topology, task queue routing, visibility store, cross-namespace Nexus endpoints, dual-visibility migration, API keys, RBAC roles, or any other concern someone running Temporal in production would need to reason about, include at least one question on the operator angle.
+
 Generate %d easy multiple-choice questions from this documentation:
 %s
 
@@ -40,6 +44,10 @@ CHOICE QUALITY (critical — avoid these MCQ tells):
 - All four choices (A, B, C, D) must be comparable in length and specificity. Aim for within ~20%% word count of each other.
 - The correct answer must NOT be the longest, most hedged, most qualified, or most "textbook-sounding" option. Wrong answers should not be noticeably terser.
 - Rotate which letter is correct across the question set so A/B/C/D are roughly evenly distributed. Do NOT default to a single letter.
+
+TOPICAL SPREAD:
+- If the documentation covers a core Temporal primitive (Workflows, Activities, Workers, Task Queues, Signals, Queries, Updates, Nexus, Data Converter, Retry Policies, Schedules, Child Workflows, Continue-As-New, Versioning, etc.), spread the questions across a diverse set of sub-topics — definition, lifecycle, common APIs, typical usage, and common pitfalls — rather than clustering on one narrow aspect.
+- Operator-facing concepts matter too. When the docs touch on Namespaces, connectivity and TLS, mTLS client certificates, Temporal Cloud networking, private link / IP allowlists, cluster topology, task queue routing, visibility store, cross-namespace Nexus endpoints, dual-visibility migration, API keys, RBAC roles, or any other concern someone running Temporal in production would need to reason about, include at least one question on the operator angle.
 
 Generate %d medium-difficulty multiple-choice questions from this documentation:
 %s
@@ -64,6 +72,10 @@ CHOICE QUALITY (critical — avoid these MCQ tells):
 - The correct answer must NOT be the longest, most hedged, most qualified, or most "textbook-sounding" option. Wrong answers should not be noticeably terser.
 - Rotate which letter is correct across the question set so A/B/C/D are roughly evenly distributed. Do NOT default to a single letter.
 
+TOPICAL SPREAD:
+- If the documentation covers a core Temporal primitive (Workflows, Activities, Workers, Task Queues, Signals, Queries, Updates, Nexus, Data Converter, Retry Policies, Schedules, Child Workflows, Continue-As-New, Versioning, etc.), spread the questions across a diverse set of sub-topics — definition, lifecycle, common APIs, typical usage, and common pitfalls — rather than clustering on one narrow aspect.
+- Operator-facing concepts matter too. When the docs touch on Namespaces, connectivity and TLS, mTLS client certificates, Temporal Cloud networking, private link / IP allowlists, cluster topology, task queue routing, visibility store, cross-namespace Nexus endpoints, dual-visibility migration, API keys, RBAC roles, or any other concern someone running Temporal in production would need to reason about, include at least one question on the operator angle.
+
 Generate %d hard multiple-choice questions from this documentation:
 %s
 
@@ -85,6 +97,10 @@ CHOICE QUALITY (critical — avoid these MCQ tells):
 - All four choices (A, B, C, D) must be comparable in length and specificity. Aim for within ~20%% word count of each other.
 - The correct answer must NOT be the longest, most hedged, most qualified, or most "textbook-sounding" option. Wrong answers should not be noticeably terser.
 - Rotate which letter is correct across the question set so A/B/C/D are roughly evenly distributed. Do NOT default to a single letter.
+
+TOPICAL SPREAD:
+- If the documentation covers a core Temporal primitive (Workflows, Activities, Workers, Task Queues, Signals, Queries, Updates, Nexus, Data Converter, Retry Policies, Schedules, Child Workflows, Continue-As-New, Versioning, etc.), spread the questions across a diverse set of sub-topics — definition, lifecycle, common APIs, typical usage, and common pitfalls — rather than clustering on one narrow aspect.
+- Operator-facing concepts matter too. When the docs touch on Namespaces, connectivity and TLS, mTLS client certificates, Temporal Cloud networking, private link / IP allowlists, cluster topology, task queue routing, visibility store, cross-namespace Nexus endpoints, dual-visibility migration, API keys, RBAC roles, or any other concern someone running Temporal in production would need to reason about, include at least one question on the operator angle.
 
 Generate %d nightmare-difficulty multiple-choice questions from this documentation:
 %s
