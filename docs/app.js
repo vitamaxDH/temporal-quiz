@@ -171,11 +171,10 @@ function formatCategoryLabel(category) {
      develop_dotnet_activities_async.html  -> "Async"
    The category chip already gives broader context, so we keep
    only the last underscore-separated segment for brevity. */
-/* Resolve the URL prefix for fetching quiz data. When a run is active,
-   pull from quizzes/runs/<date>/; otherwise fall back to the flat layout. */
+/* Resolve the URL prefix for fetching quiz data. All content lives under
+   quizzes/runs/<YYYY-MM-DD>/ and currentRun comes from runs.json. */
 function quizPath(suffix) {
-  if (currentRun) return `quizzes/runs/${currentRun}/${suffix}`;
-  return `quizzes/${suffix}`;
+  return `quizzes/runs/${currentRun}/${suffix}`;
 }
 
 /* Human-friendly label for a YYYY-MM-DD run date.
