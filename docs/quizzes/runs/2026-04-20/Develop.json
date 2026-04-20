@@ -5,337 +5,309 @@
       "id": "develop_easy_001",
       "category": "Develop",
       "difficulty": "easy",
-      "question": "What is the main purpose of an Activity in Temporal?",
+      "question": "In Temporal's .NET SDK, what is the purpose of adding a 'StaticSummary' when starting a Workflow?",
       "choices": [
         {
           "key": "A",
-          "text": "To store and manage the state of a long-running Workflow so it can survive process restarts."
+          "text": "It assigns a unique identifier to the Workflow so the system can find it later in the event history."
         },
         {
           "key": "B",
-          "text": "To execute a single, well-defined action such as querying a database, calling a third-party API, or processing a file."
+          "text": "It provides a short, human-readable label that appears in the Workflow list view of the Temporal Web UI."
         },
         {
           "key": "C",
-          "text": "To schedule recurring jobs at fixed intervals, replacing the need for external cron systems."
+          "text": "It sets the maximum number of retries allowed before the Workflow is marked as failed."
         },
         {
           "key": "D",
-          "text": "To route messages between different Workflows running in separate Namespaces."
+          "text": "It defines the Task Queue that Workers should poll when picking up this Workflow for execution."
         }
       ],
       "answer": "B",
-      "explanation": "Activities are Temporal's unit of work for interacting with the outside world — things like HTTP calls, database queries, or file processing. Workflows orchestrate Activities but intentionally avoid side effects themselves. This separation lets Temporal automatically retry a failed Activity (e.g., a flaky API call) without re-running the entire Workflow, which is one of Temporal's core value propositions over writing manual retry loops.",
-      "source_doc": "basics.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "explanation": "StaticSummary is a short, single-line description (up to 200 bytes) you attach when starting a Workflow. It shows up in the Workflow list view in the Temporal UI, making it easy to tell Workflows apart at a glance — for example, 'Order processing for customer #12345'. Without it, you'd only see raw Workflow IDs, which aren't very human-friendly. This is an example of Temporal giving you built-in observability tools rather than requiring you to bolt them on yourself.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "develop_easy_002",
       "category": "Develop",
       "difficulty": "easy",
-      "question": "An Activity fails partway through a long operation. What does Temporal's default Retry Policy do next?",
+      "question": "What makes 'CurrentDetails' on a Workflow different from the 'StaticSummary' set at Workflow start?",
       "choices": [
         {
           "key": "A",
-          "text": "It cancels the entire Workflow Execution and requires the developer to restart it manually."
+          "text": "CurrentDetails can be updated while the Workflow is running, whereas StaticSummary is fixed once the Workflow starts."
         },
         {
           "key": "B",
-          "text": "It marks the Activity as permanently failed and skips ahead to the next step in the Workflow."
+          "text": "CurrentDetails is only visible in the event history, whereas StaticSummary appears on the Workflow list page."
         },
         {
           "key": "C",
-          "text": "It automatically retries the Activity Execution according to the configured intervals and limits."
+          "text": "CurrentDetails is limited to 200 bytes of plain text, whereas StaticSummary supports full Markdown with images."
         },
         {
           "key": "D",
-          "text": "It pauses execution and sends an alert to the developer to decide what to do next."
+          "text": "CurrentDetails is set automatically by the Temporal service, whereas StaticSummary must be provided by the developer."
         }
       ],
-      "answer": "C",
-      "explanation": "Every Activity Execution is automatically associated with a default Retry Policy if you don't supply a custom one. When an Activity fails, Temporal retries it with exponential backoff up to the configured limits — no manual retry loops required. This is a key reason to use Temporal instead of writing your own retry logic: durable, automatic retries are built in, and you can tune them with timeouts and backoff settings as needed.",
-      "source_doc": "timeouts.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "answer": "A",
+      "explanation": "StaticSummary is set once when you start a Workflow and never changes — it is 'static'. CurrentDetails, on the other hand, can be read and overwritten from inside the Workflow code at any point during its execution. This matters because long-running Workflows often go through multiple phases (e.g., 'Awaiting payment', 'Shipping order', 'Waiting for return window'), and CurrentDetails lets you reflect that changing state in the UI without any extra tooling.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "develop_easy_003",
       "category": "Develop",
       "difficulty": "easy",
-      "question": "What distinguishes a Standalone Activity from a regular Workflow Activity in Temporal?",
+      "question": "When would you use Search Attributes in Temporal instead of simply looking up a Workflow by its Workflow ID?",
       "choices": [
         {
           "key": "A",
-          "text": "A Standalone Activity is started directly from a Temporal Client rather than being orchestrated by a Workflow Definition."
+          "text": "When you need to cancel a running Workflow, because cancellation requires a Search Attribute rather than a Workflow ID."
         },
         {
           "key": "B",
-          "text": "A Standalone Activity runs without a Worker and does not require registration with the Temporal Server."
+          "text": "When you want to find a group of Workflows that share a property, such as all failed Workflows of a certain type within a time range."
         },
         {
           "key": "C",
-          "text": "A Standalone Activity can only be used for short operations and does not support retries or timeouts."
+          "text": "When the Workflow ID has expired after a retention period and the platform no longer stores it in the visibility store."
         },
         {
           "key": "D",
-          "text": "A Standalone Activity is written differently from a regular Activity and cannot be reused inside a Workflow."
+          "text": "When running Workflows across multiple Task Queues, because cross-queue lookups can only be done through Search Attributes."
         }
       ],
-      "answer": "A",
-      "explanation": "Standalone Activities let you get Temporal's durable execution guarantees — automatic retries, state persistence, visibility — for a single task without needing a full Workflow to orchestrate it. Crucially, the Activity code itself is written the same way; the only difference is that you invoke it from a Temporal Client instead of from within a Workflow. The same Activity implementation can even serve both use cases.",
-      "source_doc": "standalone-activities.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "answer": "B",
+      "explanation": "A Workflow ID uniquely identifies one specific Workflow execution, which is great when you already know exactly which Workflow you want. Search Attributes let you query across many executions using properties like WorkflowType, ExecutionStatus, StartTime, or custom fields you define (e.g., customerId). This is how Temporal replaces ad-hoc database queries or manual tracking spreadsheets — the platform's visibility layer becomes your queryable index of all running and completed Workflows.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "develop_med_001",
       "category": "Develop",
       "difficulty": "med",
-      "question": "In the Temporal .NET SDK, what is the minimum timeout configuration required to successfully call `Workflow.ExecuteActivityAsync()`?",
+      "question": "In the Temporal .NET SDK, what is the key difference between `StaticSummary`/`StaticDetails` set in `WorkflowOptions` and `Workflow.CurrentDetails` set inside the Workflow?",
       "choices": [
         {
           "key": "A",
-          "text": "You must set all three timeouts: ScheduleToCloseTimeout, ScheduleToStartTimeout, and StartToCloseTimeout, or the call will throw a configuration exception."
+          "text": "`StaticSummary` and `StaticDetails` are set once at Workflow start and cannot change, while `Workflow.CurrentDetails` can be updated repeatedly throughout the Workflow's execution to reflect changing state."
         },
         {
           "key": "B",
-          "text": "No timeout is required because Temporal applies a system-wide default timeout to every Activity Execution automatically."
+          "text": "`Workflow.CurrentDetails` is only readable, not writable; you must use `StaticDetails` in `WorkflowOptions` every time you want to change what appears in the UI during a running Workflow."
         },
         {
           "key": "C",
-          "text": "You must set at least one of either StartToCloseTimeout or ScheduleToCloseTimeout; the other timeouts are optional."
+          "text": "`StaticSummary` and `StaticDetails` are visible only in Event History, while `Workflow.CurrentDetails` is shown exclusively in the Workflow list view alongside the Workflow ID."
         },
         {
           "key": "D",
-          "text": "Only ScheduleToStartTimeout is required, because it controls how long the Activity waits before a Worker picks it up, which implicitly bounds total execution time."
+          "text": "`StaticSummary` supports Markdown with images and HTML, while `Workflow.CurrentDetails` is plain text only and is limited to 200 bytes per update."
         }
       ],
-      "answer": "C",
-      "explanation": "Temporal requires that every Activity Execution has either a StartToCloseTimeout or a ScheduleToCloseTimeout (or both) set in ActivityOptions. StartToCloseTimeout bounds a single attempt, while ScheduleToCloseTimeout bounds the entire execution including retries. ScheduleToStartTimeout is optional and addresses a different concern (queue wait time). Option A is wrong because ScheduleToStartTimeout is never mandatory. Option B is wrong because there is no system-wide default that removes the requirement — the SDK will throw if neither bound is set. Option D is wrong because ScheduleToStartTimeout does not bound execution time; a task could be picked up quickly and then run indefinitely.",
-      "source_doc": "timeouts (develop_dotnet_activities_timeouts.html)",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "answer": "A",
+      "explanation": "Static summary and static details are provided at Workflow start via `WorkflowOptions` and remain fixed for the lifetime of the execution. `Workflow.CurrentDetails`, set inside the `[WorkflowRun]` method, is a dynamic field that can be reassigned at any point during execution — useful for surfacing live status like 'awaiting payment' or 'processing step 3 of 5'. In practice, use static fields for identifying context (customer ID, order type) and `CurrentDetails` for progress updates. All three fields support Markdown, but exclude images, HTML, and scripts — making option D wrong. Option B is wrong because `Workflow.CurrentDetails` is a writable property. Option C reverses the actual UI placement: the static fields and current details both appear on the Workflow detail page, not exclusively in the list view or Event History.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "develop_med_002",
       "category": "Develop",
       "difficulty": "med",
-      "question": "A team's Activity polls an external queue that is frequently empty, causing frequent `ItemNotFoundException` errors that flood their dashboards. They want retries to continue normally but reduce log and metric noise. Which approach in the .NET SDK best addresses this?",
+      "question": "You want to filter Workflow Executions by a domain-specific field (e.g., `customerId`) using `ListWorkflowsAsync` in the Temporal .NET SDK. Which sequence of steps is required before your filter will work?",
       "choices": [
         {
-          "key": "A",
-          "text": "Set a very short StartToCloseTimeout so failed attempts time out quickly and are rescheduled without generating failure logs."
-        },
-        {
           "key": "B",
-          "text": "Catch the exception inside the Activity and return a sentinel value instead of rethrowing, so Temporal never sees the failure."
+          "text": "Declare the attribute as a `SearchAttributeKey` in your code, set it via `TypedSearchAttributes` in `WorkflowOptions`, and then call `ListWorkflowsAsync` with a List Filter — no server-side registration is needed."
         },
         {
           "key": "C",
-          "text": "Increase the RetryPolicy's InitialInterval to space out retries and reduce the total number of failure events recorded per hour."
+          "text": "First create the Search Attribute on the Temporal Service (via CLI or Cloud UI), then set its value when starting the Workflow or via `UpsertTypedSearchAttributes` inside the Workflow, and finally query with `ListWorkflowsAsync` using a List Filter expression."
+        },
+        {
+          "key": "A",
+          "text": "Add the attribute name to the Worker's configuration so it is indexed automatically, set it using `UpsertTypedSearchAttributes`, and then call `ListWorkflowsAsync` — the CLI step is optional for self-hosted clusters."
         },
         {
           "key": "D",
-          "text": "Throw an ApplicationFailureException with category set to ApplicationErrorCategory.Benign, which downgrades failure logs to DEBUG level and suppresses failure metrics."
+          "text": "Call `Describe` on a `WorkflowHandle` to register the attribute on the server, then set it in `WorkflowOptions.TypedSearchAttributes`, and query via `ListWorkflowsAsync` — upserting inside the Workflow is not supported."
         }
       ],
-      "answer": "D",
-      "explanation": "The .NET SDK's benign error category is designed exactly for this pattern: expected, non-severe failures that occur during normal operations (like polling a service that isn't ready). Marking an error as benign keeps retries working normally while downgrading Activity failure logs to DEBUG and not emitting failure metrics or setting the OpenTelemetry error status. Option A addresses throughput, not observability noise. Option B hides the failure from Temporal entirely, which prevents proper retry behavior and error propagation to the Workflow. Option C reduces retry frequency but does not change how failures are logged or metered.",
-      "source_doc": "benign-exceptions (develop_dotnet_activities_benign-exceptions.html)",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "answer": "C",
+      "explanation": "Custom Search Attributes must be registered on the Temporal Service first — either via `temporal operator search-attribute create` in the CLI or through the Cloud UI — before any Workflow Execution can index a value for them. After registration, you can set the value at Workflow start via `WorkflowOptions.TypedSearchAttributes`, or update it at runtime with `Workflow.UpsertTypedSearchAttributes`. Only then can you filter with `ListWorkflowsAsync` using a List Filter expression like `CustomerId='abc'`. Option B is wrong because skipping server-side registration means the attribute is unknown to the visibility store and won't be indexed. Option A is wrong because Worker configuration has no role in Search Attribute registration. Option D is wrong because `Describe` is for reading attributes, not registering them, and upsert inside a Workflow is fully supported.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "develop_med_003",
       "category": "Develop",
       "difficulty": "med",
-      "question": "A developer needs to complete an Activity from an external system after the Activity function has already returned. Which sequence correctly implements asynchronous Activity completion in the .NET SDK?",
+      "question": "When configuring Prometheus metrics in the Temporal .NET SDK, why should the `TemporalRuntime` object be created globally before any other Temporal code?",
       "choices": [
         {
+          "key": "D",
+          "text": "The `TemporalRuntime` initializes the underlying Rust core and its telemetry pipeline exactly once; creating it after a client is constructed silently disables metric emission for that client, while creating multiple runtimes causes resource conflicts."
+        },
+        {
           "key": "A",
-          "text": "Return `null` from the Activity function, then later call `client.SignalWorkflowAsync()` with the result payload, and handle it in a Signal handler inside the Workflow."
+          "text": "Each `TemporalClient` creates its own independent runtime by default, so a global runtime is simply a convenience pattern — you can also pass separate runtime instances per client with no functional difference."
         },
         {
           "key": "B",
-          "text": "Capture the TaskToken inside the Activity and throw `CompleteAsyncException`; then externally call `client.GetAsyncActivityHandle(token)` and invoke `CompleteAsync()` on the handle."
+          "text": "The runtime only needs to be created before the Worker is started; client connections established before the runtime is configured will automatically pick up telemetry settings when the Worker registers."
         },
         {
           "key": "C",
-          "text": "Set a very long StartToCloseTimeout so the Activity stays alive, then poll the external system in a loop inside the Activity function until the work is done."
-        },
-        {
-          "key": "D",
-          "text": "Register a second Activity that the Workflow calls immediately after the first one returns; the second Activity blocks until the external system responds with the result."
+          "text": "Creating the runtime globally is required only when using custom metric meters; the built-in Prometheus endpoint can be configured per-client without a shared runtime object."
         }
       ],
-      "answer": "B",
-      "explanation": "Asynchronous Activity completion is a three-step pattern: (1) capture the TaskToken (or Namespace + Workflow ID + Activity ID) inside the Activity, (2) throw `CompleteAsyncException` to tell Temporal the Activity will be completed externally, and (3) use `GetAsyncActivityHandle(token)` on a Temporal Client outside the Activity to call `CompleteAsync`, `FailAsync`, or `HeartbeatAsync`. This is the right pattern when the actual work is done by an external system (e.g., a webhook callback). Option A misuses Signals, which are for sending messages to a Workflow, not for completing an Activity. Option C turns asynchronous work into a long-running synchronous poll, which wastes a Worker thread and doesn't use the async completion mechanism. Option D adds unnecessary complexity and still runs synchronously from Temporal's perspective.",
-      "source_doc": "asynchronous-activity (develop_dotnet_activities_asynchronous-activity.html)",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "answer": "D",
+      "explanation": "The documentation explicitly states the `TemporalRuntime` should be 'created globally and should be used for all clients' and that you 'should configure this before any other Temporal code.' The runtime wraps the Temporal SDK's native core (written in Rust) and sets up the telemetry pipeline — including the Prometheus HTTP endpoint or custom metric meter — at initialization time. Because clients share this runtime, metrics from all clients and Workers flow through a single pipeline. Options A, B, and C all suggest the runtime is optional or configurable after the fact, which contradicts the documentation. In practice, treat `TemporalRuntime` like a process-level singleton: initialize it once at startup, pass it into every `TemporalClient` you create, and never recreate it mid-process.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "develop_med_004",
       "category": "Develop",
       "difficulty": "med",
-      "question": "Your team deploys a Standalone Activity to Temporal Cloud and wants to connect using mutual TLS. Using `ClientEnvConfig.LoadClientConnectOptions()`, which environment variables must be set?",
+      "question": "In the Temporal .NET SDK, you attach a `Summary` to an Activity execution via `ActivityOptions`. What size limit applies to this field, and what formatting is supported?",
       "choices": [
         {
+          "key": "C",
+          "text": "The `Summary` field is limited to 200 bytes and accepts plain strings — no Markdown formatting is supported for Activity or timer summaries."
+        },
+        {
           "key": "A",
-          "text": "Set TEMPORAL_ADDRESS and TEMPORAL_NAMESPACE only; the .NET SDK discovers client certificates automatically from the system certificate store."
+          "text": "The `Summary` field is limited to 20KB and supports full Markdown including images and embedded HTML, the same as `StaticDetails` on `WorkflowOptions`."
         },
         {
           "key": "B",
-          "text": "Set TEMPORAL_API_KEY along with TEMPORAL_ADDRESS and TEMPORAL_NAMESPACE; mTLS and API key auth are equivalent and interchangeable on Temporal Cloud."
-        },
-        {
-          "key": "C",
-          "text": "Set TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE, TEMPORAL_TLS_CLIENT_CERT_PATH, and TEMPORAL_TLS_CLIENT_KEY_PATH to supply the namespace endpoint and client certificate paths."
+          "text": "The `Summary` field is limited to 200 bytes and accepts a plain string; Markdown is not referenced for this field in the documentation, unlike workflow-level details."
         },
         {
           "key": "D",
-          "text": "Set TEMPORAL_TLS_CLIENT_CERT_PATH and TEMPORAL_TLS_CLIENT_KEY_PATH only; the SDK infers the Cloud address and namespace from the certificate's Common Name field."
+          "text": "The `Summary` field has no hard limit enforced by the SDK — the limit is enforced server-side at 1KB and supports the same Markdown subset used by `Workflow.CurrentDetails`."
         }
       ],
-      "answer": "C",
-      "explanation": "Connecting to Temporal Cloud with mTLS via `ClientEnvConfig.LoadClientConnectOptions()` requires four environment variables: TEMPORAL_ADDRESS (the namespace endpoint, e.g. `\u003cnamespace\u003e.\u003caccount\u003e.tmprl.cloud:7233`), TEMPORAL_NAMESPACE (e.g. `\u003cnamespace\u003e.\u003caccount\u003e`), TEMPORAL_TLS_CLIENT_CERT_PATH, and TEMPORAL_TLS_CLIENT_KEY_PATH. The benefit of `ClientEnvConfig` is that no code changes are needed between local dev and Cloud — only environment variables differ. Option A is wrong because the SDK does not auto-discover Cloud certificates. Option B conflates mTLS and API key authentication; they are separate mechanisms — API keys use TEMPORAL_API_KEY, not certificate paths. Option D is wrong because the address and namespace cannot be inferred from a certificate.",
-      "source_doc": "standalone-activities (develop_dotnet_activities_standalone-activities.html)",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "answer": "B",
+      "explanation": "The documentation states the `Summary` field on `ActivityOptions` (and timer `DelayOptions`) 'is a string, and limited to 200 bytes.' This matches the same 200-byte limit as `StaticSummary` on `WorkflowOptions`. By contrast, `StaticDetails` has a much larger 20KB limit, and `Workflow.CurrentDetails` supports multi-line Markdown. The Activity/timer `Summary` is described simply as a string with a 200-byte cap — the documentation does not extend Markdown formatting to this field the way it explicitly does for workflow-level details. Option A is wrong on both the size limit and Markdown claim. Option C is actually close but states 'no Markdown formatting is supported' as a definitive negative, while option B more accurately reflects what the documentation says. Option D invents a server-side 1KB limit not mentioned in the docs. In practice, use brief, descriptive summaries for Activities so event history entries are self-explanatory without expanding each event.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "develop_hard_001",
+      "category": "Develop",
+      "difficulty": "hard",
+      "question": "Your team deploys a new version of a long-running .NET Workflow that adds a `Workflow.CurrentDetails` update midway through execution. After the deploy, you observe that some Workflow Executions—specifically those that were already running before the deploy—are now failing during replay with a non-determinism error. Workers running the old code have been shut down. What is the most likely cause of this replay failure?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`Workflow.CurrentDetails` writes to the Temporal visibility store, which is eventually consistent. The replay engine sees a stale read from before the deploy and treats the mismatch as a determinism violation."
+        },
+        {
+          "key": "B",
+          "text": "Setting `Workflow.CurrentDetails` produces a Command in the Workflow's Event History. When existing Workflows replay past that point, the new code emits a Command that has no corresponding event in the pre-deploy history, causing a non-determinism error."
+        },
+        {
+          "key": "C",
+          "text": "The `Workflow.CurrentDetails` property is not safe to set inside `[WorkflowRun]`; it is only valid inside Signal handlers. Using it in the main run method produces undefined behavior during replay."
+        },
+        {
+          "key": "D",
+          "text": "The issue is with Markdown parsing: the updated details string contains characters that the SDK cannot serialize during replay, so the replay engine throws a codec exception rather than a true non-determinism error."
+        }
+      ],
+      "answer": "B",
+      "explanation": "In Temporal, any operation that mutates observable Workflow state—including metadata mutations like `Workflow.CurrentDetails`—is recorded as a Command and becomes part of the Event History. When a pre-existing Workflow Execution replays, its history does not contain the event for this new Command, so the replay engine detects a history/code mismatch and raises a non-determinism error. This is the same fundamental problem as adding a new Activity call or timer without versioning. The fix is to use the .NET SDK's patching/versioning API (`Workflow.Patched`) to guard the new `CurrentDetails` assignment so it is only executed on new Executions or after the history point where the patch is introduced. The other options describe mechanisms that do not exist: `CurrentDetails` does not write directly to the visibility store in a way that affects replay, it is valid inside `[WorkflowRun]`, and Markdown content is not involved in replay determinism.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "develop_hard_002",
       "category": "Develop",
       "difficulty": "hard",
-      "question": "An engineer integrates with a slow document-signing service. The Activity calls the service to initiate signing, then must wait hours or days for a webhook callback before it can report completion. The engineer is worried about heartbeat timeouts killing the Activity while it waits. What is the correct Temporal pattern for this in the .NET SDK?",
+      "question": "An operator dashboards team wants to display live order status for thousands of concurrent .NET Workflows in an internal tool. They propose calling `ListWorkflowsAsync` on a 30-second polling loop with a filter like `WorkflowType='OrderWorkflow' AND ExecutionStatus='Running'` and then calling `Describe` on each result to read a custom Search Attribute `OrderStatus`. Under production load with 50,000 concurrent Workflows, the tool starts experiencing high latency and the Temporal visibility store shows elevated query pressure. Which architectural change would most directly reduce the load on the visibility layer while preserving real-time accuracy?",
       "choices": [
         {
           "key": "A",
-          "text": "Set a very large StartToCloseTimeout (e.g., 72 hours) and have the Activity poll the signing service in a loop with periodic heartbeats to keep the Task alive until the signing completes."
+          "text": "Replace `ListWorkflowsAsync` polling with individual `QueryAsync` calls to each known Workflow handle, since Query responses bypass the visibility store and are served directly from in-memory Workflow state on the Worker."
         },
         {
           "key": "B",
-          "text": "Capture the TaskToken inside the Activity, throw CompleteAsyncException to release the worker thread, and later call GetAsyncActivityHandle(token).CompleteAsync() from the webhook handler when signing finishes."
+          "text": "Reduce the Search Attribute type from `Keyword` to `Text` so the visibility index uses a lighter-weight inverted index structure, lowering per-query CPU on the Elasticsearch backing store."
         },
         {
           "key": "C",
-          "text": "Start a Child Workflow from within the Activity that blocks on a Signal; when the webhook arrives, send the Signal to the Child Workflow and have the parent Activity await the child result."
+          "text": "Store order status in an external database updated by the Workflow via an Activity, and query that database instead of the Temporal visibility store. Use `UpsertTypedSearchAttributes` only for coarse-grained filters still needed in the Temporal UI, not for all status reads."
         },
         {
           "key": "D",
-          "text": "Use a Temporal Schedule to poll the signing service every 15 minutes from a separate workflow, then send a Signal to the original Workflow when the signing status changes to complete."
+          "text": "Increase the `StaticDetails` byte limit by chunking the payload across multiple Workflow starts, allowing more status data to live in the Workflow metadata layer rather than in Search Attributes, which eliminates visibility queries entirely."
         }
       ],
-      "answer": "B",
-      "explanation": "Asynchronous Activity Completion is the canonical Temporal solution for activities that must wait on external systems. The Activity captures its TaskToken, throws CompleteAsyncException (which tells Temporal 'this activity will be completed externally — do not retry it'), and exits. The worker thread is freed immediately. When the webhook arrives, any process with a Temporal Client can call GetAsyncActivityHandle(token).CompleteAsync() to resolve the Activity. This keeps the Workflow durable without tying up a worker thread for hours. Option A (long timeout + polling loop) wastes a worker thread and is fragile. Option C (starting a workflow from an activity) inverts the orchestration hierarchy. Option D (schedules + signals) adds unnecessary complexity and breaks the clean Activity abstraction.",
-      "source_doc": "asynchronous-activity.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "answer": "C",
+      "explanation": "The Temporal visibility store (backed by Elasticsearch or SQL) is optimized for operator-facing Workflow discovery, not for high-frequency application-layer status reads at scale. Polling `ListWorkflowsAsync` across 50,000 Workflows every 30 seconds creates a sustained, expensive scan against the visibility index. The correct pattern is to offload high-read-volume status to an external store (database, cache) that the Workflow updates via Activities, and reserve Temporal Search Attributes for operational filtering in the UI or CLI. Option A is incorrect because Query calls still hit a Worker process and are not inherently cheaper at this fan-out scale; they also require knowing every Workflow ID upfront. Option B is wrong because `Text` vs `Keyword` changes tokenization behavior and would actually break exact-match filters without reducing infrastructure load in the way described. Option D is wrong because `StaticDetails` is a read-only metadata field set at Workflow start with a 20K byte limit and cannot be updated during execution to reflect live status.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "develop_hard_003",
       "category": "Develop",
       "difficulty": "hard",
-      "question": "A Temporal .NET worker is running Activities that process large media files. Each Activity result includes the full transcoded file content as a byte array. After a few weeks, oncall engineers report that Workflow Task latency is increasing and workers occasionally OOM. What is the most likely root cause based on Temporal's execution model?",
+      "question": "A .NET Temporal application configures metrics by creating a `TemporalRuntime` with a Prometheus endpoint on port 9000, then passes that runtime to `TemporalClient.ConnectAsync`. A second component in the same process creates its own `TemporalClient` using default options (no explicit runtime). Engineers observe that metrics from the second client are not appearing in Prometheus, and they suspect a runtime lifecycle issue. What is the most accurate explanation?",
       "choices": [
         {
           "key": "A",
-          "text": "The Dynamic Activity handler is deserializing IRawValue arrays inefficiently, adding CPU overhead that degrades Workflow Task scheduling under load."
+          "text": "Each `TemporalClient` instance registers its own independent metrics pipeline, so the second client's metrics appear on a randomly assigned port rather than port 9000. The fix is to call `TemporalClient.SetDefaultRuntime()` before creating any client."
         },
         {
           "key": "B",
-          "text": "Large Activity return values are written into the Workflow Execution Event History, and the entire Event History is transferred to a Worker on every Workflow Task, growing memory pressure and latency over time."
+          "text": "The `TemporalRuntime` should be created once and shared across all clients in the process. The second client using default options creates an implicit runtime with no metrics configuration, so its metrics are silently discarded rather than emitted to Prometheus."
         },
         {
           "key": "C",
-          "text": "The gRPC 4 MB message size limit is being silently truncated, causing corrupted payloads that force the SDK to retry deserialization, consuming extra CPU and memory."
+          "text": "Prometheus scraping in .NET is pull-based, so the second client's metrics are buffered until the next scrape interval. The missing metrics will appear after the Prometheus server scrapes port 9000 the next time the second client emits a data point."
         },
         {
           "key": "D",
-          "text": "Because a single Activity implementation instance is shared across concurrent invocations, large byte arrays held as instance fields cause heap contention between simultaneous Activity executions."
+          "text": "The `TemporalRuntime` binds the Prometheus endpoint to the process, not to the client, so both clients automatically share the same endpoint. The missing metrics indicate a Worker—not a Client—configuration problem on the second component."
         }
       ],
       "answer": "B",
-      "explanation": "The documentation explicitly states that values passed to and returned from Activities are recorded in the Workflow Execution Event History, and that the entire history is transferred to a Worker whenever a Workflow Task needs to be processed (replay). This means that large return values compound over time: each Activity result permanently enlarges the history, and every subsequent Workflow Task must load the full history. This is the classic 'history bloat' problem and is the most likely explanation for growing latency and OOM conditions. The fix is to store large artifacts in external blob storage and return only a reference (URL, key) from the Activity. Option C is incorrect because the 4 MB limit would cause hard errors, not silent truncation. Options A and D describe real concerns but are not the root cause described.",
-      "source_doc": "execution.html",
-      "generated_at": "2026-04-20T05:57:50Z"
-    },
-    {
-      "id": "develop_hard_004",
-      "category": "Develop",
-      "difficulty": "hard",
-      "question": "Your team wants to deploy Standalone Activities to Temporal Cloud using the .NET SDK. A security review requires mTLS authentication. Looking at the sample configuration, what is the correct way to configure the worker and client for Temporal Cloud with mTLS — without changing application source code between environments?",
-      "choices": [
-        {
-          "key": "A",
-          "text": "Hardcode the Temporal Cloud namespace and certificate paths in TemporalWorkerOptions, then use a build-time preprocessor directive to swap between dev and Cloud configurations at compile time."
-        },
-        {
-          "key": "B",
-          "text": "Set TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE, TEMPORAL_TLS_CLIENT_CERT_PATH, and TEMPORAL_TLS_CLIENT_KEY_PATH environment variables; ClientEnvConfig.LoadClientConnectOptions() reads these automatically, so no source changes are needed."
-        },
-        {
-          "key": "C",
-          "text": "Create a separate Program.cs for Cloud deployments that passes a manually constructed TlsConfig into TemporalClient.ConnectAsync(), and use CI/CD to select the correct entry point at deploy time."
-        },
-        {
-          "key": "D",
-          "text": "Use the TEMPORAL_API_KEY environment variable for both local dev and Cloud; mTLS is only needed when a corporate firewall blocks API key traffic on port 7233."
-        }
-      ],
-      "answer": "B",
-      "explanation": "The documentation specifically calls out that ClientEnvConfig.LoadClientConnectOptions() reads environment variables (and TOML profiles) so that 'the same code works against a local dev server and Temporal Cloud without changes.' For mTLS, you set TEMPORAL_ADDRESS to your Cloud namespace endpoint, TEMPORAL_NAMESPACE, TEMPORAL_TLS_CLIENT_CERT_PATH, and TEMPORAL_TLS_CLIENT_KEY_PATH. The SDK picks these up automatically. This is the operator-friendly design that avoids environment-specific branching in source code. Option A (hardcoding + preprocessor) defeats the purpose and is error-prone. Option C requires maintaining two entry points. Option D conflates API key auth with mTLS — they are separate authentication mechanisms; mTLS uses client certificates, not API keys, and the choice between them is not firewall-dependent.",
-      "source_doc": "standalone-activities.html",
-      "generated_at": "2026-04-20T05:57:50Z"
-    },
-    {
-      "id": "develop_nightmare_001",
-      "category": "Develop",
-      "difficulty": "nightmare",
-      "question": "A .NET worker runs both Workflow and Activity code. An Activity calls a third-party payment API that occasionally returns HTTP 429 (rate-limited). The team throws an `ApplicationFailureException` with `ApplicationErrorCategory.Benign` for these 429 responses. A separate on-call engineer notices that Activity failure metrics and ERROR-level logs are missing for these failures entirely, making it impossible to page on sustained rate-limiting. What is the correct explanation for this behavior, and what is the right remediation?",
-      "choices": [
-        {
-          "key": "A",
-          "text": "Benign exceptions suppress metrics and ERROR logs by design. The remediation is to add a Workflow Query that exposes the retry count, allowing external monitors to poll for sustained rate-limiting rather than relying on Activity failure signals."
-        },
-        {
-          "key": "B",
-          "text": "Benign exceptions suppress Activity failure metrics and downgrade failure logs to DEBUG level by design. The team should instead emit a custom metric or structured log inside the catch block before throwing, so observability tooling captures the event independently of Temporal's built-in instrumentation pipeline."
-        },
-        {
-          "key": "C",
-          "text": "Benign exceptions only suppress OpenTelemetry spans but still emit Activity failure metrics. The missing metrics indicate the Worker is silently dropping exceptions before they reach the Temporal SDK, so the remediation is to inspect the Worker process logs for unhandled exceptions outside the Activity boundary."
-        },
-        {
-          "key": "D",
-          "text": "Benign exception suppression is limited to the first retry attempt. On subsequent retries, metrics and ERROR logs are restored automatically. The missing data suggests the payment API recovered before the second attempt, so no code change is required."
-        }
-      ],
-      "answer": "B",
-      "explanation": "The `.NET` SDK's `ApplicationErrorCategory.Benign` flag explicitly does three things: downgrades Activity failure log entries to DEBUG level, suppresses Activity failure metrics emission, and leaves the OpenTelemetry failure status as non-ERROR. All three suppressions are intentional and apply on every retry, not just the first one (ruling out D). The suppression is not limited to spans only—metrics are also suppressed (ruling out C). Polling via Query (option A) is an awkward workaround that doesn't address the root cause. The correct insight is that 'benign' means 'Temporal won't shout about this', so the application code itself must take responsibility for any observability it needs. The right pattern is to emit a counter metric or a structured WARNING log *inside the catch block before re-throwing* as benign, so your APM/alerting layer sees the event through a side channel that Temporal's instrumentation pipeline doesn't gate. This pattern generalizes: whenever you opt out of a platform's built-in observability for a class of errors, you must compensate with application-level instrumentation—otherwise you create silent failure blindspots that only surface during post-mortems.",
-      "source_doc": "benign-exceptions.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "explanation": "The .NET SDK documentation explicitly states that `TemporalRuntime` 'should be created globally and should be used for all clients; therefore, you should configure this before any other Temporal code.' When a second client is created without an explicit runtime, it uses a default runtime that has no metrics configuration, meaning its metrics pipeline is effectively a no-op and no data reaches Prometheus. The fix is to create one `TemporalRuntime` with the desired `Telemetry` configuration and pass it to every `TemporalClient.ConnectAsync` call in the process. Option A is incorrect—there is no `SetDefaultRuntime()` API described, and ports are not assigned randomly. Option C is incorrect because this is not a scrape-timing issue; the metrics are never emitted at all. Option D is incorrect because the runtime is not automatically shared; each client uses the runtime it is given, or a default unconfigured one.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "develop_nightmare_002",
       "category": "Develop",
       "difficulty": "nightmare",
-      "question": "A platform team is migrating a long-running .NET data-pipeline Activity to use asynchronous completion. The Activity captures its Task Token, throws `CompleteAsyncException`, and an external orchestration service is expected to call `handle.CompleteAsync()` later. During a production incident, the external service crashes before calling `CompleteAsync`, and the Activity never completes. The team sets a `StartToCloseTimeout` of 2 hours on the Activity, expecting Temporal to time it out and retry. However, the Activity sits in a 'Started' state far beyond 2 hours without timing out. Which statement correctly explains this behavior?",
+      "question": "A team configures a .NET Temporal worker with both OpenTelemetry tracing (via `Temporalio.Extensions.OpenTelemetry.TracingInterceptor`) and a Prometheus metrics endpoint (via `TemporalRuntime` with `Telemetry.Metrics.Prometheus`). They also set a `LoggerFactory` on the client. In load testing they observe that traces correctly show spans crossing from client → server → worker for activity invocations, but the Prometheus scrape endpoint returns no SDK metrics at all for client-side operations—only worker-side metrics appear. What is the most likely cause?",
       "choices": [
         {
           "key": "A",
-          "text": "The `StartToCloseTimeout` clock pauses as soon as `CompleteAsyncException` is thrown, because Temporal interprets the exception as a signal that the Activity Worker has voluntarily yielded the task. The timeout only resumes when the external system sends the first heartbeat via `HeartbeatAsync`, so the fix is to have the external system heartbeat immediately after receiving the token."
+          "text": "The `TracingInterceptor` and the Prometheus metric meter are mutually exclusive in the .NET SDK; when both are configured simultaneously, the tracing interceptor suppresses metric emission for client-side calls to avoid double-counting latency."
         },
         {
           "key": "B",
-          "text": "Asynchronous Activity completion detaches the Activity from its original Worker thread, so the `StartToCloseTimeout` no longer applies. Only `ScheduleToCloseTimeout` can bound the total duration of an asynchronously completing Activity, because that timeout runs against wall-clock time from scheduling regardless of worker state."
+          "text": "A second `TemporalClient` instance was created without passing the `TemporalRuntime` that holds the Prometheus configuration. Because `TemporalRuntime` must be created globally and shared across all clients, the client used for load-test calls is attached to a default runtime with no metrics sink, so its metrics are silently dropped."
         },
         {
           "key": "C",
-          "text": "Once `CompleteAsyncException` is thrown, the Activity Task is considered 'Started' and the `StartToCloseTimeout` continues to count. However, the timeout is only enforced when the Worker that originally picked up the task sends a heartbeat or the Heartbeat Timeout fires. With no heartbeating from the external service, the server cannot detect the stall, so neither timeout fires correctly without a `HeartbeatTimeout` configured."
+          "text": "Client-side SDK metrics require a separate `MetricsOptions.ClientMetricsEnabled = true` flag in .NET that is distinct from worker-side metrics. Without this flag, the Prometheus endpoint only collects worker process metrics even when the runtime is correctly configured."
         },
         {
           "key": "D",
-          "text": "Asynchronous Activity completion requires a heartbeat to keep the Activity alive. The external system must call `HeartbeatAsync` at intervals shorter than the configured `HeartbeatTimeout`. Without any heartbeating, Temporal marks the Activity as timed out after one `HeartbeatTimeout` interval, so if the Activity is sitting in Started state beyond 2 hours, it means `HeartbeatTimeout` was set longer than 2 hours by a misconfigured default."
+          "text": "The `LoggerFactory` set on the client overrides the telemetry pipeline for that client instance. In .NET, logging and metrics share the same telemetry channel; once a custom `LoggerFactory` is provided, metrics are routed through the logging framework instead of the Prometheus exporter."
         }
       ],
-      "answer": "C",
-      "explanation": "When an Activity throws `CompleteAsyncException`, the SDK signals to the Temporal server that this Activity Task Execution is now externally owned—but critically, the Activity Task is still in the 'Started' state on the server's side. The `StartToCloseTimeout` timer is running, but the Temporal server enforces `StartToCloseTimeout` by detecting that no completion, failure, or heartbeat has arrived within that window. For a normal Activity, the Worker's SDK automatically sends periodic task-context pings; for an asynchronously completing Activity, the external system is entirely responsible for heartbeating via `HeartbeatAsync`. If the external system crashes without heartbeating, the server has no signal that anything is wrong and the timeout machinery cannot fire—because the timeout is edge-triggered by heartbeat absence relative to the `HeartbeatTimeout`, not by absolute wall clock alone. Without a `HeartbeatTimeout` set, the server may never evict the Started task. Option A incorrectly claims the clock pauses. Option B incorrectly claims `StartToCloseTimeout` stops applying—both timeouts remain applicable but enforcement depends on the heartbeat mechanism. Option D is closest to the truth but misstates causation: the issue isn't a misconfigured long HeartbeatTimeout; it's that no HeartbeatTimeout was set at all, so the server has no mechanism to detect the stall. The production fix is to always set both a `HeartbeatTimeout` and have the external system call `HeartbeatAsync` within that interval—treating the token hand-off as the start of a new heartbeat obligation, not the end of one.",
-      "source_doc": "asynchronous-activity.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "answer": "B",
+      "explanation": "The .NET SDK documentation explicitly states: 'That object [TemporalRuntime] should be created globally and should be used for all clients; therefore, you should configure this before any other Temporal code.' The `TemporalRuntime` is the root object that owns the metrics pipeline. If a second `TemporalClient` is instantiated—even in the same process—without receiving the configured runtime via `new(\"localhost:7233\") { Runtime = runtime }`, it silently creates its own default runtime with no metrics configuration. This is a particularly dangerous footgun in production: the code compiles, runs, and even produces correct functional results and traces (because tracing is configured as a client interceptor, not inside the runtime), but metric emission simply disappears. The interaction between the OpenTelemetry interceptor and the Prometheus runtime is key: they are configured at different layers. The `TracingInterceptor` attaches to the client/worker interceptor chain and works per-client regardless of which runtime is used. The Prometheus endpoint, however, lives inside `TemporalRuntime` and only captures metrics from clients/workers that reference that specific runtime instance. Engineers debugging this should check for multiple `TemporalClient.ConnectAsync` calls in their codebase and verify each one explicitly receives the shared runtime. A useful operational check: if worker metrics appear but client metrics don't, a split-runtime bug is almost certain.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     }
   ]
 }

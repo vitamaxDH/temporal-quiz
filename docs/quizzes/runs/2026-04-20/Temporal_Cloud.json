@@ -5,225 +5,337 @@
       "id": "temporal_cloud_easy_001",
       "category": "Temporal_Cloud",
       "difficulty": "easy",
-      "question": "A security team wants to track who deleted a user account in Temporal Cloud and exactly when it happened. Which Temporal Cloud feature is designed to answer that question?",
+      "question": "What is the main purpose of Audit Logs in Temporal Cloud?",
       "choices": [
         {
           "key": "A",
-          "text": "Workflow History Export, which records all workflow lifecycle events including administrative actions"
+          "text": "To record every Workflow execution, activity retry, and task queue event inside your Namespaces"
         },
         {
           "key": "B",
-          "text": "Audit Logs, which capture control-plane operations like user deletions along with who performed them and when"
+          "text": "To answer 'who, when, and what' questions about control-plane operations on Temporal Cloud resources"
         },
         {
           "key": "C",
-          "text": "The Billing API, which tracks resource usage and account-level changes over time"
+          "text": "To store completed Workflow Histories so they can be replayed or exported to external storage"
         },
         {
           "key": "D",
-          "text": "Namespace visibility store, which indexes workflow metadata for search and compliance queries"
+          "text": "To monitor Worker health and alert you when Workers stop polling their task queues"
         }
       ],
       "answer": "B",
-      "explanation": "Audit Logs are specifically designed to answer 'who, when, and what' questions about Temporal Cloud control-plane operations. A DeleteUser operation would appear in the Audit Log with the principal (who acted), the emit_time (when), and the operation details (what). Workflow History Export only covers closed workflow histories, not administrative actions. The Billing API tracks cost attribution, and the visibility store indexes workflow state — neither is built for security forensics on admin operations.",
-      "source_doc": "audit-logs.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "explanation": "Audit Logs track administrative and control-plane operations — things like creating Namespaces, managing users, or changing API keys — so you can answer security and compliance questions such as 'who deleted that Namespace and when?' Importantly, they do NOT capture data-plane events like individual Workflow starts or activity retries; for those, you would use the Export feature instead.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "temporal_cloud_easy_002",
+      "category": "Temporal_Cloud",
+      "difficulty": "easy",
+      "question": "Which AWS service does Temporal Cloud use as the destination when you set up an Audit Log sink in AWS?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Amazon SQS, a managed message queue service for decoupling applications"
+        },
+        {
+          "key": "B",
+          "text": "AWS Lambda, a serverless compute service that runs code in response to events"
+        },
+        {
+          "key": "C",
+          "text": "Amazon Kinesis Data Streams, a real-time data streaming service"
+        },
+        {
+          "key": "D",
+          "text": "Amazon DynamoDB, a fully managed NoSQL database service"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal Cloud streams Audit Logs into Amazon Kinesis Data Streams, which is designed for real-time ingestion of high-volume event data. Once logs are flowing into Kinesis, you are responsible for building your own consumer — for example, reading from the stream and writing to an S3 bucket — since Temporal only delivers the events to Kinesis.",
+      "source_doc": "cloud_audit-logs-aws.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "temporal_cloud_easy_003",
       "category": "Temporal_Cloud",
       "difficulty": "easy",
-      "question": "An administrator wants to use Audit Logs to investigate whether any workflows were started or terminated in a Temporal Cloud namespace last week. What will they find?",
+      "question": "Which Temporal Cloud roles are allowed to configure an Audit Log Integration or view Audit Logs in the UI?",
       "choices": [
         {
-          "key": "D",
-          "text": "Full details on those workflow events, because Audit Logs record all activity inside a namespace"
+          "key": "A",
+          "text": "Any authenticated user in the account, since audit visibility should be broadly available"
         },
         {
           "key": "B",
-          "text": "A partial record, because Audit Logs only capture events that resulted in an error status"
-        },
-        {
-          "key": "A",
-          "text": "Nothing relevant, because Audit Logs do not capture data-plane events like workflow starts or terminations"
+          "text": "Only the billing contact on the account, because Audit Logs are tied to subscription management"
         },
         {
           "key": "C",
-          "text": "A summary count of workflow events, but not the individual workflow IDs or run details"
+          "text": "Namespace Admins, because Audit Logs are scoped to individual Namespaces they manage"
+        },
+        {
+          "key": "D",
+          "text": "Account Owner or Global Administrator, because these roles have account-wide administrative privileges"
         }
       ],
-      "answer": "A",
-      "explanation": "Audit Logs specifically cover control-plane operations — things like creating namespaces, managing users, or configuring API keys. They do NOT capture data-plane events such as Workflow Start, Workflow Terminate, or Schedule Create. For closed workflow histories, the correct tool is the Workflow History Export feature, which can send that data to external storage like S3. This distinction matters because operators often expect one log source to cover everything, but Temporal separates control-plane audit trails from workflow execution history by design.",
-      "source_doc": "audit-logs.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "answer": "D",
+      "explanation": "Configuring an Audit Log Integration and viewing Audit Logs requires the Account Owner or Global Administrator role. This makes sense because Audit Logs cover account-wide control-plane events — such as user management and Namespace changes — that go beyond any single Namespace, so only account-level admins have the access needed to set them up.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "temporal_cloud_med_001",
       "category": "Temporal_Cloud",
       "difficulty": "med",
-      "question": "A security team asks you to determine who deleted a user from Temporal Cloud last Tuesday and from which IP address. Which Temporal Cloud feature should you use, and what is a key limitation you must be aware of?",
+      "question": "A security engineer at your company asks: 'Which Temporal Cloud events are captured in Audit Logs?' Which of the following accurately describes the scope of Audit Log coverage?",
       "choices": [
         {
           "key": "A",
-          "text": "Use the Export feature to find the deletion event; be aware that exported files only retain workflow history for 7 days by default."
+          "text": "Audit Logs capture all Workflow lifecycle events such as Workflow Start, Workflow Terminate, and Schedule Create, so you can reconstruct execution history for compliance purposes."
         },
         {
           "key": "B",
-          "text": "Use Audit Logs to find the DeleteUserAPI event and caller IP via x_forwarded_for; be aware that Audit Logs only retain data for 30 days and do not capture data-plane events like Workflow Start."
+          "text": "Audit Logs capture control plane operations such as CreateNamespace, InviteUsers, and CreateAPIKey, but do NOT capture data plane events like Workflow Start or Workflow Terminate."
         },
         {
           "key": "C",
-          "text": "Use the Temporal Cloud Ops API to query workflow visibility; be aware that visibility queries are rate-limited to 100 requests per minute per namespace."
+          "text": "Audit Logs capture both control plane operations and data plane events, but data plane events require enabling a separate flag in the Namespace settings."
         },
         {
           "key": "D",
-          "text": "Use Audit Logs combined with the Export feature together; neither alone can answer 'who' questions because Export covers workflow events and Audit Logs cover only namespace configuration changes."
+          "text": "Audit Logs capture only user authentication events and API key operations; Namespace and Nexus endpoint changes are tracked separately via the Export feature."
         }
       ],
       "answer": "B",
-      "explanation": "Audit Logs are specifically designed to answer 'who, when, and what' questions about Temporal Cloud control-plane operations. The DeleteUserAPI operation is tracked, and the caller's IP is available in the x_forwarded_for field (the older caller_ip_address field is deprecated). A critical operational limit is that Audit Logs are retained for only 30 days — beyond that you must open a support ticket. Option A is wrong because the Export feature only captures closed Workflow Histories, not admin operations. Option C is wrong because workflow visibility doesn't record admin actions like user deletion. Option D is wrong because Audit Logs alone do cover 'who' questions for control-plane events; Export is not needed and does not cover admin operations.",
-      "source_doc": "audit-logs.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "explanation": "Audit Logs are scoped exclusively to the Temporal Cloud control plane — operations like CreateNamespace, InviteUsers, CreateAPIKey, CreateNexusEndpoint, and similar administrative actions. They deliberately do NOT capture data plane events such as Workflow Start, Workflow Terminate, or Schedule Create. If you need visibility into closed Workflow Histories, the correct feature to reach for is Export, which sends closed Workflow Histories to external storage like S3. Option A is the opposite of correct: data plane events are explicitly excluded. Option C is wrong because there is no flag to enable data plane events in Audit Logs. Option D is wrong because Namespace and Nexus endpoint changes are well within Audit Log scope.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "temporal_cloud_med_002",
       "category": "Temporal_Cloud",
       "difficulty": "med",
-      "question": "Your team configures an AWS Kinesis Audit Log sink in Temporal Cloud. Thirty minutes after setup, no log entries have appeared in the stream. After clicking the Verify button in the UI and seeing a Success status, what is the most likely explanation?",
+      "question": "Your organization configures an Audit Log sink using AWS Kinesis. After setup, how long does it typically take to see the first log entries in the stream, and for how long does Temporal retain Audit Log data?",
       "choices": [
         {
           "key": "A",
-          "text": "The IAM role was created with the wrong trust policy, but Temporal's Verify check does not detect trust policy mismatches, so it reports Success incorrectly."
+          "text": "Logs appear immediately after configuration completes, and Temporal retains Audit Log data indefinitely within the Kinesis stream."
         },
         {
           "key": "B",
-          "text": "The Kinesis stream is in a different AWS region than the one selected during sink configuration, causing silent routing failures that Verify cannot detect."
+          "text": "Logs appear within 1 hour after configuration, and Temporal retains Audit Log data for 7 days before purging it from internal storage."
         },
         {
           "key": "C",
-          "text": "No auditable admin operations have been performed since the sink was configured, so there are no events to flow through the stream yet."
+          "text": "Logs appear within 10 minutes after configuration, and Temporal retains Audit Log data for up to 30 days; retrieving logs older than what flowed into your stream requires opening a support ticket."
         },
         {
           "key": "D",
-          "text": "The first log entries take up to 10 minutes to appear after configuration, and no qualifying admin events may have occurred yet to generate entries."
-        }
-      ],
-      "answer": "D",
-      "explanation": "The documentation explicitly states that the first logs appear within 10 minutes after configuring the sink, and Audit Logs only capture control-plane admin operations (CreateNamespace, DeleteUser, etc.) — not data-plane events. If no admin operations have been performed, there is simply nothing to log. The Verify button confirms Temporal can write to the stream, which rules out IAM or region misconfiguration. Option A is incorrect because a Verify Success confirms the write path works, meaning the trust policy is correct. Option B is incorrect for the same reason — a region mismatch would cause Verify to fail. Option C overstates the problem; the sink is working, but there may genuinely be no events yet, and the 10-minute initial delay also applies.",
-      "source_doc": "audit-logs-aws.html",
-      "generated_at": "2026-04-20T05:57:50Z"
-    },
-    {
-      "id": "temporal_cloud_med_003",
-      "category": "Temporal_Cloud",
-      "difficulty": "med",
-      "question": "An engineer reviews an Audit Log entry and notices both a user_email field and a principal.name field containing the same email address. They also see a caller_ip_address field alongside an x_forwarded_for field. How should they interpret these overlapping fields?",
-      "choices": [
-        {
-          "key": "A",
-          "text": "The duplicate fields indicate a malformed log entry; well-formed entries contain either legacy fields or new fields, but never both simultaneously in the same record."
-        },
-        {
-          "key": "B",
-          "text": "user_email and caller_ip_address are the current canonical fields; principal.name and x_forwarded_for are newer aliases added for SDK compatibility and can be safely ignored."
-        },
-        {
-          "key": "C",
-          "text": "user_email and caller_ip_address are deprecated fields scheduled for removal on or after April 1, 2026; principal.name and x_forwarded_for are their replacements and should be used going forward."
-        },
-        {
-          "key": "D",
-          "text": "Both sets of fields are permanent and serve different purposes: user_email identifies the human actor while principal.name identifies the service account, and caller_ip_address records the origin while x_forwarded_for records intermediate proxies only."
+          "text": "Logs appear within 10 minutes after configuration, and Temporal retains Audit Log data for up to 90 days, accessible via the Cloud Ops API without any special request."
         }
       ],
       "answer": "C",
-      "explanation": "The Audit Log format documentation explicitly marks user_email, caller_ip_address, level, details, and category as deprecated, scheduled for removal on or after April 1, 2026. Their replacements are principal.name (for the actor identity), x_forwarded_for (for the IP address), status (for level), and raw_details (for details). During the transition period, both old and new fields appear in log entries simultaneously, which is expected behavior. Option A is wrong — the simultaneous presence of both sets is intentional for backward compatibility. Option B has the relationship backwards; the deprecated fields are the older ones. Option D is wrong because both fields in each pair represent the same information; user_email is specifically a duplicate of principal.name for user-type principals.",
-      "source_doc": "audit-logs.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "explanation": "The documentation states that the first logs appear within 10 minutes after configuring the sink, and that Temporal retains Audit Log information for up to 30 days. If you need logs from the past 30 days that didn't flow through your sink (e.g., the sink wasn't configured yet), you must file a support ticket. Option A is wrong on both counts — there is a delay and retention is not indefinite. Option B understates the retention period (7 days vs. 30 days). Option D correctly identifies the 10-minute startup delay but inflates the retention period to 90 days; the API also caps access at 30 days, not 90.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "temporal_cloud_med_004",
       "category": "Temporal_Cloud",
       "difficulty": "med",
-      "question": "A FinOps team wants to attribute Temporal Cloud costs to individual Namespaces with hourly granularity for the previous billing month. They plan to poll for report completion. Which approach correctly follows the Temporal Cloud Billing API's intended usage pattern?",
+      "question": "A platform engineer is configuring Workflow History Export to an S3 bucket on Temporal Cloud and notices that Temporal Cloud provisions multiple internal IAM roles that trust the export operation. What is the primary reason for this multi-role design?",
       "choices": [
         {
           "key": "A",
-          "text": "Call CreateBillingReport, then immediately download the report using the billing_report_id returned in the response, since the API generates reports synchronously for completed billing months."
+          "text": "Each IAM role maps to a specific Namespace, so multiple roles are required because one AWS account can host multiple Temporal Namespaces simultaneously."
         },
         {
           "key": "B",
-          "text": "Call CreateBillingReport to start async generation, poll GetBillingReport with exponential backoff until the state is BILLING_REPORT_STATE_GENERATED, then download the CSV before the URL expires."
+          "text": "AWS enforces a hard limit of one write operation per IAM role per minute, so multiple roles are needed to meet the throughput requirements of high-volume exports."
         },
         {
           "key": "C",
-          "text": "Query the Audit Logs API with a date range covering the previous month, filter for cost-related operations, and aggregate the results client-side to build a per-Namespace cost report."
+          "text": "Multiple IAM roles are created for security isolation, load distribution, warm standby availability, and resilience — so that compromising or decommissioning one role does not disrupt export operations."
         },
         {
           "key": "D",
-          "text": "Call CreateBillingReport once per Namespace with overlapping date ranges to maximize coverage, then merge the CSV files, since the API enforces per-Namespace report scope at creation time."
+          "text": "The S3 bucket policy requires a distinct IAM role per AWS region, so Temporal provisions one role per region where export traffic may originate to satisfy cross-region access requirements."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation explicitly lists the reasons Temporal Cloud provisions multiple internal IAM roles for export: security isolation (one compromised role doesn't break everything), load distribution (avoiding single-role bottlenecks), warm standby (preventing throttling when roles rotate), and resilience against cloud provider account-level issues. The system randomly selects from these roles when writing to your storage sink. Option A is incorrect — roles are not mapped one-to-one to Namespaces. Option B fabricates an AWS per-minute write limit that does not exist. Option D is incorrect; the multi-role design is not driven by S3 bucket region policy requirements.",
+      "source_doc": "cloud_aws-export-s3.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "temporal_cloud_hard_001",
+      "category": "Temporal_Cloud",
+      "difficulty": "hard",
+      "question": "Your security team is reviewing Temporal Cloud Audit Logs after an unexpected Namespace deletion. They notice the logs capture the `DeleteNamespaceAPI` event but find no record of the Workflow executions that were running in that Namespace at the time of deletion. They suspect Audit Logs should have captured `Workflow Terminate` events triggered by the deletion. How should you explain this gap to your security team?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Audit Logs capture all control plane and data plane events, but Workflow Terminate events from Namespace deletion are batched and appear with up to a 30-minute delay, so the security team should wait before concluding the events are missing."
+        },
+        {
+          "key": "B",
+          "text": "Audit Logs only capture Temporal Cloud control plane operations such as Namespace lifecycle and user management changes. Data plane events like Workflow terminations are not recorded in Audit Logs; the Export feature must be used to capture closed Workflow Histories instead."
+        },
+        {
+          "key": "C",
+          "text": "Workflow Terminate events are captured only when triggered by a user API call, not when they result from a Namespace deletion, so those specific terminations are intentionally excluded from both Audit Logs and Export."
+        },
+        {
+          "key": "D",
+          "text": "The missing events indicate a misconfiguration in the Kinesis sink. Because Kinesis has a rate limit of 1,000 messages per second, high-volume Workflow terminations during deletion can cause events to be dropped before they reach the stream."
         }
       ],
       "answer": "B",
-      "explanation": "The Billing API is explicitly asynchronous: you create a report, receive a billing_report_id and async_operation_id, then poll GetBillingReport until the state reaches BILLING_REPORT_STATE_GENERATED. The documentation specifically recommends using exponential backoff when polling and downloading the report promptly because the download URL expires. Option A is wrong because the API is asynchronous — there is no synchronous download path. Option C is wrong because Audit Logs capture control-plane admin events (user creation, namespace changes), not billing or cost data; the Billing API is the correct tool for cost attribution. Option D is wrong because the API already provides Namespace-level attribution in a single report, and the documentation warns against generating large overlapping date ranges frequently.",
-      "source_doc": "billing-api.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "explanation": "Temporal Cloud Audit Logs explicitly do NOT capture data plane events such as Workflow Start, Workflow Terminate, or Schedule Create. They are scoped exclusively to control plane operations — things like CreateNamespaceAPI, DeleteNamespaceAPI, user management, API key operations, and so on. The `DeleteNamespaceAPI` event itself will appear, but the downstream Workflow terminations it triggers are data plane events and will never appear in Audit Logs regardless of sink configuration or throughput. If your compliance requirements demand a record of closed Workflow Histories, you must configure the Export feature, which ships closed Workflow execution histories to S3 or GCP storage. This distinction is fundamental: Audit Logs answer 'who did what to the Temporal Cloud control plane,' while Export answers 'what happened inside Workflows.'",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "temporal_cloud_hard_002",
+      "category": "Temporal_Cloud",
+      "difficulty": "hard",
+      "question": "An engineer is building an automated compliance dashboard that must display all Temporal Cloud administrative actions from the past 25 days in near-real time, refreshing every few minutes. They are debating between polling the Temporal Cloud Ops API for Audit Logs versus configuring a Kinesis-based Audit Log sink. Which approach is most appropriate for this use case, and why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Ops API is better suited for near-real-time dashboards because it supports WebSocket subscriptions that push new audit events as they are emitted, avoiding the polling overhead of a Kinesis consumer."
+        },
+        {
+          "key": "B",
+          "text": "A Kinesis-based sink is the correct choice because the Ops API is read-only and cannot filter by time range, forcing you to page through all 30 days of history on every dashboard refresh."
+        },
+        {
+          "key": "C",
+          "text": "A Kinesis sink is better suited for capturing each event as it is generated and feeding a real-time pipeline, whereas the Ops API is more appropriate for on-demand historical queries such as dashboards that can tolerate eventual consistency and a 30-day retention window."
+        },
+        {
+          "key": "D",
+          "text": "Both approaches are equivalent for near-real-time dashboards, but the Ops API should be avoided because its page size is capped at 100 records, making it impractical for accounts with high administrative activity."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation explicitly states: 'If your goal is to export an Audit Log, it is better to use an Audit Log sink and capture each entry as it is generated.' The Ops API is designed for ad-hoc or on-demand historical access — it supports time-range filtering (StartTimeInclusive, EndTimeExclusive), pagination up to 1,000 records per page, and a 30-day retention window. Polling it every few minutes for a live dashboard is functional but inefficient: you must manage pagination, handle rate limits, and deduplicate events across polls. A Kinesis (or GCP Pub/Sub) sink delivers events stream-style as they are emitted, which is the natural fit for a near-real-time pipeline feeding a dashboard. The page size cap of 1,000 (not 100 — the default is 100 but the max is 1,000) is a minor constraint, not a blocker. The key architectural principle is: streaming sinks for real-time capture, API for historical lookups.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "temporal_cloud_hard_003",
+      "category": "Temporal_Cloud",
+      "difficulty": "hard",
+      "question": "After deploying a new Temporal Cloud Audit Log integration that routes events to AWS Kinesis, your team observes that some Audit Log entries still contain the deprecated `user_email` and `caller_ip_address` fields while others use the newer `principal.name` and `x_forwarded_for` fields. Your log parsing pipeline breaks on entries that include both. What is the most accurate explanation for this inconsistency, and what is the correct long-term remediation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The mixed fields indicate that two different Kinesis shards are processing events from different Temporal Cloud regions, each emitting a different schema version. Consolidating to a single-shard stream resolves the inconsistency."
+        },
+        {
+          "key": "B",
+          "text": "Deprecated fields like `user_email` and `caller_ip_address` coexist with their replacements during the deprecation window (planned for removal on or after April 1, 2026). The pipeline must handle both field sets until removal; the long-term fix is to migrate parsing to `principal.name` and `x_forwarded_for` before that date."
+        },
+        {
+          "key": "C",
+          "text": "The deprecated fields only appear for operations performed by service accounts, while human user operations emit the new fields. Filtering by `principal.type` in the pipeline resolves the schema mismatch."
+        },
+        {
+          "key": "D",
+          "text": "This inconsistency is caused by the Kinesis rate limit of 1,000 messages per second. When the limit is exceeded, Temporal falls back to an older log schema, so reducing administrative operation frequency eliminates the mixed-field behavior."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal Cloud Audit Log documentation explicitly marks several fields as deprecated with planned removal on or after April 1, 2026: `user_email` (replaced by `principal.name` for user principals), `caller_ip_address` (replaced by `x_forwarded_for`), `level` (replaced by `status`), `details` (replaced by `raw_details`), and `category` (no longer used). During this deprecation window, Temporal continues to emit both the old and new fields simultaneously, so consumers will see both. This is intentional backward compatibility, not a bug or schema inconsistency caused by sharding or rate limiting. The correct remediation is to update your parsing pipeline to rely exclusively on the replacement fields (`principal.name`, `x_forwarded_for`, `status`, `raw_details`) before the removal deadline. Pipelines that break on seeing both fields are incorrectly assuming a strict either/or schema.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "temporal_cloud_hard_004",
+      "category": "Temporal_Cloud",
+      "difficulty": "hard",
+      "question": "A platform team configures Temporal Cloud Workflow History Export to an S3 bucket in `us-east-1`, but their Temporal Cloud Namespace is provisioned in `us-west-2`. After completing the CloudFormation stack setup and clicking Verify in the UI, the validation fails. The IAM role permissions look correct. What is the most likely root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal Cloud Export requires the S3 bucket to reside in the same AWS region as the Namespace. A bucket in `us-east-1` cannot receive exports from a Namespace in `us-west-2`, regardless of IAM role configuration."
+        },
+        {
+          "key": "B",
+          "text": "The CloudFormation stack must be deployed in the same region as the Temporal Cloud control plane (`us-west-2`), not the region of the S3 bucket. Redeploying the stack in `us-west-2` while keeping the bucket in `us-east-1` resolves the issue."
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud uses multiple intermediary IAM roles for export and randomly selects among them. The Verify step only tests one role, so a single failed Verify does not indicate a real misconfiguration — retrying Verify several times will eventually succeed."
+        },
+        {
+          "key": "D",
+          "text": "The KMS ARN field was left empty during setup. Without a KMS key, Temporal Cloud cannot write to S3 because all export data must be encrypted at rest using a customer-managed key."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The AWS Export documentation explicitly states: 'The S3 bucket must reside in the same region as your Namespace.' This is a hard prerequisite, not a soft recommendation. A Namespace in `us-west-2` requires an S3 bucket also in `us-west-2`. Cross-region writes would violate this constraint, causing the Verify step to fail even when IAM permissions are correctly configured. The multi-IAM-role behavior (Temporal Cloud randomly selecting from multiple intermediary roles for security isolation and warm standby) is real, but it does not affect the Verify outcome in this scenario — the root cause is the region mismatch. The KMS ARN is explicitly optional and its absence does not block exports. The CloudFormation stack region is a deployment concern for IAM, not a proxy for the bucket region requirement. The fix is to create a new S3 bucket in `us-west-2` and update the export sink configuration to reference it.",
+      "source_doc": "cloud_aws-export-s3.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "temporal_cloud_nightmare_001",
       "category": "Temporal_Cloud",
       "difficulty": "nightmare",
-      "question": "Your security team is building a SIEM pipeline that must detect when any Temporal Cloud user's namespace permissions are elevated AND when new API keys are created for service accounts — with sub-hour latency. You configure an Audit Log sink to AWS Kinesis. During a quarterly compliance review, the team also asks whether workflow execution events (e.g., Workflow Started, Workflow Terminated) will appear in the same Kinesis stream so they can correlate control-plane changes with data-plane activity. Which statement accurately describes what your Kinesis-based Audit Log sink will and will not capture?",
+      "question": "A security engineer at a fintech company is building a compliance pipeline on Temporal Cloud. They configure an AWS Kinesis Audit Log sink and separately configure Workflow History Export to an S3 bucket. Six months later, an auditor asks: \"Who deleted the namespace 'payments-prod' and when?\" and also \"Show me the full execution history of workflow run XYZ-123 that completed three months ago.\" The engineer queries the Audit Log API. Which of the following statements is correct about what each system can provide?",
       "choices": [
         {
           "key": "A",
-          "text": "The Kinesis sink captures both control-plane admin operations (namespace permission changes, API key creation) and data-plane workflow execution events like Workflow Started and Workflow Terminated, because all Temporal Cloud events are routed through the same audit pipeline when a sink is configured."
+          "text": "Both questions can be answered via the Audit Log API: namespace deletion is a control-plane event captured in Audit Logs, and closed Workflow Histories are also captured in Audit Logs since they are treated as namespace-level administrative operations."
         },
         {
           "key": "B",
-          "text": "The Kinesis sink captures control-plane events including `UpdateUserNamespacePermissionsAPI` and `CreateServiceAccountAPIKey`, but explicitly does NOT capture data-plane events like Workflow Start or Workflow Terminate — those require a separate Export sink that delivers closed Workflow Histories to S3 or GCS."
+          "text": "The Audit Log API can answer who deleted the namespace and when (control-plane event, retained 30 days via API), but cannot answer questions about workflow execution history — that requires the Export sink to S3, which is a separate data-plane pipeline not covered by Audit Logs."
         },
         {
           "key": "C",
-          "text": "The Kinesis sink captures data-plane workflow execution events but not control-plane IAM operations like API key creation or namespace permission changes, because those events are handled by a separate identity audit system that requires a different integration endpoint."
+          "text": "Neither system can answer both questions after 30 days: Audit Logs expire after 30 days and the Export sink only captures workflow starts, not full execution histories, so the engineer must file a support ticket with Temporal for both datasets."
         },
         {
           "key": "D",
-          "text": "The Kinesis sink captures control-plane events but only for namespaces explicitly listed in the sink configuration; permission changes and API key events on other namespaces are silently dropped unless the sink is scoped account-wide via a separate `UpdateAccountAPI` configuration call."
+          "text": "The Export sink to S3 captures both control-plane events like namespace deletion and data-plane events like closed workflow histories, making the Audit Log sink redundant for compliance purposes when an Export sink is already configured."
         }
       ],
       "answer": "B",
-      "explanation": "Temporal Cloud maintains a strict architectural boundary between the control plane and the data plane. The Audit Log feature is explicitly scoped to control-plane operations — things like user permission changes (`UpdateUserNamespacePermissionsAPI`, `SetUserGroupNamespaceAccess`), API key lifecycle events (`CreateServiceAccountAPIKey`, `DeleteAPIKey`), Nexus endpoint management, and namespace configuration changes. The documentation explicitly states: 'Audit Logs do NOT capture data plane events, like Workflow Start, Workflow Terminate, Schedule Create, etc.' For data-plane visibility, the Export feature is the correct tool — it ships closed Workflow Histories to an external storage sink (S3 or GCS). This is a critical distinction for compliance teams: if your SIEM needs to correlate 'who elevated permissions' (control plane → Audit Log) with 'what workflows ran afterward' (data plane → Export), you need both pipelines configured independently. The Kinesis sink is account-scoped, not namespace-scoped, so there is no per-namespace filtering at the sink level — that eliminates D. Options A and C both misrepresent the control/data-plane boundary. In production, teams frequently misconfigure compliance coverage by assuming one integration covers both planes, leading to gaps in audit trails. Understanding this separation also explains why Temporal charges and manages these two features independently: Audit Logs answer 'who administered what,' while Export answers 'what business processes completed.'",
-      "source_doc": "audit-logs.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "explanation": "This question exercises the interaction between Temporal Cloud's Audit Logs (control-plane forensics) and the Workflow History Export feature (data-plane closed workflow histories), two distinct observability pipelines that are frequently conflated. Audit Logs explicitly do NOT capture data-plane events such as Workflow Start, Workflow Terminate, or Schedule Create — these are excluded by design. They only capture control-plane operations: namespace CRUD, user management, API key operations, Nexus endpoint changes, etc. `DeleteNamespaceAPI` is a supported Audit Log event, so the namespace deletion question is answerable. However, individual workflow execution histories are data-plane events and are never in Audit Logs; they require the Export feature which ships closed Workflow Histories to S3 or GCS. The Audit Log API provides access for the past 30 days, so at six months the engineer cannot use the API for the namespace deletion either — they must file a support request (Temporal retains up to 30 days internally and can surface older logs on request). The Export sink to S3 is a separate, customer-controlled pipeline and retains data as long as the S3 bucket does. The key architectural insight: Audit Logs = 'who touched the control plane,' Export = 'what happened inside workflows.' Mixing them up in a compliance design leads to gaps that only surface during an actual audit — exactly the scenario here.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     },
     {
       "id": "temporal_cloud_nightmare_002",
       "category": "Temporal_Cloud",
       "difficulty": "nightmare",
-      "question": "A platform engineer is migrating their Temporal Cloud Audit Log integration from the legacy JSON format to the v2 schema. They write a consumer in Go that reads from Kinesis and indexes fields into their SIEM. After the migration, alerts based on `caller_ip_address` and `user_email` stop firing even though the underlying admin operations are still occurring. The engineer also notices that the `details` field, which they used to extract request-level specifics, now appears empty in some records. What is the most precise explanation for all three symptoms — silent `caller_ip_address`, missing `user_email`, and empty `details`?",
+      "question": "A platform team configures Temporal Cloud Audit Logs with a GCP Pub/Sub sink. Their SIEM ingests the Pub/Sub stream and parses the `caller_ip_address` field to enforce geo-based access policies. After upgrading their log parsing pipeline, they notice that some records show the `caller_ip_address` as a comma-separated list (e.g., `\"10.1.2.3, 10.4.5.6\"`) rather than a single IP, causing their geo-lookup to fail. Simultaneously, a newer audit log record version returns `x_forwarded_for` instead of `caller_ip_address`. Which action correctly addresses both the comma-separated IP parsing issue AND the field deprecation, and what is the right evaluation order for the IP list?",
       "choices": [
         {
           "key": "A",
-          "text": "The v2 schema encrypts PII fields like `caller_ip_address` and `user_email` by default; they must be decrypted using the account's KMS key before indexing. The `details` field is empty because request-level data now requires a separate API call using the `request_id` from each log entry."
+          "text": "Migrate the SIEM to parse `x_forwarded_for`, splitting on commas and evaluating from left to right, trusting the first IP as the originating client address, since proxies append their addresses to the right of the list per the X-Forwarded-For standard."
         },
         {
           "key": "B",
-          "text": "In the v2 schema, `caller_ip_address` is superseded by `x_forwarded_for` (which uses a comma-separated proxy-aware format evaluated last-to-first), `user_email` is superseded by `principal.name` for user-type principals, and `details` is superseded by `raw_details` — all three legacy fields are deprecated and may be empty or removed in current log entries."
+          "text": "Continue using `caller_ip_address` because `x_forwarded_for` is only present in version 2 log entries and older entries lack it; the comma-separated format in `caller_ip_address` should be split and the last IP taken as the true client IP, since Temporal documents X-Forwarded-For evaluation as last-to-first until the first untrusted IP."
         },
         {
           "key": "C",
-          "text": "The v2 schema removed `caller_ip_address` and `user_email` entirely for GDPR compliance reasons, so these fields never appear. The `details` field is now only populated for `LOG_CATEGORY_ADMIN` events, and since the migration changed the category classification, it appears empty for most operations."
+          "text": "Migrate to `x_forwarded_for`, split on commas, and evaluate from last to first until reaching the first untrusted IP — this correctly identifies the originating caller even through proxy chains, and avoids the deprecated `caller_ip_address` field which is planned for removal on or after April 1, 2026."
         },
         {
           "key": "D",
-          "text": "The Kinesis consumer is receiving events out of order because the v2 schema uses a different shard partition key, causing the consumer's field extractor to misalign records. Re-partitioning the Kinesis stream by `log_id` will restore all three fields to their expected positions in the consumer pipeline."
+          "text": "The comma-separated format in `caller_ip_address` always contains exactly two IPs — the originating client and one Temporal-internal proxy — so splitting on comma and taking index 0 is always safe, and field deprecation can be ignored since deprecated fields remain indefinitely in Temporal Cloud."
         }
       ],
-      "answer": "B",
-      "explanation": "The Temporal Cloud Audit Log v2 schema introduced three direct field replacements, all currently deprecated with planned removal on or after April 1, 2026. Each of the three symptoms maps to a specific deprecation: (1) `caller_ip_address` → `x_forwarded_for`: The new field uses the X-Forwarded-For header format, a comma-separated list of IPs that must be evaluated right-to-left to find the first untrusted IP, which is critical for correctly attributing calls that pass through proxies or load balancers. A consumer still reading `caller_ip_address` gets empty or stale data. (2) `user_email` → `principal.name`: The new schema moves identity into a structured `principal` object with `type`, `id`, `name`, and `apiKeyId` fields. This supports non-user principal types (service accounts, API keys) that have no associated email — `user_email` was conceptually incomplete. (3) `details` → `raw_details`: The `details` field is replaced by `raw_details` which contains the full request details. Consumers relying on `details` will see empty objects in new records. The deeper architectural insight is that Temporal versioned these schemas to support richer identity models (service accounts, API keys as first-class principals) and proxy-aware IP attribution — both driven by production security requirements. Engineers migrating SIEM pipelines must update field mappings across all three dimensions simultaneously or face silent alert failures, exactly the scenario described. Options A, C, and D invent mechanisms (KMS encryption, GDPR removal, shard partitioning) not described in the documentation and represent plausible but incorrect mental models that an engineer might form without reading the deprecation notices carefully.",
-      "source_doc": "audit-logs.html",
-      "generated_at": "2026-04-20T05:57:50Z"
+      "answer": "C",
+      "explanation": "This question exercises the interaction between Temporal Cloud's Audit Log field deprecation schedule and the semantics of the X-Forwarded-For header format used for IP attribution — a real operational pitfall for teams building SIEM-integrated compliance pipelines. First, the deprecation: `caller_ip_address` is explicitly deprecated and scheduled for removal on or after April 1, 2026, replaced by `x_forwarded_for`. Teams that don't migrate will have their parsers silently break when Temporal removes the field. Second, the X-Forwarded-For evaluation order: Temporal's documentation explicitly states the comma-separated list 'should be evaluated from the last to the first, until meeting the first untrusted IP address of the list.' This is the standard security-correct approach — the rightmost IP in an XFF header is the one appended by the last trusted proxy Temporal controls, while the leftmost is the client-reported IP (which can be spoofed). Evaluating right-to-left until hitting an untrusted IP gives you the actual originating client. Option A has the evaluation direction backwards (left-to-right), which is exploitable via IP spoofing. Option B is operationally backwards — it correctly identifies the evaluation direction but recommends staying on a deprecated field, and the assumption about version compatibility creates a false dependency. Option D invents a guarantee about list length that doesn't exist and dismisses a documented deprecation. The production insight: whenever a security-sensitive IP field uses XFF semantics, always evaluate right-to-left, and never anchor compliance tooling to fields marked for removal.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-20T15:25:08Z"
     }
   ]
 }

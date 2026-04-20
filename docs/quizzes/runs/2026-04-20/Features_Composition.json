@@ -1,0 +1,369 @@
+{
+  "category": "Features_Composition",
+  "questions": [
+    {
+      "id": "features_composition_easy_001",
+      "category": "Features_Composition",
+      "difficulty": "easy",
+      "question": "What happens to a Child Workflow Execution when its Parent Workflow closes, if no Parent Close Policy is explicitly set?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Child Workflow pauses and waits until the Parent Workflow is restarted before continuing."
+        },
+        {
+          "key": "B",
+          "text": "The Child Workflow is automatically terminated by default."
+        },
+        {
+          "key": "C",
+          "text": "The Child Workflow is abandoned and continues running independently by default."
+        },
+        {
+          "key": "D",
+          "text": "The Child Workflow is cancelled gracefully and allowed to clean up before stopping."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The default Parent Close Policy is to terminate the Child Workflow Execution. This means if a Parent Workflow completes, fails, or times out without an explicit policy being set, its Child Workflows are stopped immediately. You can override this — for example, using the Abandon policy — if you want Child Workflows to keep running independently after the Parent closes.",
+      "source_doc": "develop_go_workflows_child-workflows.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_easy_002",
+      "category": "Features_Composition",
+      "difficulty": "easy",
+      "question": "Why does Continue-As-New exist in Temporal? What problem does it solve?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It allows a Workflow to run on a different Worker or Task Queue mid-execution when the current one is too busy."
+        },
+        {
+          "key": "B",
+          "text": "It lets a Workflow pause itself and resume later when external input arrives, without consuming any server resources."
+        },
+        {
+          "key": "C",
+          "text": "It closes the current Workflow Execution and starts a fresh one with a new Event History, preventing the history from growing too large."
+        },
+        {
+          "key": "D",
+          "text": "It resets a Workflow back to its initial state so it can be retried from the beginning after a failure."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal records every step a Workflow takes in its Event History. Over a long-running Workflow, this history can grow very large and hit platform limits. Continue-As-New solves this by closing the current Workflow Execution and immediately starting a new one with a clean Event History — but keeping the same Workflow ID so it's still treated as the same logical workflow. Think of it like periodically checkpointing a very long process.",
+      "source_doc": "develop_go_workflows_continue-as-new.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_easy_003",
+      "category": "Features_Composition",
+      "difficulty": "easy",
+      "question": "Why must you use a Side Effect when generating a random number inside a Temporal Workflow, rather than calling a random number function directly?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Random number functions are not available in Workflow code because the SDK blocks access to standard libraries for security reasons."
+        },
+        {
+          "key": "B",
+          "text": "Calling a random number function directly would produce a different value each time the Workflow replays, breaking determinism."
+        },
+        {
+          "key": "C",
+          "text": "Side Effects run faster than regular function calls, so using them improves overall Workflow throughput."
+        },
+        {
+          "key": "D",
+          "text": "Without a Side Effect, the random number would not be passed correctly to downstream Activities."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Workflows must be deterministic — when a Workflow replays its history (e.g., after a Worker restart), every step must produce the same result as the first run. Calling a random number function directly would produce a different value on replay, causing a mismatch. A Side Effect solves this by recording the result in the Event History the first time it runs, and returning that same recorded value on every subsequent replay, keeping the Workflow deterministic.",
+      "source_doc": "develop_go_workflows_side-effects.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_med_001",
+      "category": "Features_Composition",
+      "difficulty": "med",
+      "question": "A Go Workflow spawns a Child Workflow with `PARENT_CLOSE_POLICY_ABANDON` and then immediately returns after calling `ExecuteChildWorkflow`. What happens to the Child Workflow Execution?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Child Workflow runs independently because the Abandon policy detaches it from the parent at scheduling time, so no extra waiting is needed."
+        },
+        {
+          "key": "B",
+          "text": "The Child Workflow Execution is terminated automatically since the parent closed before the `ChildWorkflowExecutionStarted` event was recorded."
+        },
+        {
+          "key": "C",
+          "text": "The Child Workflow Execution does not spawn at all, because the parent must wait for the `ChildWorkflowExecutionStarted` event before completing."
+        },
+        {
+          "key": "D",
+          "text": "The Child Workflow Execution is paused and resumes once a new parent workflow with the same Workflow ID is started."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Even with `PARENT_CLOSE_POLICY_ABANDON`, if the Parent Workflow completes before the `ChildWorkflowExecutionStarted` event is recorded in the Event History, the child simply never starts. To safely abandon a child, the parent must call `childWorkflowFuture.GetChildWorkflowExecution().Get(ctx, \u0026childWE)` to block until the child has actually been spawned. Option A is wrong because the Abandon policy governs what happens *after* the child starts, not whether it starts. Option B incorrectly implies termination, which is the default policy behavior, not Abandon. Option D describes behavior that doesn't exist in Temporal.",
+      "source_doc": "develop_go_workflows_child-workflows.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_med_002",
+      "category": "Features_Composition",
+      "difficulty": "med",
+      "question": "When a Workflow uses Continue-As-New in Go, which of the following best describes what happens to the Workflow's identity and history?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Workflow gets a brand-new Workflow ID and Run ID, effectively starting an entirely separate execution with no relationship to the original."
+        },
+        {
+          "key": "B",
+          "text": "The Workflow keeps the same Workflow ID and Run ID, and the existing Event History is carried forward into the new execution."
+        },
+        {
+          "key": "C",
+          "text": "The Workflow retains the same Workflow ID but is assigned a new Run ID, and the new execution starts with a fresh Event History."
+        },
+        {
+          "key": "D",
+          "text": "The Workflow keeps the same Workflow ID and Run ID, but Temporal truncates older events from the history to stay within limits."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Continue-As-New closes the current execution successfully and starts a new one in the same Workflow Execution chain. The new run keeps the same Workflow ID (so it's still logically the same workflow) but receives a new Run ID and begins with a completely empty Event History. This is exactly the point — it's a way to avoid hitting Event History size limits by resetting the history while preserving workflow identity. Option A is wrong because the Workflow ID is preserved. Option B is wrong because the Run ID changes and history is NOT carried forward. Option D is wrong — Temporal doesn't truncate history; Continue-As-New replaces it entirely.",
+      "source_doc": "develop_go_workflows_continue-as-new.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_med_003",
+      "category": "Features_Composition",
+      "difficulty": "med",
+      "question": "In a Go Workflow, you need to generate a random UUID to use as a record identifier. Which approach correctly preserves determinism during replay?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Call `uuid.New()` directly inside the Workflow function, since Go's UUID library is stateless and safe to call during replay."
+        },
+        {
+          "key": "B",
+          "text": "Use `workflow.SideEffect` and assign the result by modifying a variable inside the Side Effect function, returning `nil` from it."
+        },
+        {
+          "key": "C",
+          "text": "Use `workflow.SideEffect`, return the UUID from the function, then retrieve the result with `.Get(\u0026myVar)` outside the Side Effect."
+        },
+        {
+          "key": "D",
+          "text": "Spawn a dedicated child workflow whose sole purpose is to generate and return the UUID, since child workflow results are also deterministic."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The correct pattern is to use `workflow.SideEffect`, return the non-deterministic value from inside the function, and then use `.Get()` to extract it into a variable outside. The Side Effect result is recorded in Event History on first execution and replayed from history on subsequent replays, preserving determinism. Option A is wrong — calling non-deterministic code directly in a Workflow will cause divergence during replay. Option B demonstrates the *incorrect* usage shown in the docs: mutating a variable inside the Side Effect function means it will always be zero/nil on replay, since the function is not re-executed. Option D would technically work but is overkill and introduces unnecessary overhead for something as simple as UUID generation.",
+      "source_doc": "develop_go_workflows_side-effects.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_med_004",
+      "category": "Features_Composition",
+      "difficulty": "med",
+      "question": "You have a .NET Workflow that processes a long-running job and uses Signal handlers. The Workflow is approaching Event History limits and you want to Continue-As-New. Where should you trigger the `CreateContinueAsNewException`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Directly inside a Signal handler as soon as `Workflow.ContinueAsNewSuggested` returns true, so the workflow resets at the earliest opportunity."
+        },
+        {
+          "key": "B",
+          "text": "Inside the main Workflow method, but only after confirming that `Workflow.AllHandlersFinished` is true, so no in-flight handlers are interrupted."
+        },
+        {
+          "key": "C",
+          "text": "Inside any handler or the main method interchangeably, since Temporal automatically queues pending signals and replays them in the new run."
+        },
+        {
+          "key": "D",
+          "text": "Only from a dedicated Activity, since throwing exceptions inside Workflow code is not supported by the .NET SDK's determinism model."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly warns against calling Continue-As-New from inside Signal or Update handlers. Instead, you should wait for all handlers to finish in the main Workflow body — typically by checking `Workflow.AllHandlersFinished` — and only then throw `CreateContinueAsNewException`. This prevents a handler from being interrupted mid-execution when the workflow closes. Option A is the anti-pattern called out in the docs: triggering Continue-As-New from within a handler can leave work in an inconsistent state. Option C is incorrect — Temporal does not automatically replay pending signals into the new run. Option D is wrong; throwing exceptions (including `ContinueAsNewException`) from Workflow code is perfectly valid in the .NET SDK.",
+      "source_doc": "develop_dotnet_workflows_continue-as-new.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_hard_001",
+      "category": "Features_Composition",
+      "difficulty": "hard",
+      "question": "A long-running Go Workflow that manages a cluster processes Signals and Updates throughout its lifetime. After deploying a fix, you notice that some Workflow replays fail with non-determinism errors. Investigating, you discover that the Workflow uses `workflow.SideEffect` to generate UUIDs for node assignments, but a developer accidentally modified shared Workflow state inside the SideEffect function rather than using its return value. Why does this cause a non-determinism error during replay?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "SideEffect functions are re-executed on every replay, so mutating state inside them causes double-application of state changes, which diverges from the original execution path recorded in Event History."
+        },
+        {
+          "key": "B",
+          "text": "SideEffect functions are skipped entirely during replay and only their serialized return value is replayed from Event History, so any state mutations made inside the function never happen during replay, causing the Workflow's in-memory state to diverge from what was recorded."
+        },
+        {
+          "key": "C",
+          "text": "SideEffect functions are executed during replay but their results are discarded, so the UUID is regenerated but not applied, causing a mismatch between the replayed UUID and the one stored in Event History."
+        },
+        {
+          "key": "D",
+          "text": "SideEffect functions serialize their results using the Data Converter, and if the Workflow state is mutated inside the function, the serialized payload no longer matches the expected schema, causing a deserialization failure at replay time."
+        }
+      ],
+      "answer": "B",
+      "explanation": "During replay, Temporal does NOT re-execute SideEffect functions. Instead, it reads the previously recorded result from the Event History and returns it directly. This means any side mutations to Workflow state that were made inside the SideEffect function during the original execution simply do not happen during replay. The Workflow's in-memory state then diverges from the original run, causing non-determinism errors. The correct pattern is for the SideEffect function to only compute and return a value, which is then retrieved via `.Get()` and used to update state outside the function.",
+      "source_doc": "develop_go_workflows_side-effects.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_hard_002",
+      "category": "Features_Composition",
+      "difficulty": "hard",
+      "question": "A Go service spawns a Child Workflow with `PARENT_CLOSE_POLICY_ABANDON` and immediately calls `ExecuteChildWorkflow(...).Get(ctx, \u0026result)` to wait for the child's final result. The Parent Workflow then completes successfully. In production you observe that occasionally the Child Workflow never appears in the Temporal Web UI at all. What is the most likely cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Child Workflow's task queue has no registered workers at the moment of spawning, so Temporal silently drops the start request when the Parent completes before a worker picks it up."
+        },
+        {
+          "key": "B",
+          "text": "Calling `.Get()` on the `ChildWorkflowFuture` directly waits for the child's final result, not for the `ChildWorkflowExecutionStarted` event, so if the Parent completes before the child is scheduled, the child execution is never created by the Temporal server."
+        },
+        {
+          "key": "C",
+          "text": "The `PARENT_CLOSE_POLICY_ABANDON` policy requires an explicit detach call in the SDK before the Parent can complete; without it the server treats the child as terminated when the Parent closes."
+        },
+        {
+          "key": "D",
+          "text": "The Parent Workflow is completing before the `ChildWorkflowExecutionStarted` event is written to the Parent's Event History. Without first awaiting `childFuture.GetChildWorkflowExecution().Get(ctx, \u0026childWE)`, the child execution may not be created if the parent finishes first."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Temporal documentation is explicit: if the Parent makes the `ExecuteChildWorkflow` call and then immediately completes, the Child Workflow Execution may not spawn at all. To guarantee the child has actually started, you must wait for the `ChildWorkflowExecutionStarted` event by calling `childFuture.GetChildWorkflowExecution().Get(ctx, \u0026childWE)` before the Parent completes. Calling `.Get()` on the `ChildWorkflowFuture` directly waits for the child's *result*, which means the Parent is still waiting — but if some other code path lets the Parent complete before that point, the child can be lost. The idiomatic async pattern for fire-and-forget children with `PARENT_CLOSE_POLICY_ABANDON` is to explicitly wait for the started event first.",
+      "source_doc": "develop_go_workflows_child-workflows.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_hard_003",
+      "category": "Features_Composition",
+      "difficulty": "hard",
+      "question": "Your .NET Workflow manages a long-lived cluster and uses Updates to assign nodes. The Workflow is also designed to call Continue-As-New when `Workflow.ContinueAsNewSuggested` returns true. During a production incident you observe that some Update responses are never delivered to callers — the callers receive a 'workflow execution already completed' error instead. The Workflow code throws `CreateContinueAsNewException` inside a timer callback in the main loop. What is the correct fix?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Increase the Update timeout so callers wait longer; the Continue-As-New transition is fast and callers will reconnect to the new run automatically once it starts."
+        },
+        {
+          "key": "B",
+          "text": "Move the Continue-As-New check to inside each Update handler so the Workflow continues as new only after each handler has a chance to complete its own work."
+        },
+        {
+          "key": "C",
+          "text": "Gate the `CreateContinueAsNewException` throw on `Workflow.AllHandlersFinished` being true, so the Workflow only continues as new from the main loop after all in-flight Update and Signal handlers have completed."
+        },
+        {
+          "key": "D",
+          "text": "Switch from Updates to Signals for node assignment, since Signal handlers are fire-and-forget and do not need to return a response, eliminating the race with Continue-As-New."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Temporal documentation explicitly warns: do not call Continue-As-New from Update or Signal handlers. Instead, wait for handlers to finish in the main Workflow body before throwing `CreateContinueAsNewException`. The `Workflow.AllHandlersFinished` property (and the equivalent `AllHandlersFinished` pattern in Go) is the correct guard. If the Workflow continues as new while an Update handler is still running, the Update response is never sent to the caller, resulting in the 'workflow execution already completed' error observed in production.",
+      "source_doc": "develop_dotnet_workflows_continue-as-new.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_hard_004",
+      "category": "Features_Composition",
+      "difficulty": "hard",
+      "question": "An engineering team runs a multi-tenant SaaS platform where each tenant's data processing is a long-lived Workflow. After six months, some Workflows start logging warnings about approaching Event History limits. The team considers two options: (1) use Continue-As-New to reset history periodically, or (2) break the monolithic Workflow into Child Workflows with `PARENT_CLOSE_POLICY_TERMINATE`. Which statement best describes the operational difference between these two approaches that should guide the decision?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Continue-As-New preserves the same Workflow Id and Run chain so external systems that poll by Workflow Id keep working, while Child Workflows get independent Workflow Ids and histories, making them independently queryable but requiring callers to track child IDs separately."
+        },
+        {
+          "key": "B",
+          "text": "Continue-As-New is only available in Go and Java SDKs, while Child Workflows are the cross-SDK solution for managing history size, so the choice depends on which SDK the team uses."
+        },
+        {
+          "key": "C",
+          "text": "Continue-As-New carries forward the full previous Event History into the new run, so it reduces Workflow Task processing time but does not actually reduce stored history size on disk."
+        },
+        {
+          "key": "D",
+          "text": "Child Workflows with `PARENT_CLOSE_POLICY_TERMINATE` automatically continue as new when they approach Event History limits, while Continue-As-New requires the developer to instrument and trigger the transition manually."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Continue-As-New creates a new Workflow Execution in the same chain — same Workflow Id, new Run Id, fresh Event History. This is transparent to external callers that reference the Workflow by its stable Workflow Id. Child Workflows, by contrast, are independent executions with their own Workflow Ids (auto-generated unless explicitly set), their own histories, and their own lifecycle. With `PARENT_CLOSE_POLICY_TERMINATE`, Child Workflows are terminated when the parent closes, which suits fan-out/fan-in patterns but requires the parent to track child handles. The key operational difference is identity and observability: Continue-As-New is a single logical thread of execution visible under one ID, while Child Workflows are separately addressable units of work. Option C is wrong — Continue-As-New explicitly creates a *fresh* Event History. Option D is wrong — neither approach auto-triggers the other.",
+      "source_doc": "develop_go_workflows_continue-as-new.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_nightmare_001",
+      "category": "Features_Composition",
+      "difficulty": "nightmare",
+      "question": "A Go-based parent workflow spawns a long-running child workflow with `PARENT_CLOSE_POLICY_ABANDON` and then calls `Continue-As-New` to shed event history. The parent uses Signal and Update handlers extensively and correctly waits for `AllHandlersFinished` before throwing `NewContinueAsNewError`. After the rollout, engineers notice that **sometimes the child workflow never starts at all** — it disappears without a trace. Which interaction between Continue-As-New, child workflow lifecycle, and the Abandon policy explains this behavior?\n\n```go\nfunc ParentWorkflow(ctx workflow.Context, input Input) error {\n    cwo := workflow.ChildWorkflowOptions{\n        ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,\n    }\n    ctx2 := workflow.WithChildOptions(ctx, cwo)\n    childFuture := workflow.ExecuteChildWorkflow(ctx2, ChildWorkflow, input.ChildParams)\n    // ... handle signals/updates ...\n    if shouldContinueAsNew(ctx) {\n        return workflow.NewContinueAsNewError(ctx, ParentWorkflow, nextInput)\n    }\n    return childFuture.Get(ctx, nil)\n}\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `PARENT_CLOSE_POLICY_ABANDON` policy only applies when the parent completes or fails; Continue-As-New is treated as a parent timeout, which defaults to `PARENT_CLOSE_POLICY_TERMINATE`, so the server silently terminates the child before the abandon policy can take effect."
+        },
+        {
+          "key": "B",
+          "text": "When the parent throws `NewContinueAsNewError`, it closes the current Run. If the parent closes before the `ChildWorkflowExecutionStarted` event is recorded in the parent's event history, the server never dispatches the child's first task, regardless of the abandon policy — the child simply never materializes."
+        },
+        {
+          "key": "C",
+          "text": "Continue-As-New resets the workflow chain's Run ID, which causes the server to garbage-collect all child workflow references attached to the old Run ID, effectively terminating them even when `PARENT_CLOSE_POLICY_ABANDON` is set, because abandon only persists across parent failure, not parent continuation."
+        },
+        {
+          "key": "D",
+          "text": "The `AllHandlersFinished` guard prevents the Continue-As-New from firing until all updates complete, but this also drains the task queue of child-start tasks, causing a race where the child start command is dropped when the parent's history is atomically swapped to the new run."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The core invariant is: **a child workflow only truly exists once `ChildWorkflowExecutionStarted` appears in the parent's event history**. Until that event is written, the child is just a pending command in the parent's workflow task completion. If the parent closes (for any reason — complete, fail, timeout, or Continue-As-New) before that event is persisted, the server has no durable record that the child should be started, so it never is — even with `PARENT_CLOSE_POLICY_ABANDON`.\n\nThe fix, documented explicitly in the Go SDK, is to call `childFuture.GetChildWorkflowExecution().Get(ctx, \u0026childWE)` before allowing the parent to proceed to Continue-As-New. This call blocks until the `ChildWorkflowExecutionStarted` event is in the parent's history, guaranteeing the child is registered on the server. Only after that point does `PARENT_CLOSE_POLICY_ABANDON` give the child an independent lifecycle.\n\nThis is not a race in the task queue (D) nor a policy scoping issue (A, C). Continue-As-New is treated like a successful close for parent-close-policy purposes, so abandon *would* work — but only if the child has actually started. The `AllHandlersFinished` guard correctly prevents data loss during message handler processing, but it has no bearing on whether the child start has been acknowledged. The lesson: spawning an async child and immediately continuing-as-new without awaiting `GetChildWorkflowExecution()` is a silent data-loss bug that only surfaces under load or slow scheduling.",
+      "source_doc": "develop_go_workflows_child-workflows.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_composition_nightmare_002",
+      "category": "Features_Composition",
+      "difficulty": "nightmare",
+      "question": "An engineering team maintains a .NET workflow that manages a long-lived cluster. It uses Update handlers extensively for node assignment operations and calls `Continue-As-New` when `Workflow.ContinueAsNewSuggested` is true. To test this, they set `TestContinueAsNew = true` in CI, which reduces `maxHistoryLength` to 5. In CI, the workflow intermittently panics during replay with a non-determinism error **only when an Update arrives concurrently with the Continue-As-New decision**. Which interaction between Update handlers, the `AllHandlersFinished` guard, and the Continue-As-New test hook explains this failure?\n\n```csharp\nprivate bool ShouldContinueAsNew =\u003e\n    Workflow.AllHandlersFinished \u0026\u0026\n    (Workflow.ContinueAsNewSuggested || Workflow.CurrentHistoryLength \u003e maxHistoryLength);\n\n// In main loop:\nif (ShouldContinueAsNew)\n    throw Workflow.CreateContinueAsNewException(...);\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The test hook sets `maxHistoryLength` to 5, which is below the minimum number of events needed to record a single Update (accept + complete = 3 events minimum), so the workflow always attempts Continue-As-New mid-Update, corrupting the handler's stack frame in the replay determinism checker."
+        },
+        {
+          "key": "B",
+          "text": "When `TestContinueAsNew` artificially lowers the threshold, `ShouldContinueAsNew` can become true inside the main loop while an Update validator has already passed but the handler body has not yet run. On replay, the Update's accepted/completed events appear in history but the workflow throws Continue-As-New before re-executing the handler body, causing a determinism mismatch."
+        },
+        {
+          "key": "C",
+          "text": "The `AllHandlersFinished` property checks that no handlers are *scheduled*, not that they have *completed*. Under the low test threshold, the scheduler marks the Update handler as finished when the validator runs, so `ShouldContinueAsNew` returns true prematurely and the exception is thrown before the Update response is sent to the caller, orphaning the Update."
+        },
+        {
+          "key": "D",
+          "text": "Continue-As-New discards all pending messages in the SDK's internal message buffer, so the Update that arrived concurrently is silently dropped. On replay the server re-delivers it to the new run, which has a different history position, and the determinism checker flags the event offset mismatch as a non-determinism error."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The interaction is between the **Update lifecycle events in history**, the **low artificial history threshold from the test hook**, and the **`AllHandlersFinished` guard's timing**.\n\nWhen an Update is accepted, Temporal writes `WorkflowExecutionUpdateAccepted` to history. When the handler completes, it writes `WorkflowExecutionUpdateCompleted`. `AllHandlersFinished` is only true when all accepted Updates have also completed — so the guard is designed correctly to prevent Continue-As-New mid-handler. However, under the test hook's aggressively low threshold, the main workflow loop can evaluate `ShouldContinueAsNew` *between* the point where the Update has been accepted (history event written) and the point where the handler body executes (before `WorkflowExecutionUpdateCompleted` is written). In this narrow window, if `AllHandlersFinished` is momentarily true (no other handlers running) but the Update body hasn't been dispatched yet in the current workflow task, the workflow can throw `CreateContinueAsNewException`. On replay, the SDK sees `WorkflowExecutionUpdateAccepted` in history and expects to replay the handler to produce `WorkflowExecutionUpdateCompleted`, but the workflow code throws Continue-As-New first — a non-determinism error.\n\nThis does not mean `AllHandlersFinished` is broken; it means the test threshold must be set high enough that at least one full Update round-trip can complete before the threshold is crossed. The documentation's guidance to *not* call Continue-As-New from handlers is necessary but not sufficient — you also need the threshold to be practically unreachable within a single handler dispatch cycle. Option C mischaracterizes `AllHandlersFinished` (it does track completion, not just scheduling). Options A and D describe mechanisms that don't exist. The broader lesson: test hooks that compress history thresholds can expose timing windows invisible at production thresholds, and CI failures from artificial hooks can reveal real latent bugs in message-handler/Continue-As-New coordination.",
+      "source_doc": "develop_dotnet_workflows_continue-as-new.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    }
+  ]
+}

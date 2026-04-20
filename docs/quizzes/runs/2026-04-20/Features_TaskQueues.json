@@ -1,0 +1,649 @@
+{
+  "category": "Features_TaskQueues",
+  "questions": [
+    {
+      "id": "features_taskqueues_easy_001",
+      "category": "Features_TaskQueues",
+      "difficulty": "easy",
+      "question": "What does Task Queue Priority control in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "How many Workers are assigned to a given Task Queue at any time"
+        },
+        {
+          "key": "B",
+          "text": "The execution order of Tasks within a single Task Queue based on assigned priority values"
+        },
+        {
+          "key": "C",
+          "text": "Which Namespace a Task is routed to when multiple Namespaces are available"
+        },
+        {
+          "key": "D",
+          "text": "How long a Task is allowed to run before it is automatically cancelled"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Task Queue Priority lets you control the execution order of Workflows, Activities, and Child Workflows within a single Task Queue by assigning priority values. Tasks with a lower priority key number (e.g., 1) execute before Tasks with a higher number (e.g., 5). This is useful when you want urgent work — like payment processing — to run ahead of less time-sensitive work like inventory updates, all without needing separate Worker pools.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_easy_002",
+      "category": "Features_TaskQueues",
+      "difficulty": "easy",
+      "question": "If you start a Workflow without setting a priority key, what priority level will it receive by default?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Priority 1, the highest available priority level"
+        },
+        {
+          "key": "B",
+          "text": "Priority 5, the lowest available priority level"
+        },
+        {
+          "key": "C",
+          "text": "Priority 3, the middle of the available range"
+        },
+        {
+          "key": "D",
+          "text": "No priority is assigned, and the Task is placed in a separate unordered queue"
+        }
+      ],
+      "answer": "C",
+      "explanation": "When no priority key is specified, a Task defaults to priority level 3, which sits in the middle of the valid range of 1 to 5. Priority 1 is the highest (processed first) and priority 5 is the lowest. This default prevents untagged Tasks from jumping ahead of intentionally low-priority work or being stuck behind everything else.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_easy_003",
+      "category": "Features_TaskQueues",
+      "difficulty": "easy",
+      "question": "You have a multi-tenant application where a large tenant's Tasks frequently delay smaller tenants. Which Temporal feature is designed to address this problem?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Task Queue Priority, so smaller tenants are assigned a higher priority key than the large tenant"
+        },
+        {
+          "key": "B",
+          "text": "Task Queue Fairness, which uses fairness keys to give each tenant regular processing time via round-robin dispatch"
+        },
+        {
+          "key": "C",
+          "text": "Retry Policies, so Tasks from smaller tenants automatically retry faster after being blocked"
+        },
+        {
+          "key": "D",
+          "text": "Child Workflows, so each tenant's Tasks run in an isolated sub-workflow that cannot be interrupted"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Task Queue Fairness is built specifically for multi-tenant scenarios where one high-volume tenant could monopolize Worker capacity. Each tenant gets its own fairness key, which creates a virtual sub-queue. A round-robin dispatch mechanism ensures every tenant gets regular processing time, even if one tenant has a much larger backlog than the others.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_easy_004",
+      "category": "Features_TaskQueues",
+      "difficulty": "easy",
+      "question": "You assign three fairness keys with weights: premium-tier (5.0), basic-tier (3.0), and free-tier (2.0). Approximately how often will free-tier Tasks be dispatched from the backlog?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "About 33% of the time, since there are three tiers and each gets an equal share"
+        },
+        {
+          "key": "B",
+          "text": "About 50% of the time, because free-tier Tasks are never deprioritized below half the throughput"
+        },
+        {
+          "key": "C",
+          "text": "About 20% of the time, proportional to its weight relative to the total weight of all keys"
+        },
+        {
+          "key": "D",
+          "text": "About 10% of the time, since premium-tier Tasks always consume the majority of available capacity"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Fairness dispatches Tasks proportionally based on each key's weight relative to the sum of all weights. The total here is 5 + 3 + 2 = 10, so free-tier (weight 2) gets dispatched 2/10 = 20% of the time, basic-tier gets 30%, and premium-tier gets 50%. This weighted distribution lets you give higher-value tiers more throughput without completely starving lower-value ones.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_easy_005",
+      "category": "Features_TaskQueues",
+      "difficulty": "easy",
+      "question": "When Task Queue Priority and Task Queue Fairness are used together, how do they interact?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Priority and Fairness compete with each other, so enabling both causes unpredictable dispatch ordering"
+        },
+        {
+          "key": "B",
+          "text": "Priority determines which sub-queue a Task enters, and Fairness then distributes Tasks within each priority level"
+        },
+        {
+          "key": "C",
+          "text": "Fairness overrides Priority entirely, so Tasks are always dispatched in round-robin order regardless of their priority key"
+        },
+        {
+          "key": "D",
+          "text": "Priority applies only to Workflows, while Fairness applies only to Activities, keeping the two features separate"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The two features are complementary and operate at different layers. Priority first sorts Tasks into sub-queues (level 1 is processed before level 2, and so on). Within each priority sub-queue, Fairness then uses fairness keys to ensure that no single group of same-priority Tasks monopolizes Worker capacity. Together, they give you both ordering control and fair resource sharing.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_easy_006",
+      "category": "Features_TaskQueues",
+      "difficulty": "easy",
+      "question": "What happens to Tasks that are already queued in a Task Queue when you first enable Fairness on a self-hosted Temporal instance?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "All previously queued Tasks are immediately dropped and must be re-submitted with fairness keys"
+        },
+        {
+          "key": "B",
+          "text": "Existing queued Tasks are processed before any new Tasks created after Fairness was enabled"
+        },
+        {
+          "key": "C",
+          "text": "Existing queued Tasks are automatically assigned a fairness key based on the Workflow type"
+        },
+        {
+          "key": "D",
+          "text": "Previously queued Tasks and new Tasks are interleaved randomly, ignoring any fairness weights"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When Fairness is first enabled, the Task Queue switches to fairness mode for newly submitted Tasks. However, Tasks that were already sitting in the existing backlog are drained and processed first, before the new Fairness-aware Tasks are dispatched. On self-hosted instances, you also need to set `matching.enableMigration` to true to support this draining behavior.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_med_001",
+      "category": "Features_TaskQueues",
+      "difficulty": "med",
+      "question": "What is the valid range for priority keys in Temporal's Task Queue Priority feature, and which value represents the highest priority?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Range is [0,10]; value 0 represents the highest priority because zero-indexed systems start at 0."
+        },
+        {
+          "key": "B",
+          "text": "Range is [1,5]; value 1 represents the highest priority because lower values execute before higher values."
+        },
+        {
+          "key": "C",
+          "text": "Range is [1,10]; value 10 represents the highest priority because higher integers signal greater urgency."
+        },
+        {
+          "key": "D",
+          "text": "Range is [1,5]; value 5 represents the highest priority because the system counts up to maximum capacity first."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Priority keys must be integers in the range [1,5], and a lower value means higher priority — so priority 1 tasks run before priority 2, and so on. If no priority is specified, tasks default to priority 3. This 'lower = higher priority' convention is common in operating systems and scheduling systems. Option A is wrong because 0 is not a valid priority key. Option C inverts the range and the direction. Option D correctly identifies the range but incorrectly states that 5 is the highest priority.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_med_002",
+      "category": "Features_TaskQueues",
+      "difficulty": "med",
+      "question": "An Activity is scheduled inside a Workflow that has priority key 2. The Activity itself has no explicit priority set. What priority level will the Activity use?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Priority 3, because all tasks without an explicit priority always default to the global default of 3, regardless of their parent Workflow's priority."
+        },
+        {
+          "key": "B",
+          "text": "Priority 1, because child tasks always receive the highest possible priority to avoid blocking their parent Workflow."
+        },
+        {
+          "key": "C",
+          "text": "Priority 2, because Activities inherit the priority level of their Workflow when no separate Activity priority is set."
+        },
+        {
+          "key": "D",
+          "text": "Priority 5, because Activities are assigned the lowest priority to prevent them from starving Workflow tasks."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Activities inherit the priority level of their parent Workflow if a separate Activity priority is not explicitly set. This makes it easy to propagate priorities through a workflow without having to annotate every activity call. Option A is incorrect — the default of 3 only applies when there is no parent context to inherit from. Options B and D describe invented rules that do not exist in Temporal's priority system.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_med_003",
+      "category": "Features_TaskQueues",
+      "difficulty": "med",
+      "question": "You are building a multi-tenant SaaS platform where a few large tenants regularly flood the task queue, causing small tenants to wait a long time for their tasks to run. Which Temporal feature is specifically designed to address this problem?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Task Queue Priority, which lets you assign priority key 1 to small tenants so their tasks always run before large tenant tasks."
+        },
+        {
+          "key": "B",
+          "text": "Task Queue Fairness, which uses fairness keys per tenant and a weighted round-robin dispatch to prevent any single tenant from monopolizing queue resources."
+        },
+        {
+          "key": "C",
+          "text": "Multiple task queues — one per tenant — so large tenants can't interfere with smaller tenants' dedicated queues."
+        },
+        {
+          "key": "D",
+          "text": "Increasing the number of Workers assigned to small-tenant workflows so they can compete more effectively with large tenant backlogs."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Task Queue Fairness is purpose-built for multi-tenant scenarios where one high-volume tenant could starve others. By assigning each tenant a unique fairness key (and optionally a fairness weight), the system cycles through keys in a weighted round-robin manner so that every tenant gets dispatch opportunities even when a large tenant has a much bigger backlog. Option A (Priority) would simply block all large-tenant tasks entirely rather than interleave them fairly. Option C works operationally but wastes resources and adds management overhead — Fairness solves this within a single queue. Option D addresses Worker capacity, not dispatch ordering.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_med_004",
+      "category": "Features_TaskQueues",
+      "difficulty": "med",
+      "question": "A team configures three fairness keys on a task queue: `premium-tier` with weight 5.0, `basic-tier` with weight 3.0, and `free-tier` with weight 2.0. Approximately what percentage of dispatches will `basic-tier` tasks receive when all three keys have a backlog?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "50%, because basic-tier is the middle tier and the system splits resources evenly between the tiers above and below it."
+        },
+        {
+          "key": "B",
+          "text": "33%, because Fairness uses strict round-robin and ignores weights unless explicitly configured as ratios."
+        },
+        {
+          "key": "C",
+          "text": "20%, because weights are normalized by subtracting the lowest weight from each tier before calculating shares."
+        },
+        {
+          "key": "D",
+          "text": "30%, because weights are summed (5+3+2=10) and basic-tier's share is 3/10 of total dispatches."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Fairness weights are proportional: the total weight is 5+3+2=10, so premium gets 5/10=50%, basic gets 3/10=30%, and free gets 2/10=20% of dispatches. This is a weighted distribution, not simple round-robin or equal splitting. Option A wrongly assumes equal splitting for the middle tier. Option B incorrectly says weights are ignored. Option C invents a subtraction normalization that doesn't exist in the documentation.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_med_005",
+      "category": "Features_TaskQueues",
+      "difficulty": "med",
+      "question": "When Task Queue Priority and Task Queue Fairness are used together on the same queue, how do they interact?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Priority is applied first globally, and Fairness overrides Priority when a fairness key is set, so fairness keys always get equal dispatch regardless of their priority level."
+        },
+        {
+          "key": "B",
+          "text": "Fairness is applied first to group tasks, and then Priority is used as a tiebreaker within each fairness key's virtual queue."
+        },
+        {
+          "key": "C",
+          "text": "Priority divides the queue into sub-queues by priority level, and Fairness then applies its weighted dispatch independently within each priority-level sub-queue."
+        },
+        {
+          "key": "D",
+          "text": "They cannot be used together on the same task queue; you must choose one or the other for a given queue."
+        }
+      ],
+      "answer": "C",
+      "explanation": "When both features are enabled, Priority operates at the outer layer — creating sub-queues for each priority level (1 through 5). Fairness then applies within each sub-queue, distributing tasks across fairness keys using the weighted round-robin mechanism. This means a priority-1 task with fairness key 'tenant-A' will still run before all priority-2 tasks, but within the priority-1 sub-queue, fairness keys compete fairly. Option A incorrectly suggests Fairness overrides Priority. Option B inverts the layering. Option D is false — the documentation explicitly describes using them together.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_med_006",
+      "category": "Features_TaskQueues",
+      "difficulty": "med",
+      "question": "Your team starts assigning fairness keys to some workflows but leaves others without any fairness key. How does Temporal handle the unkeyed tasks once Fairness mode is active?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Unkeyed tasks bypass Fairness entirely and are dispatched immediately before any keyed tasks, acting as a fast lane."
+        },
+        {
+          "key": "B",
+          "text": "Unkeyed tasks are grouped together under an implicit empty-string key with a default weight of 1.0, and they compete in the round-robin alongside all explicitly keyed tasks."
+        },
+        {
+          "key": "C",
+          "text": "Unkeyed tasks are rejected with an error once Fairness mode is active, requiring all tasks to have an explicit fairness key."
+        },
+        {
+          "key": "D",
+          "text": "Unkeyed tasks are automatically assigned the fairness key of the most recently dispatched keyed task to keep distribution consistent."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Fairness adoption is designed to be incremental. Tasks without a fairness key are all grouped under a single implicit empty-string key with a default weight of 1.0. This group participates in the same weighted round-robin as named fairness keys — it doesn't bypass Fairness, nor does it cause errors. This means you can gradually introduce fairness keys tenant by tenant without needing to update all existing workflows at once. Options A, C, and D all describe behaviors that would make incremental adoption impractical and are not how the system works.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_med_008",
+      "category": "Features_TaskQueues",
+      "difficulty": "med",
+      "question": "A self-hosted Temporal operator wants to enable both Task Queue Priority and Task Queue Fairness on their cluster. Which dynamic config settings are required?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Set `matching.enablePriority` to `true` and `matching.enableFairness` to `true`; Priority and Fairness each have their own independent toggle."
+        },
+        {
+          "key": "B",
+          "text": "Set `matching.useNewMatcher` to `true` and `matching.enableFairness` to `true`; also set `matching.enableMigration` to `true` if existing backlogs need to drain after enabling Fairness."
+        },
+        {
+          "key": "C",
+          "text": "Set `matching.useNewMatcher` to `true` only; Fairness is automatically enabled whenever the new matcher is active and no additional flag is needed."
+        },
+        {
+          "key": "D",
+          "text": "No dynamic config changes are needed; both features are enabled by default on all self-hosted Temporal clusters running a supported version."
+        }
+      ],
+      "answer": "B",
+      "explanation": "For self-hosted instances, `matching.useNewMatcher` enables the new scheduling infrastructure (which includes Priority), and `matching.enableFairness` must also be set to `true` to turn on Fairness. Additionally, `matching.enableMigration` should be set to `true` to support draining any pre-existing tasks in backlogs after Fairness is enabled. Option A invents a `matching.enablePriority` flag that doesn't exist in the docs. Option C incorrectly implies Fairness is automatic when the new matcher is on — it needs its own flag. Option D is wrong; neither feature is on by default for self-hosted deployments.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_hard_001",
+      "category": "Features_TaskQueues",
+      "difficulty": "hard",
+      "question": "Your e-commerce platform uses a single Task Queue for both real-time payment workflows (priority 1) and nightly inventory batch jobs (priority 5). After deploying the priority feature, your on-call engineer notices in Temporal Web UI that inventory batch jobs have been stuck in 'Scheduled' state for hours, even though workers are idle between payment bursts. What is the most likely explanation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Priority only affects Activity scheduling, not Workflow scheduling, so inventory Workflows are bypassed by a known limitation."
+        },
+        {
+          "key": "B",
+          "text": "The priority feature requires separate Task Queues per priority level; using a single queue causes lower-priority Tasks to be silently dropped."
+        },
+        {
+          "key": "C",
+          "text": "This is expected behavior: all priority-1 Tasks must fully complete before priority-5 Tasks are dispatched, so any backlog of payment Tasks will block inventory Tasks indefinitely."
+        },
+        {
+          "key": "D",
+          "text": "Workers are applying sticky scheduling to priority-1 Tasks, preventing the matching service from routing priority-5 Tasks to available workers."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Task Queue Priority works by creating sub-queues per priority level. All Tasks at priority 1 are dispatched before any at priority 2, and so on — it is a strict ordering, not a weighted share. The documentation explicitly states: 'all of your priority level 1 Tasks will execute before your priority level 2 Tasks... lower priority Tasks will be blocked until the higher priority Tasks finish running.' If there is any continuous backlog of priority-1 payment tasks (even from new arrivals), priority-5 inventory Tasks will remain stuck. This is not a bug but the intended design of strict priority ordering. If you need both high-priority and low-priority Tasks to make progress simultaneously, you need Fairness (weighted round-robin) rather than strict Priority, or you need to ensure the high-priority backlog can drain completely.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_hard_002",
+      "category": "Features_TaskQueues",
+      "difficulty": "hard",
+      "question": "A multi-tenant SaaS platform processes document-conversion workflows on a shared Task Queue. One large enterprise tenant submits 50,000 tasks at once, and your Grafana dashboard shows queue depth for two smaller tenants has grown from near-zero to over 10,000 tasks with no drain for 20 minutes. All tasks are the same priority (default). You enable Task Queue Fairness and assign each tenant a fairness key with equal weight of 1.0. After enabling Fairness, what should you expect regarding the already-queued tasks from the large tenant?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Existing queued tasks are immediately reordered into the weighted round-robin dispatch, so smaller tenants start receiving proportional dispatch right away."
+        },
+        {
+          "key": "B",
+          "text": "The existing backlog from the large tenant is drained first in FIFO order before any new tasks with fairness keys are dispatched."
+        },
+        {
+          "key": "C",
+          "text": "Enabling fairness keys drops all unkeyed tasks already in the queue to enforce strict tenant isolation from that point forward."
+        },
+        {
+          "key": "D",
+          "text": "Fairness only affects newly submitted tasks; existing keyed tasks in the backlog are redistributed but unkeyed tasks are ignored until manually requeued."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly warns: 'when you start using fairness keys, it switches your active Task Queues to fairness mode. That means new Tasks are created with Fairness and the existing queued Tasks get processed before any of the new ones.' This means the pre-existing large-tenant backlog (which has no fairness key) will be drained first, and only after that does the new weighted round-robin dispatch take effect for tasks submitted after fairness was enabled. Operators enabling Fairness mid-backlog need to account for this transitional drain period — it does not provide immediate relief to starved tenants if a large unkeyed backlog already exists.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_hard_003",
+      "category": "Features_TaskQueues",
+      "difficulty": "hard",
+      "question": "Your team runs three customer tiers on one Task Queue using Fairness: premium-tier (weight 5.0), basic-tier (weight 3.0), free-tier (weight 2.0). A free-tier customer complains that their tasks are still not getting processed even though Fairness is enabled. You check Temporal Web UI and see that premium-tier workers are actively executing hundreds of tasks. Which explanation best accounts for this behavior given how Fairness operates?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Fairness only controls dispatch time, not execution time. Tasks from premium-tier that were dispatched before Fairness was enabled are still running, so free-tier tasks may appear blocked even though dispatch is now proportional."
+        },
+        {
+          "key": "B",
+          "text": "A fairness weight of 5.0 means premium-tier tasks are dispatched exclusively until the backlog reaches zero, after which other tiers cycle in. The configuration is effectively equivalent to strict priority."
+        },
+        {
+          "key": "C",
+          "text": "Fairness weights are applied per-worker, not per-queue, so workers polling for premium-tier tasks ignore the weight distribution entirely."
+        },
+        {
+          "key": "D",
+          "text": "The free-tier fairness weight of 2.0 is below the minimum threshold of 3.0 required for guaranteed dispatch slots, causing those tasks to be deprioritized silently."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The documentation is precise: 'Fairness applies at Task dispatch time based on information about the Tasks passing through the Task Queue and considers each Task as having equal cost until dispatch. It doesn't consider any Task execution that is currently being done by Workers.' So if a wave of premium-tier tasks was dispatched just before fairness kicked in, those tasks will run to completion on workers, and during that time the UI will show premium-tier dominating worker capacity — even though the dispatch queue is now operating fairly. This is a critical operational nuance: 'fair dispatch' does not mean 'fair worker utilization' when long-running tasks are in flight.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_hard_004",
+      "category": "Features_TaskQueues",
+      "difficulty": "hard",
+      "question": "An engineer sets up a workflow with Priority and Fairness together: priority key 2, fairness key 'tenant-A', fairness weight 3.0. A second workflow uses priority key 1, fairness key 'tenant-B', fairness weight 5.0. Both are submitted to the same Task Queue simultaneously with no other tasks present. In what order will these tasks be dispatched?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "tenant-B's task (priority 1) dispatches first because Priority governs which sub-queue is served, and Fairness only distributes tasks within the same priority level."
+        },
+        {
+          "key": "B",
+          "text": "The task with the higher fairness weight (tenant-B, weight 5.0) dispatches first regardless of priority, because Fairness overrides Priority when both are configured."
+        },
+        {
+          "key": "C",
+          "text": "Both tasks are dispatched simultaneously since there is one worker available per priority level when Fairness is active."
+        },
+        {
+          "key": "D",
+          "text": "tenant-A's task (priority 2) dispatches first because a lower fairness weight indicates a higher-priority fairness tier in the combined Priority+Fairness model."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The documentation states clearly: 'When you use Fairness and Priority together, Priority determines which sub-queue Tasks go into... Fairness will apply to the Tasks within each priority level.' Priority is the outer sort; Fairness operates within a single priority level. Since tenant-B's task sits at priority 1 and tenant-A's task sits at priority 2, tenant-B's task dispatches first — the fairness weight of 5.0 vs 3.0 is irrelevant here because there is no contention within the same priority level. Fairness weight only matters when multiple tasks with different fairness keys are competing at the same priority level.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_hard_005",
+      "category": "Features_TaskQueues",
+      "difficulty": "hard",
+      "question": "Your team has a workflow that schedules a high-volume Activity. The parent workflow has no explicit priority set. A teammate suggests you set the Activity's priority key to 1 to ensure it runs quickly. However, your platform also runs other workflows that explicitly set priority key 1. What priority level will the Activity actually receive if no Activity-level priority is set?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity defaults to priority 3 regardless of the parent workflow's priority, since Activities and Workflows have independent priority namespaces."
+        },
+        {
+          "key": "B",
+          "text": "The Activity inherits the parent workflow's priority, which is 3 (the default) since no workflow-level priority was specified either."
+        },
+        {
+          "key": "C",
+          "text": "The Activity receives priority 1 because unset Activity priorities always resolve to the highest available priority to minimize latency."
+        },
+        {
+          "key": "D",
+          "text": "The Activity's priority is undefined until a worker polls for it, at which point the matching service assigns the lowest available priority from the queue."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation states: 'Activities will inherit the priority level of their Workflow if a separate Activity priority level isn't set.' Since the parent workflow has no explicit priority set, it defaults to priority 3. The Activity, having no explicit priority of its own, inherits that priority-3 value. This inheritance behavior is important for teams migrating to Priority: if you want an Activity to run at a different priority than its parent workflow, you must explicitly set the Activity's priority key. Assuming that unset means 'highest priority' is a dangerous misconception that could inadvertently starve lower-priority tasks.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_hard_007",
+      "category": "Features_TaskQueues",
+      "difficulty": "hard",
+      "question": "Your team self-hosts Temporal and wants to enable Task Queue Fairness to handle a multi-tenant backlog spike. An engineer sets `matching.enableFairness: true` and `matching.useNewMatcher: true` in dynamic config and deploys. After the deploy, new tasks receive fairness dispatch correctly, but the pre-existing backlog of ~200k tasks appears to not be draining in fairness order. The engineer discovers they omitted one config flag. Which flag was missing and what is its purpose?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`matching.enablePriority: true` — without this, the new matcher cannot sort tasks by fairness key because the priority sub-queue infrastructure is required as a prerequisite."
+        },
+        {
+          "key": "B",
+          "text": "`matching.enableMigration: true` — this flag enables draining of tasks in existing backlogs after Fairness is enabled, allowing old queued tasks to be processed under the new scheduler."
+        },
+        {
+          "key": "C",
+          "text": "`matching.fairnessBackfill: true` — this flag retroactively assigns fairness keys to unkeyed tasks already in the backlog so they participate in weighted dispatch."
+        },
+        {
+          "key": "D",
+          "text": "`matching.drainOnStart: true` — this flag forces the matching service to flush the existing backlog to a visibility store before activating the fairness scheduler."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation states: 'You'll also need to set `matching.enableMigration` to `true` in order to support draining Tasks in existing backlogs after Fairness is enabled.' Without this flag, the Fairness scheduler activates for new tasks but the existing backlog doesn't transition properly into the new scheduling model. This is a critical operational detail for self-hosted deployments doing a live migration: all three flags (`useNewMatcher`, `enableFairness`, and `enableMigration`) are required to fully activate Fairness including proper handling of pre-existing queue contents. Missing `enableMigration` is a common mistake that results in new tasks receiving fair dispatch while the old backlog drains in legacy FIFO order.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_nightmare_001",
+      "category": "Features_TaskQueues",
+      "difficulty": "nightmare",
+      "question": "A payment processing platform uses a single Task Queue with both Priority and Fairness enabled. Payment workflows run at priority 1, and inventory workflows run at priority 3. Each payment workflow spawns child workflows for fraud detection with this Go code:\n\n```go\ncwo := workflow.ChildWorkflowOptions{\n  WorkflowID: \"fraud-check-\" + orderID,\n  TaskQueue:  \"main-task-queue\",\n  // No Priority or FairnessKey set\n}\nctx = workflow.WithChildOptions(ctx, cwo)\nerr = workflow.ExecuteChildWorkflow(ctx, FraudCheckWorkflow).Get(ctx, nil)\n```\n\nThe team notices that fraud-check child workflows are sometimes delayed behind inventory workflows. What is the most likely root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Child workflows always run at priority 3 by default regardless of parent priority, so fraud-check workflows compete equally with inventory workflows in the priority 3 sub-queue."
+        },
+        {
+          "key": "B",
+          "text": "Because no PriorityKey is set on the ChildWorkflowOptions, the child workflows default to priority 3 rather than inheriting the parent workflow's priority 1. The inheritance rule applies only to Activities, not Child Workflows, so fraud-check tasks queue behind inventory tasks."
+        },
+        {
+          "key": "C",
+          "text": "The fraud-check child workflows inherit priority 1 from the parent but no FairnessKey, so they are grouped under the implicit empty-string fairness key which gets deprioritized against named fairness keys at the same priority level."
+        },
+        {
+          "key": "D",
+          "text": "The child workflow runs on the same Task Queue as the parent, causing a sticky scheduling conflict that prevents the Matching service from dispatching the child task until the parent workflow task completes its current event loop iteration."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Activity tasks inherit the parent workflow's priority if no explicit priority is set, but Child Workflow Options do not have this inheritance behavior — if you omit a PriorityKey on ChildWorkflowOptions, the child defaults to priority 3 (the system default), not the parent's priority 1. This means fraud-check child workflows enter the priority 3 sub-queue alongside inventory workflows, where they compete under FIFO ordering. The fix is to explicitly set PriorityKey: 1 (or whatever the parent's priority is) on the ChildWorkflowOptions. This interaction between Priority's inheritance rules and Child Workflows is a common production pitfall: engineers assume child workflows inherit parent context the same way Activities do, but the two primitives behave differently. When Priority and Fairness are combined, this gap compounds: the child might also lack a FairnessKey, landing in the implicit empty-string fairness bucket at priority 3 — a double-demotion from what the author intended.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_nightmare_002",
+      "category": "Features_TaskQueues",
+      "difficulty": "nightmare",
+      "question": "A multi-tenant SaaS platform is migrating to Task Queue Fairness. They have hundreds of existing queued tasks with no fairness keys, and they begin assigning fairness keys to new tasks for three tenant tiers: `premium` (weight 5.0), `basic` (weight 3.0), and `free` (weight 2.0). A week after enabling Fairness on their self-hosted cluster (with `matching.enableMigration: true`), engineers observe that `premium` tenant tasks are still waiting behind a large backlog. Which statement best describes the dispatch ordering behavior causing this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The weighted round-robin among fairness keys applies only after all unkeyed tasks are fully drained, because unkeyed tasks were created before Fairness was enabled and the Matching service processes them as a legacy FIFO queue first."
+        },
+        {
+          "key": "B",
+          "text": "The unkeyed tasks compete as a single fairness group with weight 1.0 alongside the named tenant keys, so they receive approximately 10% of dispatch slots (1 out of 10 total weight). This is unlikely to cause a significant backlog delay for premium tasks."
+        },
+        {
+          "key": "C",
+          "text": "When Fairness is enabled, all previously queued tasks without a fairness key are processed first (drained) before new tasks with fairness keys are dispatched. This means the existing backlog of unkeyed tasks blocks premium, basic, and free tenant tasks until the backlog clears."
+        },
+        {
+          "key": "D",
+          "text": "Fairness keys only apply at dispatch time; since unkeyed tasks were enqueued at lower priority levels, they are deprioritized automatically once a fairness key is present on any task in the same priority sub-queue."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation explicitly states: 'When you start using fairness keys, it switches your active Task Queues to fairness mode. That means new Tasks are created with Fairness and the existing queued Tasks get processed before any of the new ones.' This drain-first behavior is intentional — it ensures in-flight backlog tasks are not lost or reordered unpredictably during migration — but it has a significant operational consequence: if the existing backlog is large, all fairness-keyed tasks (including premium tier) are blocked until it drains completely. The `matching.enableMigration: true` flag enables this drain behavior on self-hosted deployments. Engineers migrating incrementally must account for this: a large pre-existing unkeyed backlog effectively acts as a wall that all new keyed tasks wait behind, defeating the fairness guarantees until the migration is complete. The fix is to plan Fairness enablement when the queue backlog is low, or to pre-assign fairness keys to tasks before enabling the feature.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_nightmare_003",
+      "category": "Features_TaskQueues",
+      "difficulty": "nightmare",
+      "question": "An engineering team is designing a job processing system on Temporal Cloud. They want to use both Priority and Fairness to handle different job classes. They plan to assign priority keys 1–3 and fairness keys per customer. A junior engineer proposes setting multiple fairness weights for the same fairness key across different task submissions — for example, submitting some tasks for `customer-A` with fairness weight 2.0 and others for `customer-A` with fairness weight 4.0 — arguing this will give later high-priority submissions from the same customer a dispatch boost. What actually happens, and what is the correct mental model?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Matching service resolves the conflict by taking the maximum fairness weight seen for a given key, so `customer-A` will consistently dispatch at weight 4.0 once any task with that weight has been submitted."
+        },
+        {
+          "key": "B",
+          "text": "The system averages the fairness weights seen for a given key, so `customer-A` ends up with an effective weight of 3.0, which is a deterministic and predictable outcome."
+        },
+        {
+          "key": "C",
+          "text": "Having multiple fairness weights on the same fairness key results in unspecified behavior. The correct model is one fairness weight per fairness key per Task Queue; the weight is a property of the key's identity in the queue, not a per-task dispatch boost."
+        },
+        {
+          "key": "D",
+          "text": "Each task's fairness weight is evaluated independently at dispatch time, so submitting a task with weight 4.0 doubles that specific task's chance of dispatch without affecting other `customer-A` tasks submitted at weight 2.0."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation is explicit: 'There should only be one fairness weight assigned to each fairness key within a single Task Queue. Having multiple fairness weights on a fairness key will result in unspecific behavior.' The mental model engineers need is that a fairness key is an identity for a virtual queue, and the fairness weight is a property of that virtual queue — not a per-task attribute that can vary task-by-task. The Matching service tracks dispatch ratios across fairness keys using a data structure that assumes stable weights per key. When weights vary for the same key, the internal state becomes inconsistent, leading to undefined dispatch ordering. In practice this means you should treat the fairness key+weight pair as a configuration decision made at system design time, not a dynamic dispatch hint. If you need different dispatch rates for the same customer based on job urgency, use Priority (different priority sub-queues) combined with Fairness (consistent weights per key within each priority level).",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_taskqueues_nightmare_004",
+      "category": "Features_TaskQueues",
+      "difficulty": "nightmare",
+      "question": "A platform team is operating a self-hosted Temporal cluster and wants to enable Task Queue Fairness for one specific namespace without affecting others. They set `matching.enableFairness` to `true` globally in the dynamic config. Later, they observe that Tasks from a high-volume tenant in an unrelated namespace are now experiencing different dispatch patterns, and a Temporal Cloud team asks about toggling Fairness at the namespace level. Which combination of dynamic config flags and scoping behavior is accurate for self-hosted Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`matching.enableFairness` can be scoped to a specific namespace in dynamic config, so setting it globally was a mistake. Additionally, `matching.useNewMatcher` must be set to `true` at the same scope or Fairness will silently have no effect even if fairness keys are present."
+        },
+        {
+          "key": "B",
+          "text": "`matching.enableFairness` only takes effect per Task Queue, not per namespace or globally. You must set it on each Task Queue individually. The `matching.enableMigration` flag is what controls namespace-level fairness activation."
+        },
+        {
+          "key": "C",
+          "text": "Both `matching.useNewMatcher` and `matching.enableFairness` must be set to `true`, and they can be scoped to specific Task Queues or Namespaces in dynamic config — global enablement was not required. `matching.enableMigration` must also be set to `true` to drain existing backlogs after Fairness is enabled. Temporal Cloud does not yet have a Namespace-level toggle but one is planned."
+        },
+        {
+          "key": "D",
+          "text": "On self-hosted clusters, only `matching.useNewMatcher` is required; `matching.enableFairness` is automatically derived from the presence of fairness keys in task submissions. Setting `matching.enableMigration` is optional and only affects performance, not correctness."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation specifies that for self-hosted Temporal, you need to set both `matching.useNewMatcher` and `matching.enableFairness` to `true` — and crucially, these dynamic config keys can be scoped to specific Task Queues or Namespaces (Temporal's dynamic config system supports per-namespace and per-task-queue overrides), so a global setting was overkill and affected unintended namespaces. Additionally, `matching.enableMigration: true` is required to support draining existing backlogs after Fairness is enabled — without it, pre-existing queued tasks may not transition correctly into fairness mode, causing the drain behavior to be skipped and potentially creating dispatch anomalies. On Temporal Cloud, the toggle to enable Priority and Fairness at the namespace level is described as 'coming soon' — it does not yet exist at the time of this documentation. This question tests the operator's understanding of how dynamic config scoping interacts with Fairness enablement: a common mistake is globally enabling a feature that has cost or behavioral implications for all namespaces, when the intent was surgical per-namespace or per-queue activation.",
+      "source_doc": "develop_task-queue-priority-fairness.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    }
+  ]
+}

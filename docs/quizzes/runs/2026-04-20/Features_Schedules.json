@@ -1,0 +1,677 @@
+{
+  "category": "Features_Schedules",
+  "questions": [
+    {
+      "id": "features_schedules_easy_001",
+      "category": "Features_Schedules",
+      "difficulty": "easy",
+      "question": "What is the main purpose of scheduling a Workflow in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To restrict a Workflow to run only once and never repeat"
+        },
+        {
+          "key": "B",
+          "text": "To automate repetitive tasks, reduce manual intervention, and ensure timely execution of business processes"
+        },
+        {
+          "key": "C",
+          "text": "To force a Workflow to run faster by skipping error handling steps"
+        },
+        {
+          "key": "D",
+          "text": "To permanently lock a Workflow's configuration so it cannot be changed later"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Scheduling Workflows lets you automate recurring work without human triggers. Instead of building your own cron job infrastructure or retry loops, Temporal's Schedules give you a managed, observable way to run Workflows on a recurring basis — with pause, backfill, and update capabilities built in.",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_easy_002",
+      "category": "Features_Schedules",
+      "difficulty": "easy",
+      "question": "What happens to already-running Workflows when you delete a Schedule?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "They are immediately cancelled and their results are discarded"
+        },
+        {
+          "key": "B",
+          "text": "They are paused and can be resumed later by recreating the Schedule"
+        },
+        {
+          "key": "C",
+          "text": "They continue running unaffected — deletion only removes the Schedule itself"
+        },
+        {
+          "key": "D",
+          "text": "They are restarted from the beginning with a fresh execution context"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Deleting a Schedule only removes the scheduling definition. Any Workflow Executions that were already started by that Schedule continue running normally. This separation means you can safely clean up a Schedule without disrupting in-flight work.",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_easy_003",
+      "category": "Features_Schedules",
+      "difficulty": "easy",
+      "question": "What does the 'backfill' action on a Schedule allow you to do?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Restore a deleted Schedule from a previous backup snapshot"
+        },
+        {
+          "key": "B",
+          "text": "Execute Workflow Actions for a past time range that was missed or skipped"
+        },
+        {
+          "key": "C",
+          "text": "Rewind a currently running Workflow to an earlier point in its history"
+        },
+        {
+          "key": "D",
+          "text": "Copy the configuration of one Schedule into a brand-new Schedule"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Backfilling lets you retroactively run the Workflow Actions that would have fired during a specific past time window. This is handy when a Schedule was paused, a deployment was delayed, or you simply want to test the Workflow against historical time slots — without having to rebuild your own replay logic.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_easy_004",
+      "category": "Features_Schedules",
+      "difficulty": "easy",
+      "question": "What does pausing a Schedule do?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Permanently removes the Schedule and all associated Workflow history"
+        },
+        {
+          "key": "B",
+          "text": "Cancels any currently running Workflow Executions that the Schedule started"
+        },
+        {
+          "key": "C",
+          "text": "Temporarily stops future Workflow Runs from being triggered while keeping the Schedule intact"
+        },
+        {
+          "key": "D",
+          "text": "Resets the Schedule's interval counter so the next run starts from the beginning"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Pausing is a non-destructive operation — it freezes future triggers while preserving the Schedule's full configuration. This is useful during maintenance windows or whenever you want to temporarily halt automated runs without losing the Schedule setup. You can unpause at any time to resume normal execution.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_easy_005",
+      "category": "Features_Schedules",
+      "difficulty": "easy",
+      "question": "What is the difference between using 'trigger' on a Schedule versus waiting for the Schedule's next scheduled time?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Trigger permanently changes the Schedule's interval so it fires more frequently going forward"
+        },
+        {
+          "key": "B",
+          "text": "Trigger executes the Workflow immediately on demand, outside the normal scheduled cadence"
+        },
+        {
+          "key": "C",
+          "text": "Trigger resets the Schedule to start counting from zero again after it fires"
+        },
+        {
+          "key": "D",
+          "text": "Trigger only works if the Schedule is currently paused and has no pending executions"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The trigger action is an on-demand override — it fires the scheduled action right now without waiting for the next scheduled time. It's useful for ad-hoc testing or urgent manual runs. By default it still respects the Schedule's Overlap Policy, so you stay in control of concurrency.",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_easy_006",
+      "category": "Features_Schedules",
+      "difficulty": "easy",
+      "question": "What is 'Start Delay' used for, and how does it differ from a recurring Schedule?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Start Delay sets the maximum time a Workflow is allowed to run before it is automatically cancelled"
+        },
+        {
+          "key": "B",
+          "text": "Start Delay defines how long to wait between each run in a repeating Schedule interval"
+        },
+        {
+          "key": "C",
+          "text": "Start Delay delays a single Workflow Execution by a set duration and then runs it once, rather than on a recurring cadence"
+        },
+        {
+          "key": "D",
+          "text": "Start Delay pauses an already-running Workflow and resumes it after the specified time has elapsed"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Start Delay is a one-shot timer: you tell Temporal 'start this Workflow X hours from now,' and it fires exactly once at that future point. It's simpler than a full Schedule when you only need a single deferred execution — no Schedule ID, no recurring spec, and no extra management overhead.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_med_001",
+      "category": "Features_Schedules",
+      "difficulty": "med",
+      "question": "You need to run a backfill on a Temporal Schedule to cover a missed 10-day window. Which overlap policy should you typically specify so that all missed executions actually run?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "SCHEDULE_OVERLAP_POLICY_SKIP, so that only the most recent missed execution runs and older ones are ignored"
+        },
+        {
+          "key": "B",
+          "text": "SCHEDULE_OVERLAP_POLICY_BUFFER_ONE, so that one missed execution is queued and the rest are dropped"
+        },
+        {
+          "key": "C",
+          "text": "SCHEDULE_OVERLAP_POLICY_ALLOW_ALL, so that every missed execution in the backfill range runs concurrently without being skipped"
+        },
+        {
+          "key": "D",
+          "text": "SCHEDULE_OVERLAP_POLICY_CANCEL_OTHER, so that any currently-running execution is cancelled before the backfill starts"
+        }
+      ],
+      "answer": "C",
+      "explanation": "When backfilling, you almost always want ALLOW_ALL so that every scheduled slot in the specified time range actually fires. Using SKIP would drop most of the missed runs; BUFFER_ONE would only queue one extra; CANCEL_OTHER would interrupt ongoing work rather than replay history. The Go sample code in the docs explicitly uses SCHEDULE_OVERLAP_POLICY_ALLOW_ALL in ScheduleBackfill entries for exactly this reason.",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_med_002",
+      "category": "Features_Schedules",
+      "difficulty": "med",
+      "question": "A developer deletes a Temporal Schedule using `DeleteAsync()` in .NET. What happens to Workflow Executions that were already started by that Schedule?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "They are immediately cancelled because deleting the Schedule sends a cancellation signal to all child Workflows"
+        },
+        {
+          "key": "B",
+          "text": "They continue running unaffected, because deleting a Schedule does not affect Workflows already started by it"
+        },
+        {
+          "key": "C",
+          "text": "They are terminated after a configurable grace period, allowing in-flight Workflows to complete"
+        },
+        {
+          "key": "D",
+          "text": "They are paused until the Schedule is either recreated or the Workflows time out"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The docs are explicit: 'Deletion does not affect any Workflows started by the Schedule.' The Schedule is purely a trigger mechanism; once a Workflow Execution is spawned it has its own independent lifecycle. Deleting the Schedule only prevents future runs from being scheduled — it has no effect on already-running or completed executions.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_med_003",
+      "category": "Features_Schedules",
+      "difficulty": "med",
+      "question": "What is the key difference between using `StartDelay` on `WorkflowOptions` and creating a Schedule with a one-time interval in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`StartDelay` is only available in the Go SDK; other SDKs must use a Schedule with a future start time to achieve the same result"
+        },
+        {
+          "key": "B",
+          "text": "`StartDelay` requires a Worker to be running at submission time, whereas a Schedule does not need an active Worker until execution time"
+        },
+        {
+          "key": "C",
+          "text": "`StartDelay` schedules a single Workflow Execution at a specific one-time future point without creating a persistent Schedule object, while a Schedule creates a named, manageable entity that can be paused or updated"
+        },
+        {
+          "key": "D",
+          "text": "`StartDelay` uses a cron expression internally, so it repeats on the same interval indefinitely until explicitly cancelled"
+        }
+      ],
+      "answer": "C",
+      "explanation": "`StartDelay` is a lightweight one-shot mechanism: you pass it on `StartWorkflowOptions` and the Workflow fires once after that delay — no Schedule ID is created and nothing can be paused, described, or updated later. A Schedule, by contrast, is a persistent named entity stored by the Temporal Service that supports full lifecycle operations (pause, trigger, backfill, update). The docs describe `StartDelay` explicitly as 'a specific one-time future point rather than on a recurring schedule.'",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_med_004",
+      "category": "Features_Schedules",
+      "difficulty": "med",
+      "question": "In the Go SDK, what three required fields must be set in `client.ScheduleOptions{}` when calling `ScheduleClient().Create()`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "ID, Spec, and Action — the unique schedule identifier, the timing specification, and the workflow action to run"
+        },
+        {
+          "key": "B",
+          "text": "ID, CronSchedule, and TaskQueue — the identifier, a cron string, and the queue where Workers poll"
+        },
+        {
+          "key": "C",
+          "text": "Spec, Action, and Namespace — the timing, the workflow to run, and the namespace to target"
+        },
+        {
+          "key": "D",
+          "text": "ID, Action, and Timeout — the identifier, the workflow action, and a maximum duration for the schedule itself"
+        }
+      ],
+      "answer": "A",
+      "explanation": "The Go docs state: 'Schedules must be initialized with a Schedule ID, Spec, and Action in client.ScheduleOptions{}.' ID is the unique handle you use to reference the schedule later, Spec defines when it fires (intervals, cron expressions, calendar specs, etc.), and Action (typically a ScheduleWorkflowAction) defines what runs. CronSchedule belongs to the legacy Cron Jobs API, not the Schedules API.",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_med_005",
+      "category": "Features_Schedules",
+      "difficulty": "med",
+      "question": "After a Temporal Schedule has created all of its Workflow Executions and will not fire again, what does the Temporal Service do with it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It pauses the Schedule automatically and keeps it in a PAUSED state so operators can inspect it"
+        },
+        {
+          "key": "B",
+          "text": "It deletes the Schedule, though the exact timing of removal is not guaranteed"
+        },
+        {
+          "key": "C",
+          "text": "It converts the Schedule to a historical record that can still be queried via DescribeAsync but can no longer trigger new runs"
+        },
+        {
+          "key": "D",
+          "text": "It keeps the Schedule active indefinitely, returning empty results on any list or describe call until manually deleted"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Both the .NET and Go docs include the same tip: 'Once a Schedule has completed creating all its Workflow Executions, the Temporal Service deletes it since it won't fire again. The Temporal Service doesn't guarantee when this removal will happen.' This auto-deletion is relevant for bounded schedules — for example, one with an EndTime in the past. Engineers should not depend on a specific deletion timestamp.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_med_006",
+      "category": "Features_Schedules",
+      "difficulty": "med",
+      "question": "A team wants to run a recurring report Workflow every 5 days using the .NET Temporal SDK. Which code snippet correctly configures the Schedule's timing?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`Spec: new() { CronSchedule = \"0 0 */5 * *\" }` — a standard cron expression evaluated every 5 days at midnight"
+        },
+        {
+          "key": "B",
+          "text": "`Spec: new() { Intervals = new List\u003cScheduleIntervalSpec\u003e { new(Every: TimeSpan.FromDays(5)) } }` — an interval-based spec firing every 5 days"
+        },
+        {
+          "key": "C",
+          "text": "`new WorkflowOptions { StartDelay = TimeSpan.FromDays(5) }` — a one-time delay of 5 days applied to the workflow start options"
+        },
+        {
+          "key": "D",
+          "text": "`Spec: new() { CalendarSpec = new(DayOfMonth = \"*/5\") }` — a calendar spec matching every fifth day of the month"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The .NET docs show exactly this pattern: `Intervals = new List\u003cScheduleIntervalSpec\u003e { new(Every: TimeSpan.FromDays(5)) }` inside the `ScheduleSpec`. Option A uses a cron string, which belongs to the legacy Cron Jobs API rather than the modern Schedules API. Option C uses `StartDelay`, which is one-shot and not recurring. Option D is a plausible-sounding struct but not what the documented API exposes.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_med_007",
+      "category": "Features_Schedules",
+      "difficulty": "med",
+      "question": "The Temporal docs explicitly caution against using Cron Jobs and recommend Schedules instead. What is the stated reason for preferring Schedules?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Cron Jobs require a dedicated Worker process, while Schedules are managed entirely server-side without any Worker involvement"
+        },
+        {
+          "key": "B",
+          "text": "Cron Jobs cannot express intervals shorter than one minute, whereas Schedules support sub-minute precision through interval specs"
+        },
+        {
+          "key": "C",
+          "text": "Schedules offer a better developer experience with more configuration options and the ability to update or pause running Schedules"
+        },
+        {
+          "key": "D",
+          "text": "Cron Jobs are deprecated in all Temporal SDKs and will be removed in a future release, so migration is mandatory"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Go docs caution section states: 'We recommend using Schedules instead of Cron Jobs. Schedules were built to provide a better developer experience, including more configuration options and the ability to update or pause running Schedules.' The docs do not claim Cron Jobs are fully deprecated or that they'll be removed — just that Schedules are the preferred path. The Worker involvement claim and sub-minute precision claim are not stated in the documentation.",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_med_008",
+      "category": "Features_Schedules",
+      "difficulty": "med",
+      "question": "When using `UpdateAsync()` on a Schedule Handle in the .NET SDK, how is the update applied?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "You pass a fully constructed new `Schedule` object directly to `UpdateAsync()`, replacing the existing configuration wholesale"
+        },
+        {
+          "key": "B",
+          "text": "You call `DescribeAsync()` first to get the current schedule, mutate the returned object, then pass it to a separate `ReplaceAsync()` method"
+        },
+        {
+          "key": "C",
+          "text": "You provide a callback to `UpdateAsync()` that receives the current schedule description as input and returns a new `ScheduleUpdate` with the modified schedule"
+        },
+        {
+          "key": "D",
+          "text": "You send a patch object containing only the fields you want to change, and the server merges it with the existing schedule configuration"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The .NET docs describe `UpdateAsync()` as accepting 'a callback that provides input with the current schedule. A new schedule can be created and returned from that callback to perform the update.' The code sample confirms this pattern: `handle.UpdateAsync(input =\u003e { ... return new(input.Description.Schedule with { Action = newAction }); })`. This callback/read-modify-write pattern prevents lost updates by giving you the current state. Options A and D mischaracterize the API shape; Option B invents a non-existent `ReplaceAsync()` method.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_hard_001",
+      "category": "Features_Schedules",
+      "difficulty": "hard",
+      "question": "Your team runs a nightly ETL pipeline using a Temporal Schedule with an `Every: 24 hours` interval. A deployment incident caused the Temporal cluster to be unavailable for 36 hours. After recovery, you want to replay the missed nightly runs retroactively without waiting for the next scheduled interval. Which approach correctly accomplishes this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Delete and recreate the Schedule with a backdated start time so the Temporal Service automatically executes the missed intervals on startup."
+        },
+        {
+          "key": "B",
+          "text": "Use the Backfill action on the ScheduleHandle, specifying the start and end times covering the missed period and an appropriate Overlap Policy such as AllowAll."
+        },
+        {
+          "key": "C",
+          "text": "Trigger the Schedule repeatedly in a loop using TriggerAsync until the correct number of missed executions have been manually fired."
+        },
+        {
+          "key": "D",
+          "text": "Pause the Schedule, update its Spec to shift the interval window backward by 36 hours, then unpause so the Service catches up automatically."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Backfill is specifically designed for executing missed or delayed schedule actions over a historical time range. By calling BackfillAsync (or Backfill in Go) on the ScheduleHandle with the start and end times that cover the downtime window and setting OverlapPolicy to AllowAll, you instruct Temporal to retroactively run all the workflow executions that would have fired in that range. Trigger fires one immediate execution but does not replay a time range; deleting/recreating the schedule doesn't replay past intervals; and shifting the Spec only affects future firings, not past ones.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_hard_002",
+      "category": "Features_Schedules",
+      "difficulty": "hard",
+      "question": "A background job Schedule fires every 5 days. After you call `DeleteAsync()` on the Schedule Handle, what happens to the Workflow Execution that is currently running — the one that was most recently started by this Schedule?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The running Workflow Execution is immediately cancelled by the Temporal Service when the Schedule is deleted."
+        },
+        {
+          "key": "B",
+          "text": "The running Workflow Execution continues to completion because deleting a Schedule does not affect Workflows already started by it."
+        },
+        {
+          "key": "C",
+          "text": "The running Workflow Execution is paused until manually resumed, since its owning Schedule no longer exists."
+        },
+        {
+          "key": "D",
+          "text": "The running Workflow Execution is terminated and its history is archived as part of the Schedule deletion process."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation is explicit: 'Deletion does not affect any Workflows started by the Schedule.' Schedules are a scheduling primitive that fires workflow executions; once an execution is started, it has its own independent lifecycle. Deleting the Schedule only prevents future firings — it has no effect on in-flight or completed workflow executions that were previously started. This is a common misconception because engineers assume the Schedule 'owns' running executions, but in Temporal the relationship is unidirectional: the Schedule starts executions and then has no ongoing authority over them.",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_hard_003",
+      "category": "Features_Schedules",
+      "difficulty": "hard",
+      "question": "An on-call engineer notices that a Schedule-driven fraud detection workflow fires every hour, but there are occasional duplicate runs during high-load periods when the previous run is still executing. She wants ad-hoc trigger invocations (manual QA tests) to always execute regardless of whether a scheduled run is in progress, while keeping the scheduled automatic firings from overlapping. Which combination of policies achieves this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Set the Schedule's default Overlap Policy to Skip so regular interval firings are dropped when a run is active, and pass OverlapPolicy AllowAll in the TriggerOptions when calling TriggerAsync manually."
+        },
+        {
+          "key": "B",
+          "text": "Set the Schedule's default Overlap Policy to AllowAll to prevent all duplicates, and rely on workflow-level mutex logic to serialize concurrent executions."
+        },
+        {
+          "key": "C",
+          "text": "Set the Schedule's default Overlap Policy to BufferAll so regular interval firings queue up, and omit any Overlap Policy override when triggering manually."
+        },
+        {
+          "key": "D",
+          "text": "Set the Schedule's default Overlap Policy to CancelOther so running workflows are cancelled before each new interval fires, and override to Skip during manual triggers."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The Trigger action documents that 'by default, trigger is subject to the Overlap Policy' but that you can override it per trigger call. This means you can configure the Schedule-level Overlap Policy as Skip (so automatic scheduled firings are silently dropped when a run is active) while passing AllowAll in the individual TriggerOptions for manual QA invocations. This decouples the behavior of scheduled vs. on-demand firings. The other options either apply a single policy to both scenarios or introduce unintended side effects like buffering queues or cancelling productive runs.",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_hard_004",
+      "category": "Features_Schedules",
+      "difficulty": "hard",
+      "question": "You call `ListSchedulesAsync()` in .NET to build a dashboard and notice that a Schedule you just created with `CreateScheduleAsync()` does not appear in the list yet. What explains this behavior, and what should you account for in your dashboard implementation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Schedule is in a 'pending' state for up to 30 seconds after creation and will not appear until its first workflow execution completes successfully."
+        },
+        {
+          "key": "B",
+          "text": "Listing schedules uses the visibility store, which has eventual consistency, so a recently added or deleted Schedule may not be immediately reflected in list results."
+        },
+        {
+          "key": "C",
+          "text": "ListSchedulesAsync requires the Schedule to have fired at least once before it is indexed; newly created schedules with future-only specs are excluded until the first fire."
+        },
+        {
+          "key": "D",
+          "text": "The Schedule list is cached per client instance and refreshed only on reconnect, so you must create a new client connection to see newly added schedules."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The .NET documentation explicitly states: 'If a schedule is added or deleted, it may not be available in the list immediately.' This reflects Temporal's use of the visibility store (backed by Elasticsearch or a SQL visibility table) for list queries, which is eventually consistent. There is no per-fire indexing requirement, no client-level cache that requires reconnection, and no 30-second pending state. Dashboard implementations should tolerate missing or stale entries, potentially using DescribeAsync on a known Schedule ID for authoritative state rather than relying solely on list results.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_hard_006",
+      "category": "Features_Schedules",
+      "difficulty": "hard",
+      "question": "A finance team runs a monthly report Schedule. Midway through a production incident, they pause the Schedule with a note and then fix the issue. When they call `UpdateAsync()` to also change the report's target task queue to a new worker pool, they notice the Schedule remains paused after the update. Why does the pause state persist, and what must they do to resume normal execution?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "UpdateAsync automatically unpauses the Schedule when the Action is changed; the team must therefore check whether an earlier UpdateAsync call errored and left the Schedule in an inconsistent state."
+        },
+        {
+          "key": "B",
+          "text": "UpdateAsync replaces the full Schedule configuration including the paused flag; if the team's update callback preserves the existing schedule object with its paused state, the Schedule will remain paused and must be explicitly unpaused afterward."
+        },
+        {
+          "key": "C",
+          "text": "PauseAsync and UpdateAsync write to different internal Schedule fields that cannot be modified in the same transaction; the team must delete and recreate the Schedule to change both the task queue and the pause state atomically."
+        },
+        {
+          "key": "D",
+          "text": "The paused state is immutable after a Schedule is created; only the Spec, Action, and Memo can be changed through UpdateAsync, and the pause must be cleared by recreating the Schedule."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The UpdateAsync documentation shows the callback pattern: `return new(input.Description.Schedule with { Action = newAction })`. This pattern uses the existing schedule description as a base and applies targeted changes. If the callback preserves the schedule as-is (including its paused state from the PauseAsync call), the paused flag remains set after the update. UpdateAsync does not implicitly unpause — pause/unpause are separate operations. To resume execution after the update, the team must also call UnpauseAsync (or Unpause in Go) on the ScheduleHandle. This tests understanding that Pause state is part of the Schedule's mutable description, not a transient lock.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_hard_007",
+      "category": "Features_Schedules",
+      "difficulty": "hard",
+      "question": "A team needs to run a one-time data migration workflow exactly 3 hours from now, triggered by a deployment pipeline step. They do not need recurring execution. Which Temporal primitive is the most appropriate, and why would using a Schedule with a single-fire Spec be operationally inferior for this use case?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Use a Schedule with `Calendars` set to fire once at the target time, because StartDelay does not support delays longer than 60 minutes due to heartbeat timeout constraints."
+        },
+        {
+          "key": "B",
+          "text": "Use StartDelay on WorkflowOptions, because it is purpose-built for one-time future execution; using a Schedule adds operational overhead since the Service will asynchronously clean it up after it fires, with no guarantee on when that cleanup occurs."
+        },
+        {
+          "key": "C",
+          "text": "Use a Schedule because it provides auditability through DescribeAsync and ListSchedulesAsync, while StartDelay offers no visibility into when the workflow will start."
+        },
+        {
+          "key": "D",
+          "text": "Use a Child Workflow with a timer activity, because neither Schedules nor StartDelay are designed for single-fire executions and both require recurring Spec definitions."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly describes StartDelay as the mechanism 'to schedule a Workflow Execution at a specific one-time future point rather than on a recurring schedule.' It is set directly on WorkflowOptions (StartWorkflowAsync or ExecuteWorkflowAsync) and requires no additional management. A Schedule could technically fire once, but the documentation notes that after a Schedule completes all its executions, 'the Temporal Service deletes it since it won't fire again' and crucially 'the Temporal Service doesn't guarantee when this removal will happen' — adding a dangling Schedule resource to monitor. StartDelay has no such overhead. The claim about 60-minute heartbeat limits is false; StartDelay is a scheduling hint to the server, not an activity heartbeat.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_nightmare_001",
+      "category": "Features_Schedules",
+      "difficulty": "nightmare",
+      "question": "A Go service uses a Temporal Schedule (not a Cron Job) with `SCHEDULE_OVERLAP_POLICY_SKIP` to run a nightly data pipeline. During an incident, the pipeline fails to start for 3 consecutive nights due to a misconfigured task queue. An engineer wants to recover by calling `Backfill()` for those 3 missed nights with `SCHEDULE_OVERLAP_POLICY_ALLOW_ALL`. Meanwhile, the schedule remains active and fires a 4th run at its normal scheduled time during the backfill operation. What happens to the 4th scheduled run while the backfill is executing with ALLOW_ALL?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The 4th scheduled run is queued and waits for all backfill executions to complete before starting, because the Schedule serializes backfill and live runs to preserve ordering guarantees."
+        },
+        {
+          "key": "B",
+          "text": "The 4th scheduled run is governed by the Schedule's configured overlap policy (SKIP), not the backfill's ALLOW_ALL override, so it is skipped if any backfill-triggered workflow is still running at that moment."
+        },
+        {
+          "key": "C",
+          "text": "The backfill call atomically pauses the Schedule for its duration, so the 4th scheduled run is automatically deferred until BackfillAsync returns, then the Schedule resumes normally."
+        },
+        {
+          "key": "D",
+          "text": "The overlap policy specified in BackfillOptions overrides the Schedule's global overlap policy for all runs—including the live 4th run—until the backfill range completes, so all concurrent runs are allowed."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Backfill's overlap policy is scoped only to the backfilled time slots themselves, not to the Schedule's ongoing live firing behavior. The Schedule continues to evaluate its own configured overlap policy for any normally scheduled run that fires while the backfill executions are in flight. Since this Schedule uses SKIP, the 4th live run will be skipped if a workflow (backfill or otherwise) is already running at that moment. This is a critical production insight: engineers often assume that specifying ALLOW_ALL in a backfill will 'open the floodgates' for all concurrent runs, but the two policies are independent. The backfill overlap applies to the artificially injected time-range executions; the Schedule's default overlap policy governs all regularly timed firings. If you want the live runs to also proceed concurrently, you must update the Schedule's overlap policy directly via UpdateAsync/Update().",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_nightmare_002",
+      "category": "Features_Schedules",
+      "difficulty": "nightmare",
+      "question": "A .NET team creates a one-time delayed workflow execution using `StartDelay = TimeSpan.FromHours(3)` on `WorkflowOptions` passed to `StartWorkflowAsync()`. A separate team creates a Schedule with a single `ScheduleIntervalSpec` of `Every: TimeSpan.FromDays(365)` and manually triggers it exactly once, then deletes the Schedule before it fires again. Both approaches are used to execute the same workflow 3 hours or ~1 year in the future respectively. Which statement best describes a key operational difference between these two mechanisms when the parent application process restarts before the delay elapses?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `StartDelay` workflow is durably persisted in the Temporal Service as a scheduled workflow execution and survives process restarts; the Schedule-based approach also survives restarts, so both are equally durable in practice."
+        },
+        {
+          "key": "B",
+          "text": "The `StartDelay` workflow execution is registered in the Temporal Service history immediately upon `StartWorkflowAsync()` returning; if the client process restarts, the workflow will still start after the delay because the timer is owned by the server, not the client."
+        },
+        {
+          "key": "C",
+          "text": "The `StartDelay` timer is held in the client SDK's in-memory scheduler and will be lost if the process restarts before the delay elapses; the Schedule-based approach stores timing state on the server and is therefore more resilient."
+        },
+        {
+          "key": "D",
+          "text": "Both approaches store timing state exclusively in the client SDK process, so both are equally vulnerable to process restarts; the team should use a Cron Job instead, since Cron schedule state is persisted server-side."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`StartDelay` on `WorkflowOptions` does not work like a client-side sleep or timer. When `StartWorkflowAsync()` is called, Temporal immediately registers the workflow execution in the service, and the server itself holds the delay timer as part of the workflow's event history. The workflow enters a 'delayed start' state on the server. This means the client process can crash, be redeployed, or scaled to zero—the workflow will still start after the delay elapses because the Temporal Service owns the timer. This is a fundamental principle of Temporal's durability model: once a workflow is registered, its lifecycle is managed by the service, not by the initiating process. By contrast, Temporal Cron Jobs are not more durable than StartDelay—both are server-side. The key distinction is that `StartDelay` is for a single future execution, whereas a Schedule with an interval spec supports recurring, observable, and manageable recurring executions with features like pause, backfill, and update.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_nightmare_003",
+      "category": "Features_Schedules",
+      "difficulty": "nightmare",
+      "question": "An engineer uses Go to call `scheduleHandle.Update()` on an active Schedule to change the `ScheduleWorkflowAction`'s `TaskQueue` from `\"payments-v1\"` to `\"payments-v2\"`. A Workflow Execution that was already triggered by the Schedule before the update is currently running on the `\"payments-v1\"` task queue. Simultaneously, another engineer calls `scheduleHandle.Delete()` on the same schedule ID from a separate process, creating a race. What does the Temporal documentation guarantee about the behavior of the already-running workflow after the Delete call succeeds?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The running Workflow Execution is immediately cancelled because it was spawned by the now-deleted Schedule, and Temporal automatically cleans up all child workflows owned by a deleted Schedule."
+        },
+        {
+          "key": "B",
+          "text": "The running Workflow Execution continues unaffected because Schedule deletion does not affect Workflows that were already started by the Schedule; deletion only prevents future firings."
+        },
+        {
+          "key": "C",
+          "text": "The running Workflow Execution is paused until the race between Update and Delete is resolved by the server; whichever operation wins determines whether the workflow resumes or is terminated."
+        },
+        {
+          "key": "D",
+          "text": "The running Workflow Execution is moved to the `\"payments-v2\"` task queue if the Update wins the race, or is terminated if the Delete wins, because the Schedule owns the lifecycle of its spawned workflows."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal documentation explicitly states: 'Deletion does not affect any Workflows started by the Schedule.' This is a deliberate design decision rooted in the principle that Schedules are a spawn mechanism, not a lifecycle owner. Once a Schedule fires and creates a Workflow Execution, that execution becomes an independent entity with its own history and lifecycle. The Schedule has no ongoing authority over it. This means that in the race scenario, regardless of whether Update or Delete wins, the currently running Workflow Execution on `payments-v1` will complete normally (or fail/timeout on its own terms). Delete only stops future firings—it does not retroactively cancel, pause, or reassign any already-running Workflow Executions. Engineers who expect 'delete schedule = cancel all its workflows' will be surprised in production. If you need to cancel running workflows spawned by a schedule, you must separately enumerate and cancel each Workflow Execution explicitly.",
+      "source_doc": "develop_go_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_schedules_nightmare_004",
+      "category": "Features_Schedules",
+      "difficulty": "nightmare",
+      "question": "Consider the following .NET Schedule creation code:\n\n```csharp\nvar handle = await client.CreateScheduleAsync(\n    \"etl-schedule\",\n    new(\n        Action: ScheduleActionStartWorkflow.Create(\n            (EtlWorkflow wf) =\u003e wf.RunAsync(),\n            new(id: \"etl-workflow-id\", taskQueue: \"etl-queue\")),\n        Spec: new()\n        {\n            Intervals = new List\u003cScheduleIntervalSpec\u003e \n            { new(Every: TimeSpan.FromDays(1)) },\n        }));\n```\n\nThe team later calls `ListSchedulesAsync()` to build a monitoring dashboard and notices that a recently created schedule does not appear. They also observe that a deleted schedule still appears briefly. Which combination of behaviors is the correct explanation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Both observations are bugs in the SDK's async enumerable implementation; the list is eventually consistent with the server state, but network retries should force immediate synchronization with zero lag."
+        },
+        {
+          "key": "B",
+          "text": "Schedule listing uses the Temporal visibility store, which is eventually consistent; newly created and recently deleted schedules may not reflect immediately because visibility writes are asynchronous relative to schedule creation and deletion operations."
+        },
+        {
+          "key": "C",
+          "text": "The Schedule auto-deletion feature is responsible for both behaviors; Temporal delays removing schedules from the list to allow observability windows, and similarly delays adding new ones until the first workflow fires."
+        },
+        {
+          "key": "D",
+          "text": "The discrepancy occurs because `ListSchedulesAsync()` pages through a local SDK cache that is only refreshed when `DescribeAsync()` is explicitly called on each handle, making the list stale until handles are individually refreshed."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The .NET documentation explicitly states: 'If a schedule is added or deleted, it may not be available in the list immediately.' This is not a bug or a caching issue—it reflects a fundamental architectural property of Temporal's visibility store. Schedule listings go through the visibility layer (backed by Elasticsearch or SQLite/PostgreSQL depending on deployment), which receives writes asynchronously. This is the same eventual consistency that affects workflow visibility queries. The create and delete operations write to the Schedule persistence layer first; the visibility index update happens asynchronously afterward. This has real operational implications: monitoring dashboards built on `ListSchedulesAsync()` must tolerate stale reads and should not make safety-critical decisions based on whether a schedule appears in the list. For authoritative state, use `DescribeAsync()` directly on a known schedule handle. The auto-deletion tip (schedules fire once and get removed) is a separate concern from eventual consistency—auto-deletion also goes through the same visibility lag. Understanding that visibility is a separate, eventually-consistent projection of schedule state is a key insight for building reliable Temporal-based observability tooling.",
+      "source_doc": "develop_dotnet_workflows_schedules.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    }
+  ]
+}
