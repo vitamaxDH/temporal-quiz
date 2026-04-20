@@ -1171,11 +1171,12 @@ function renderRecap() {
     : 0;
   const durationStr = durationMs > 0 ? fmtSessionDuration(durationMs) : '';
 
-  // Donut chart: two arcs along a circle of radius 42 (circumference ~263.9)
-  const R = 42;
+  // Donut chart: two arcs along a circle of radius 60 in a 160-wide SVG.
+  const R = 60;
   const CIRC = 2 * Math.PI * R;
   const correctLen = total > 0 ? (correct / total) * CIRC : 0;
   const wrongLen = total > 0 ? (wrong / total) * CIRC : 0;
+  const pctTone = pct >= 80 ? 'good' : pct >= 50 ? 'ok' : 'poor';
 
   const wrongListHtml = sessionWrongItems.length === 0 ? '' : `
     <div class="recap-wrong-list">
@@ -1214,26 +1215,39 @@ function renderRecap() {
       ${durationStr ? `<div class="recap-took">Took ${escapeHtml(durationStr)}</div>` : ''}
 
       <div class="recap-chart">
-        <svg class="recap-donut" width="120" height="120" viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="${R}" class="recap-donut-bg"></circle>
-          <circle cx="60" cy="60" r="${R}" class="recap-donut-correct"
+        <svg class="recap-donut" width="180" height="180" viewBox="0 0 180 180">
+          <defs>
+            <linearGradient id="recapGradCorrect" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#22c55e"/>
+              <stop offset="100%" stop-color="#10b981"/>
+            </linearGradient>
+            <linearGradient id="recapGradWrong" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ef4444"/>
+              <stop offset="100%" stop-color="#b91c1c"/>
+            </linearGradient>
+            <filter id="recapArcGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="1.4"/>
+            </filter>
+          </defs>
+          <circle cx="90" cy="90" r="${R}" class="recap-donut-bg"></circle>
+          <circle cx="90" cy="90" r="${R}" class="recap-donut-correct"
                   stroke-dasharray="${correctLen} ${CIRC - correctLen}"
                   stroke-dashoffset="0"
-                  transform="rotate(-90 60 60)"></circle>
-          <circle cx="60" cy="60" r="${R}" class="recap-donut-wrong"
+                  transform="rotate(-90 90 90)"></circle>
+          <circle cx="90" cy="90" r="${R}" class="recap-donut-wrong"
                   stroke-dasharray="${wrongLen} ${CIRC - wrongLen}"
                   stroke-dashoffset="-${correctLen}"
-                  transform="rotate(-90 60 60)"></circle>
-          <text x="60" y="58" class="recap-donut-pct" text-anchor="middle">${pct}%</text>
-          <text x="60" y="75" class="recap-donut-sub" text-anchor="middle">${correct}/${total}</text>
+                  transform="rotate(-90 90 90)"></circle>
+          <text x="90" y="92" class="recap-donut-pct recap-pct-${pctTone}" text-anchor="middle" dominant-baseline="middle">${pct}%</text>
+          <text x="90" y="118" class="recap-donut-sub" text-anchor="middle">${correct} / ${total}</text>
         </svg>
         <div class="recap-legend">
-          <div class="recap-legend-row correct">
+          <div class="recap-legend-chip correct">
             <span class="recap-legend-dot"></span>
             <span class="recap-legend-label">Correct</span>
             <span class="recap-legend-value">${correct}</span>
           </div>
-          <div class="recap-legend-row wrong">
+          <div class="recap-legend-chip wrong">
             <span class="recap-legend-dot"></span>
             <span class="recap-legend-label">Wrong</span>
             <span class="recap-legend-value">${wrong}</span>

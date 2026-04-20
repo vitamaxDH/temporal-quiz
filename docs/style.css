@@ -1048,71 +1048,98 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-  padding: 8px 0 4px;
+  gap: 28px;
+  padding: 12px 0 8px;
+  flex-wrap: wrap;
 }
 .recap-donut {
   flex-shrink: 0;
+  filter: drop-shadow(0 8px 24px rgba(124, 58, 237, 0.12));
 }
 .recap-donut-bg {
   fill: none;
   stroke: var(--bg-surface);
-  stroke-width: 10;
+  stroke-width: 14;
 }
-.recap-donut-correct {
-  fill: none;
-  stroke: var(--correct);
-  stroke-width: 10;
-  stroke-linecap: butt;
-  transition: stroke-dasharray 0.6s ease-out;
-}
+.recap-donut-correct,
 .recap-donut-wrong {
   fill: none;
-  stroke: var(--wrong);
-  stroke-width: 10;
-  stroke-linecap: butt;
-  transition: stroke-dasharray 0.6s ease-out;
+  stroke-width: 14;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+  animation: recap-arc-in 0.9s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.recap-donut-correct { stroke: url(#recapGradCorrect); }
+.recap-donut-wrong   { stroke: url(#recapGradWrong); animation-delay: 0.18s; }
+@keyframes recap-arc-in {
+  0%   { stroke-dashoffset: 1000; opacity: 0.2; }
+  100% { opacity: 1; }
 }
 .recap-donut-pct {
-  fill: var(--text-primary);
   font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  fill: var(--text-primary);
 }
+.recap-donut-pct.recap-pct-good { fill: var(--correct); }
+.recap-donut-pct.recap-pct-ok   { fill: var(--streak); }
+.recap-donut-pct.recap-pct-poor { fill: var(--wrong); }
 .recap-donut-sub {
-  fill: var(--text-secondary);
+  fill: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
 }
 .recap-legend {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 100px;
+  gap: 10px;
+  min-width: 140px;
 }
-.recap-legend-row {
+.recap-legend-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
   font-size: 12px;
   font-family: var(--font-mono);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+.recap-legend-chip.correct {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: var(--correct-glow);
+}
+.recap-legend-chip.wrong {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: var(--wrong-glow);
 }
 .recap-legend-dot {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
+  border-radius: 50%;
   display: inline-block;
+  box-shadow: 0 0 8px currentColor;
 }
-.recap-legend-row.correct .recap-legend-dot { background: var(--correct); }
-.recap-legend-row.wrong .recap-legend-dot { background: var(--wrong); }
+.recap-legend-chip.correct .recap-legend-dot { background: var(--correct); color: var(--correct); }
+.recap-legend-chip.wrong   .recap-legend-dot { background: var(--wrong);   color: var(--wrong); }
 .recap-legend-label {
   flex: 1;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
 }
 .recap-legend-value {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 14px;
   color: var(--text-primary);
 }
+.recap-legend-chip.correct .recap-legend-value { color: var(--correct); }
+.recap-legend-chip.wrong   .recap-legend-value { color: var(--wrong); }
 
 .recap-wrong-list {
   display: flex;
