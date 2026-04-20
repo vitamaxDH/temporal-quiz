@@ -83,6 +83,80 @@ function formatCategoryLabel(category) {
   return category.replace(/_/g, ' ').replace(/ and /g, ' & ');
 }
 
+/* Turn a source_doc filename into a readable sub-topic.
+   Examples:
+     parent-close-policy.html              -> "Parent Close Policy"
+     nexus_endpoints.html                  -> "Endpoints"
+     develop_dotnet_activities_async.html  -> "Async"
+   The category chip already gives broader context, so we keep
+   only the last underscore-separated segment for brevity. */
+function formatSubcategory(sourceDoc) {
+  if (!sourceDoc) return '';
+  let name = sourceDoc.replace(/\.html?$/i, '');
+  const parts = name.split('_');
+  const leaf = parts[parts.length - 1] || name;
+  if (!leaf || leaf.toLowerCase() === 'index') return '';
+  return leaf
+    .split('-')
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+/* ---- Category groups ----
+   Order matters: more important groups come first.
+   Each entry can be a string (uses default label) or
+   { id, label } to override the in-group display label. */
+
+const CATEGORY_GROUPS = [
+  {
+    label: 'Features',
+    categories: [
+      { id: 'Features_Workflows',              label: 'Workflows' },
+      { id: 'Features_Activities',             label: 'Activities' },
+      { id: 'Features_Workers_and_Routing',    label: 'Workers & Routing' },
+      { id: 'Features_Messaging_and_Visibility', label: 'Messaging & Visibility' },
+      { id: 'Features_Data_and_Security',      label: 'Data & Security' },
+      { id: 'Features_Nexus',                  label: 'Nexus' },
+      { id: 'Tags',                            label: 'Tags' },
+      { id: 'Features_Other',                  label: 'Other' },
+    ],
+  },
+  {
+    label: 'Develop (SDKs)',
+    categories: [
+      { id: 'Develop',            label: 'Develop' },
+      { id: 'Develop_General',    label: 'General' },
+      { id: 'Develop_Go',         label: 'Go' },
+      { id: 'Develop_Java',       label: 'Java' },
+      { id: 'Develop_Python',     label: 'Python' },
+      { id: 'Develop_TypeScript', label: 'TypeScript' },
+      { id: 'Develop_Other_SDKs', label: 'Other SDKs' },
+    ],
+  },
+  {
+    label: 'Concepts & Tooling',
+    categories: [
+      { id: 'Evaluate_and_Concepts', label: 'Evaluate & Concepts' },
+      { id: 'CLI_and_References',    label: 'CLI & References' },
+      { id: 'AI_and_Cookbook',       label: 'AI & Cookbook' },
+    ],
+  },
+  {
+    label: 'Operations',
+    categories: [
+      { id: 'Self_Hosted_and_Ops', label: 'Self Hosted & Ops' },
+      { id: 'Temporal_Cloud',      label: 'Temporal Cloud' },
+    ],
+  },
+  {
+    label: 'Other',
+    categories: [
+      { id: 'Miscellaneous', label: 'Miscellaneous' },
+    ],
+  },
+];
+
 /* ---- Init ---- */
 
 async function init() {
@@ -120,23 +194,75 @@ function renderCategories() {
   const container = document.querySelector('.categories');
   container.innerHTML = '';
 
-  // "All" pill
+  // Index manifest categories for quick lookup + uncategorized detection.
+  const manifestIds = new Set(manifest.categories.map(c => c.category));
+  const groupedIds = new Set();
+  CATEGORY_GROUPS.forEach(g => g.categories.forEach(c => groupedIds.add(c.id)));
+
+  // "All" pill — its own row at the top.
+  const allRow = document.createElement('div');
+  allRow.className = 'category-row category-row-all';
   const allPill = document.createElement('div');
-  allPill.className = 'pill';
+  allPill.className = 'pill pill-all';
   allPill.textContent = 'All';
   allPill.addEventListener('click', () => loadCategory('all'));
-  container.appendChild(allPill);
+  allRow.appendChild(allPill);
+  container.appendChild(allRow);
 
-  // Per-category pills (sorted alphabetically)
-  const sorted = [...manifest.categories].sort((a, b) => a.category.localeCompare(b.category));
-  sorted.forEach(cat => {
-    const pill = document.createElement('div');
-    pill.className = 'pill';
-    pill.textContent = formatCategoryLabel(cat.category);
-    pill.dataset.category = cat.category;
-    pill.addEventListener('click', () => loadCategory(cat.category));
-    container.appendChild(pill);
+  // Render each group as a labeled section.
+  CATEGORY_GROUPS.forEach(group => {
+    const visible = group.categories.filter(c => manifestIds.has(c.id));
+    if (visible.length === 0) return;
+
+    const groupEl = document.createElement('div');
+    groupEl.className = 'category-group';
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'category-group-label';
+    labelEl.textContent = group.label;
+    groupEl.appendChild(labelEl);
+
+    const rowEl = document.createElement('div');
+    rowEl.className = 'category-row';
+    visible.forEach(cat => {
+      const pill = document.createElement('div');
+      pill.className = 'pill';
+      pill.textContent = cat.label || formatCategoryLabel(cat.id);
+      pill.dataset.category = cat.id;
+      pill.title = formatCategoryLabel(cat.id);
+      pill.addEventListener('click', () => loadCategory(cat.id));
+      rowEl.appendChild(pill);
+    });
+    groupEl.appendChild(rowEl);
+    container.appendChild(groupEl);
   });
+
+  // Catch-all: anything in the manifest that isn't grouped yet.
+  const ungrouped = manifest.categories
+    .filter(c => !groupedIds.has(c.category))
+    .sort((a, b) => a.category.localeCompare(b.category));
+  if (ungrouped.length > 0) {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'category-group';
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'category-group-label';
+    labelEl.textContent = 'More';
+    groupEl.appendChild(labelEl);
+
+    const rowEl = document.createElement('div');
+    rowEl.className = 'category-row';
+    ungrouped.forEach(cat => {
+      const pill = document.createElement('div');
+      pill.className = 'pill';
+      pill.textContent = formatCategoryLabel(cat.category);
+      pill.dataset.category = cat.category;
+      pill.addEventListener('click', () => loadCategory(cat.category));
+      rowEl.appendChild(pill);
+    });
+    groupEl.appendChild(rowEl);
+    container.appendChild(groupEl);
+  }
 }
 
 function setActivePill(category) {
@@ -255,9 +381,16 @@ function showQuestion() {
 
   // Question card
   const card = document.querySelector('.question-card');
+  const subcategory = formatSubcategory(q.source_doc);
+  const subEl = subcategory
+    ? `<span class="question-subcategory">${subcategory}</span>`
+    : '';
   card.innerHTML = `
     <div class="question-meta">
-      <span class="question-category">${formatCategoryLabel(q.category)}</span>
+      <div class="question-meta-left">
+        <span class="question-category">${formatCategoryLabel(q.category)}</span>
+        ${subEl}
+      </div>
       <span class="question-difficulty">${difficultyDots(q.difficulty)}</span>
     </div>
     <p class="question-text">${formatQuestion(q.question)}</p>
@@ -344,6 +477,7 @@ function submitAnswer() {
   state.history.unshift({
     question: q.question.substring(0, 150),
     category: q.category,
+    subcategory: formatSubcategory(q.source_doc),
     difficulty: q.difficulty,
     correct: isCorrect,
     selectedKey,
@@ -455,10 +589,12 @@ function renderHistory() {
     return;
   }
 
-  list.innerHTML = items.map(h => `
+  list.innerHTML = items.map(h => {
+    const sub = h.subcategory ? ` &middot; ${h.subcategory}` : '';
+    return `
     <div class="history-item ${h.correct ? 'correct' : 'wrong'}">
       <div class="history-meta">
-        <span>${formatCategoryLabel(h.category)}</span>
+        <span>${formatCategoryLabel(h.category)}${sub}</span>
         <span>${difficultyDots(h.difficulty)}</span>
       </div>
       <div class="history-question">${h.question}</div>
@@ -466,7 +602,8 @@ function renderHistory() {
         ${h.correct ? 'Correct' : 'Wrong (' + h.selectedKey + ' instead of ' + h.answer + ')'}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 /* ---- Calculator ---- */
