@@ -1,0 +1,313 @@
+{
+  "category": "Features_Other",
+  "questions": [
+    {
+      "id": "features_other_easy_001",
+      "category": "Features_Other",
+      "difficulty": "easy",
+      "question": "What is the main purpose of Patching in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To fix bugs in the Temporal server itself"
+        },
+        {
+          "key": "B",
+          "text": "To safely update Workflow code without breaking Workflow Executions that are already running"
+        },
+        {
+          "key": "C",
+          "text": "To speed up Workflow Executions by skipping old steps"
+        },
+        {
+          "key": "D",
+          "text": "To roll back a Workflow Execution to a previous state"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When you change Workflow code, any Workflows that are currently running could break because Temporal replays their history using the new code. Patching solves this by creating a logical branch — like a feature flag — so that in-progress Workflows continue using the old code path while new Workflow Executions use the updated code. This lets you deploy code changes without disrupting running Workflows.",
+      "source_doc": "patching.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_other_easy_002",
+      "category": "Features_Other",
+      "difficulty": "easy",
+      "question": "By default, how does Temporal handle failures in Activities compared to Workflow Executions?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Both Activities and Workflow Executions are automatically retried by default"
+        },
+        {
+          "key": "B",
+          "text": "Neither Activities nor Workflow Executions are automatically retried by default"
+        },
+        {
+          "key": "C",
+          "text": "Activities are automatically retried by default, but Workflow Executions are not"
+        },
+        {
+          "key": "D",
+          "text": "Workflow Executions are automatically retried by default, but Activities are not"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal automatically retries Activities when they fail because Activities are meant to perform operations that can be unreliable, like calling an external API. Workflow Executions, on the other hand, are not retried by default. This is because Workflows are designed to be deterministic and not failure-prone. A failing Workflow usually signals a design or deployment problem that needs human attention, not just another retry.",
+      "source_doc": "retry-policies.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_other_easy_003",
+      "category": "Features_Other",
+      "difficulty": "easy",
+      "question": "What is the key difference between a Temporal Schedule and a Temporal Cron Job?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Schedules can only run once, while Cron Jobs repeat forever"
+        },
+        {
+          "key": "B",
+          "text": "A Schedule is independent of any specific Workflow Execution, while a Cron Job is a property tied directly to a Workflow Execution"
+        },
+        {
+          "key": "C",
+          "text": "Schedules require writing custom code, while Cron Jobs are configured automatically"
+        },
+        {
+          "key": "D",
+          "text": "Schedules only support calendar expressions, while Cron Jobs only support simple intervals"
+        }
+      ],
+      "answer": "B",
+      "explanation": "A Temporal Schedule has its own identity and exists independently — it simply instructs Temporal to start Workflow Executions at certain times. A Temporal Cron Job, by contrast, is configured as a property of the Workflow Execution itself. This makes Schedules more flexible and easier to manage, since you can pause, update, or delete a Schedule without affecting any particular Workflow Execution.",
+      "source_doc": "schedule.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_other_med_001",
+      "category": "Features_Other",
+      "difficulty": "med",
+      "question": "When using the `patched()` function in Python and you have multiple versions of code, which ordering of patch IDs in your conditional block is recommended?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Put the oldest version first so that existing workflows continue to use familiar code paths"
+        },
+        {
+          "key": "B",
+          "text": "Put the newest version first so that new executions (not replaying) evaluate it first and record the correct marker"
+        },
+        {
+          "key": "C",
+          "text": "The order doesn't matter because `patched()` always checks the full event history before returning"
+        },
+        {
+          "key": "D",
+          "text": "Put the newest version last so that replaying workflows can fall through to it after checking older patches"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When not replaying, `patched()` always returns `true` for the first call it encounters. If you put an older patch ID (e.g., 'v2') before the newest one ('v3'), new executions will enter the v2 branch and record a v2 marker, never reaching v3. Placing the newest version first ensures new executions record the correct marker and run the latest code. This pattern is critical when you have multiple iterations of a patch.",
+      "source_doc": "patching.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_other_med_002",
+      "category": "Features_Other",
+      "difficulty": "med",
+      "question": "What happens during a workflow replay if `patched()` is called with a patch ID that does not exist anywhere in the event history?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It raises a non-determinism exception because the marker is missing from the expected location"
+        },
+        {
+          "key": "B",
+          "text": "It returns `true` and adds a new marker to the event history to keep it up to date"
+        },
+        {
+          "key": "C",
+          "text": "It returns `false` during replay, and continues to return `false` even after the replay threshold is surpassed and new code is running"
+        },
+        {
+          "key": "D",
+          "text": "It returns `false` only during replay, then switches to returning `true` once the workflow moves past the replay point"
+        }
+      ],
+      "answer": "C",
+      "explanation": "If `patched()` is called during replay but no marker for that patch ID exists in the event history, it returns `false` — and crucially, it will continue returning `false` even after the workflow finishes replaying and starts executing new code. This ensures that if a new patch depends on earlier patched logic that wasn't in the history, the workflow won't incorrectly enter the new code path mid-execution.",
+      "source_doc": "patching.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_other_med_003",
+      "category": "Features_Other",
+      "difficulty": "med",
+      "question": "Given the default Retry Policy for Activities in Temporal, what is the retry interval after the 3rd failure (i.e., before the 4th attempt)?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "1 second, because the backoff resets after each successful attempt"
+        },
+        {
+          "key": "B",
+          "text": "4 seconds, because it is the Initial Interval multiplied by the attempt number"
+        },
+        {
+          "key": "C",
+          "text": "8 seconds, because the Initial Interval (1s) is multiplied by the Backoff Coefficient (2.0) raised to the power of 3"
+        },
+        {
+          "key": "D",
+          "text": "100 seconds, because the Maximum Interval is always used after the first retry"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The retry interval formula is: Initial Interval × (Backoff Coefficient ^ number_of_retries), capped at the Maximum Interval. With defaults (Initial Interval = 1s, Backoff Coefficient = 2.0), after 3 failures the interval is 1s × 2^3 = 8 seconds. The Maximum Interval (100s by default) only caps the interval once the exponential growth reaches it.",
+      "source_doc": "retry-policies.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_other_med_004",
+      "category": "Features_Other",
+      "difficulty": "med",
+      "question": "Your Activity throws a permanent error for invalid input data. Which approach ensures the Activity will NEVER be retried, regardless of the Retry Policy configured by the caller?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Set `maximum_attempts=1` on the Retry Policy when scheduling the Activity"
+        },
+        {
+          "key": "B",
+          "text": "Raise an `ApplicationError` with `non_retryable=True` directly in the Activity code"
+        },
+        {
+          "key": "C",
+          "text": "Add the error type to the `non_retryable_errors` list in the Retry Policy at the call site"
+        },
+        {
+          "key": "D",
+          "text": "Raise a standard built-in exception instead of an ApplicationError so Temporal won't retry it"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Raising an `ApplicationError` with `non_retryable=True` (or the equivalent in other SDKs) makes the error permanently non-retryable regardless of what Retry Policy the caller configures. While callers can add error types to their Retry Policy's `non_retryable_errors` list, only the implementer can guarantee non-retryability by flagging it in the error itself. This is the right approach for permanent failures like bad input data that no amount of retrying will fix.",
+      "source_doc": "retry-policies.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_other_hard_001",
+      "category": "Features_Other",
+      "difficulty": "hard",
+      "question": "Your team deploys new Workflow code with a `patched('v2')` check to handle a breaking change. A long-running Workflow was mid-execution when the deploy happened. After the Worker restarts, this Workflow replays its history, encounters the `patched('v2')` call, but finds NO marker for 'v2' in its event history. After replay completes and the Workflow is running new code, what happens when it hits another `patched('v2')` check later in the function body?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It returns `true` because the Workflow is now past the replay threshold and running fresh code"
+        },
+        {
+          "key": "B",
+          "text": "It returns `false` because once `patched()` returns `false` for an ID during replay, all future calls with that ID also return `false` — even after replay ends"
+        },
+        {
+          "key": "C",
+          "text": "It throws a non-determinism exception because the marker is missing from the history"
+        },
+        {
+          "key": "D",
+          "text": "It adds a new marker to the event history and returns `true`, since it's no longer replaying"
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is one of Temporal's most surprising patching behaviors. When `patched()` encounters an ID that has NO marker in the event history during replay, it returns `false` AND permanently marks that ID as 'false' for the entire execution — including after replay completes. The reasoning is sound: if earlier code depended on the patch, you cannot safely run the later patched code either. The Workflow should run the old code path throughout. If you assumed it would return `true` post-replay (choice A), you'd risk running mismatched new/old code combinations that could cause data corruption or logic errors.",
+      "source_doc": "patching.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_other_hard_002",
+      "category": "Features_Other",
+      "difficulty": "hard",
+      "question": "A senior engineer writes the following Python patch block to handle three versions of a payment processing step:\n\n```python\nif patched('v2'):\n    process_payment_v2()\nelif patched('v3'):\n    process_payment_v3()\nelse:\n    process_payment_v1()\n```\n\nThey deploy this to production. New Workflow Executions that have never been seen before start running. Which code path will they follow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`process_payment_v3()` — because v3 is the newest version"
+        },
+        {
+          "key": "B",
+          "text": "`process_payment_v1()` — because new executions have no markers in their history so both `patched()` calls return false"
+        },
+        {
+          "key": "C",
+          "text": "`process_payment_v2()` — because when not replaying, `patched()` always returns `true`, so the first branch wins"
+        },
+        {
+          "key": "D",
+          "text": "A non-determinism exception is raised because multiple patch IDs are evaluated in the same execution"
+        }
+      ],
+      "answer": "C",
+      "explanation": "When a Workflow is NOT replaying (i.e., it's a brand-new execution), `patched()` always returns `true` and writes a marker to the event history. This means the FIRST `patched()` call encountered wins. Since `patched('v2')` is checked first, it returns `true`, writes a v2 marker, and `process_payment_v2()` runs — completely bypassing v3. This is exactly why Temporal's documentation recommends always placing the NEWEST version at the TOP of the conditional chain. The fix is to swap v2 and v3 so `patched('v3')` is evaluated first.",
+      "source_doc": "patching.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_other_hard_003",
+      "category": "Features_Other",
+      "difficulty": "hard",
+      "question": "Your Activity calls an external payment API. You want failed payment attempts to retry automatically for transient network errors, but immediately surface a permanent failure when the card number is invalid (without any retries). You've configured a Retry Policy with `maximum_attempts=10`. A developer suggests two approaches: (A) Add 'InvalidCardError' to the Retry Policy's `non_retryable_errors` list, or (B) Raise the error as an `ApplicationError` with `non_retryable=True` inside the Activity code. What is the key behavioral difference between these two approaches?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "There is no difference — both prevent retries for InvalidCardError regardless of how other teams configure their Retry Policies"
+        },
+        {
+          "key": "B",
+          "text": "Approach A can be overridden by a caller who configures a different Retry Policy, while Approach B hardcodes non-retryability in the Activity implementation itself, meaning no Retry Policy can ever retry that specific error"
+        },
+        {
+          "key": "C",
+          "text": "Approach B only works if `maximum_attempts` is set to 1; otherwise Temporal ignores the `non_retryable` flag"
+        },
+        {
+          "key": "D",
+          "text": "Approach A applies only to Workflow-level retries, while Approach B applies only to Activity-level retries"
+        }
+      ],
+      "answer": "B",
+      "explanation": "This distinction matters enormously in shared codebases. Adding an error type to a Retry Policy's `non_retryable_errors` is a caller-side decision — a different team using your Activity could omit that from their Retry Policy and accidentally retry an InvalidCardError. Raising `ApplicationError` with `non_retryable=True` (or `NewNonRetryableApplicationError()` in Go) is an implementer-side decision baked into the Activity itself. No Retry Policy can override it. For errors that should NEVER be retried regardless of context — like invalid input data — hardcoding non-retryability in the Activity code is the safer choice. Reserve Retry Policy configuration for caller-specific tuning of retryable errors.",
+      "source_doc": "retry-policies.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_other_hard_004",
+      "category": "Features_Other",
+      "difficulty": "hard",
+      "question": "An engineer is debugging a long-running Workflow and notices that when an Activity fails and retries multiple times, the `ActivityTaskStarted` event does NOT appear in the Workflow's Event History until the Activity eventually succeeds (or exhausts all retries). They are concerned the Activity might be stuck and want to check its current retry attempt count. What is the correct way to get this information, and why does Temporal behave this way?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity is definitely stuck — `ActivityTaskStarted` should appear on every attempt; the absence indicates a Temporal Service bug"
+        },
+        {
+          "key": "B",
+          "text": "Use the Describe API on the Workflow Execution to get the pending Activity's attempt count; Temporal intentionally omits intermediate `ActivityTaskStarted` events to prevent Event History from being flooded with retry noise"
+        },
+        {
+          "key": "C",
+          "text": "Query the Activity Task Queue directly to count in-flight tasks; the Event History is only updated after the Schedule-to-Close Timeout expires"
+        },
+        {
+          "key": "D",
+          "text": "Increase the Workflow Execution Timeout — the missing events indicate the history has been truncated due to size limits"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal deliberately withholds `ActivityTaskStarted` events from the Workflow Event History during retry attempts. If every retry attempt wrote to the history, a misbehaving Activity with unlimited retries could generate millions of events, bloating the history and potentially hitting size limits. Instead, you use the Describe API (e.g., `DescribeWorkflowExecution`) which returns pending Activity metadata including the current attempt count, last failure, and next scheduled retry time. This is the designed operational path for monitoring in-progress retries — not the Event History. Understanding this distinction prevents engineers from mistakenly concluding that an Activity isn't retrying just because the history looks quiet.",
+      "source_doc": "retry-policies.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    }
+  ]
+}

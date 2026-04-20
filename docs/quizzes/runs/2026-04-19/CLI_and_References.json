@@ -1,0 +1,313 @@
+{
+  "category": "CLI_and_References",
+  "questions": [
+    {
+      "id": "cli_and_references_easy_001",
+      "category": "CLI_and_References",
+      "difficulty": "easy",
+      "question": "What is the key difference between canceling an Activity and terminating an Activity in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Canceling is permanent, while terminating allows the Activity to retry"
+        },
+        {
+          "key": "B",
+          "text": "Canceling gives the Activity a chance to detect and respond to the request, while terminating stops it immediately without any notification to the Activity code"
+        },
+        {
+          "key": "C",
+          "text": "Canceling and terminating do exactly the same thing, just with different command names"
+        },
+        {
+          "key": "D",
+          "text": "Terminating only works on paused Activities, while canceling works on running ones"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When you cancel an Activity, it transitions to a 'CancelRequested' state. If the Activity is sending heartbeats, it will receive a cancellation error on its next heartbeat and can handle it gracefully — for example, by cleaning up before stopping. Termination, on the other hand, is immediate and forceful: the documentation explicitly states that 'Activity code cannot see or respond to terminations.' Think of cancellation as a polite request to stop, and termination as pulling the plug.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "cli_and_references_easy_002",
+      "category": "CLI_and_References",
+      "difficulty": "easy",
+      "question": "When you pause a running Activity in Temporal, what happens immediately?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity stops executing immediately at the moment the pause command is issued"
+        },
+        {
+          "key": "B",
+          "text": "The Activity is deleted and must be restarted manually"
+        },
+        {
+          "key": "C",
+          "text": "The currently running Activity continues until it finishes, fails, or times out — the pause only takes effect after that"
+        },
+        {
+          "key": "D",
+          "text": "The Activity is paused and will automatically resume after 60 seconds"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Pausing doesn't interrupt an Activity that is currently in the middle of executing. According to the documentation, 'if the Activity is currently running, it will run until the next time it fails, completes, or times out, at which point the pause will kick in.' The pause essentially prevents the Activity from being scheduled again after its current attempt ends. If the Activity is already waiting (not currently running), the pause takes effect right away and it won't run again until you unpause it.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "cli_and_references_easy_003",
+      "category": "CLI_and_References",
+      "difficulty": "easy",
+      "question": "What is a 'Standalone Activity' in Temporal, based on how the CLI commands treat it differently?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "An Activity that runs on a dedicated server separate from the main Temporal cluster"
+        },
+        {
+          "key": "B",
+          "text": "An Activity that can be started, tracked, and managed independently without being part of a Workflow"
+        },
+        {
+          "key": "C",
+          "text": "An Activity that never retries when it fails"
+        },
+        {
+          "key": "D",
+          "text": "An Activity that can only run one at a time across the entire system"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Throughout the CLI documentation, you'll notice that some commands like 'pause', 'reset', and 'unpause' explicitly say 'Not supported for Standalone Activities.' Other commands like 'complete' and 'fail' note that the '--workflow-id' flag should be omitted for Standalone Activities. This tells us that a Standalone Activity is one that exists and runs on its own, without being invoked by or belonging to a Workflow. You can start it directly with 'temporal activity start', check its result with 'temporal activity result', and manage its lifecycle independently.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "cli_and_references_med_001",
+      "category": "CLI_and_References",
+      "difficulty": "med",
+      "question": "You run `temporal activity cancel --activity-id myActivity` against a heartbeating activity. What happens next?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The activity is immediately stopped and transitions to canceled status."
+        },
+        {
+          "key": "B",
+          "text": "The activity transitions to CancelRequested state, and a cancellation error is raised on the next heartbeat response if the activity allows it to propagate."
+        },
+        {
+          "key": "C",
+          "text": "The activity is terminated immediately and cannot respond to the cancellation."
+        },
+        {
+          "key": "D",
+          "text": "The activity is paused until manually unpaused by an operator."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Requesting cancellation transitions the activity's run state to CancelRequested. If the activity is heartbeating, the cancellation error is raised on the next heartbeat response. Only if the activity allows that error to propagate does it transition to canceled status. This is different from `terminate`, which stops the activity immediately with no chance for the activity code to respond. You'd use cancellation when you want the activity to have a chance to clean up gracefully.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "cli_and_references_med_002",
+      "category": "CLI_and_References",
+      "difficulty": "med",
+      "question": "A developer wants to externally mark an in-flight workflow Activity as successfully finished from the CLI and return a JSON result. Which command and required flags should they use?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`temporal activity finish --activity-id myId --workflow-id myWf --output '{\"key\": \"val\"}'`"
+        },
+        {
+          "key": "B",
+          "text": "`temporal activity complete --activity-id myId --result '{\"key\": \"val\"}'` with --workflow-id required for workflow activities"
+        },
+        {
+          "key": "C",
+          "text": "`temporal activity complete --activity-id myId --workflow-id myWf` with --result being optional"
+        },
+        {
+          "key": "D",
+          "text": "`temporal activity update-options --activity-id myId --workflow-id myWf --result '{\"key\": \"val\"}'`"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The `temporal activity complete` command marks an activity as successfully finished. It requires `--activity-id` and `--result` (a JSON string). For workflow activities, `--workflow-id` is also required. Note that `--result` is listed as a required flag, making option C incorrect. This pattern is used when implementing async activity completion — the worker abandons the task and an external process later reports the result via the CLI or SDK.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "cli_and_references_med_003",
+      "category": "CLI_and_References",
+      "difficulty": "med",
+      "question": "You pause an activity that is currently executing. What is the expected behavior according to the Temporal CLI documentation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The activity is immediately interrupted and will not run again until unpaused."
+        },
+        {
+          "key": "B",
+          "text": "The activity continues running until it fails, completes, or times out — then the pause takes effect. If it's on its last retry and fails, the failure is returned to the caller."
+        },
+        {
+          "key": "C",
+          "text": "The activity is paused immediately but retains its current heartbeat progress for resumption."
+        },
+        {
+          "key": "D",
+          "text": "The activity is paused and all remaining retry attempts are cancelled permanently."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Pausing an activity that is currently running does not interrupt it immediately. It continues until it next fails, completes, or times out — at which point the pause kicks in. An important edge case: if the activity is on its last retry attempt and fails, the failure is returned to the caller just as if it hadn't been paused. This is useful for operators who want to hold an activity from retrying without forcibly stopping a running attempt.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "cli_and_references_med_004",
+      "category": "CLI_and_References",
+      "difficulty": "med",
+      "question": "What is the difference between `temporal activity terminate` and `temporal activity cancel` for a running Standalone Activity?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "They are functionally identical; both transition the activity to CancelRequested before stopping it."
+        },
+        {
+          "key": "B",
+          "text": "`cancel` pauses the activity immediately, while `terminate` sends a cancellation error on the next heartbeat."
+        },
+        {
+          "key": "C",
+          "text": "`terminate` stops the activity immediately and the activity code cannot see or respond to it, while `cancel` raises a cancellation error on the next heartbeat allowing the activity to handle it."
+        },
+        {
+          "key": "D",
+          "text": "`terminate` is only supported for workflow activities, while `cancel` works for both workflow and Standalone Activities."
+        }
+      ],
+      "answer": "C",
+      "explanation": "According to the documentation, `terminate` stops a Standalone Activity immediately and 'Activity code cannot see or respond to terminations.' In contrast, `cancel` transitions the activity to CancelRequested and, for a heartbeating activity, surfaces a cancellation error on the next heartbeat — giving the activity code an opportunity to clean up. Use `cancel` when graceful shutdown is important and the activity heartbeats; use `terminate` when you need an immediate, forceful stop.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "cli_and_references_hard_001",
+      "category": "CLI_and_References",
+      "difficulty": "hard",
+      "question": "Your team has a long-running Activity that heartbeats every 30 seconds to track its progress through a large dataset. An on-call engineer pauses it using `temporal activity pause` during an incident, then later resets it with `temporal activity reset --reset-heartbeats`. The Activity code receives a Canceled failure on its next heartbeat. What should your Activity code do when it catches this Canceled failure after a reset?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Swallow the Canceled failure and continue execution normally, since resets are non-destructive operations"
+        },
+        {
+          "key": "B",
+          "text": "Handle any necessary cleanup and then re-throw the Canceled failure so Temporal can properly restart the Activity from the beginning"
+        },
+        {
+          "key": "C",
+          "text": "Immediately call `context.Done()` to signal completion and return a nil result"
+        },
+        {
+          "key": "D",
+          "text": "Ignore the failure — heartbeat-based Canceled failures from resets are automatically retried without any code intervention"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When an Activity that heartbeats is reset, the documentation explicitly states it 'will receive a Canceled failure the next time they heartbeat after a reset.' The Activity code must handle this Canceled failure for cleanup purposes (e.g., releasing locks, closing connections, rolling back partial work) and then re-throw it. If you swallow the error and continue, your Activity will proceed with the old state even though Temporal is trying to restart it from scratch — leading to duplicate processing or data corruption. Re-throwing signals to Temporal that the Activity has acknowledged the reset and is ready to be restarted. This is a critical pattern: Temporal uses cancellation as a cooperative mechanism, so the Activity code is responsible for recognizing and propagating it.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "cli_and_references_hard_002",
+      "category": "CLI_and_References",
+      "difficulty": "hard",
+      "question": "An engineer runs `temporal activity cancel --activity-id my-activity` against a workflow-owned Activity that is currently executing and heartbeating. The engineer then checks the UI a few seconds later and sees the Activity is still showing as 'Running'. Which of the following best explains this behavior?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The cancel command failed silently — activity cancellation requires --workflow-id to work"
+        },
+        {
+          "key": "B",
+          "text": "Cancellation only works on Standalone Activities; workflow-owned Activities must use `temporal workflow cancel`"
+        },
+        {
+          "key": "C",
+          "text": "The cancel command transitions the Activity to CancelRequested state, but the Activity only receives the cancellation error on its next heartbeat call — it continues running until then"
+        },
+        {
+          "key": "D",
+          "text": "The Activity will never be cancelled because the workflow must explicitly handle the cancellation scope in its own code first"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation states that requesting cancellation 'transitions the Activity's run state to CancelRequested' and 'a cancellation error will be raised when the next heartbeat response is received.' This is Temporal's cooperative cancellation model: the server records the cancellation intent, but the Activity is not forcibly stopped. The Activity must be heartbeating for this signal to be delivered — and only when the heartbeat call returns does the Activity code see the error. If your Activity heartbeats infrequently (e.g., every 5 minutes), it could appear 'Running' for a long time after cancellation is requested. This is why heartbeat frequency is important for responsive cancellation, and why Activities that don't heartbeat require termination rather than cancellation to stop them.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "cli_and_references_hard_003",
+      "category": "CLI_and_References",
+      "difficulty": "hard",
+      "question": "You need to urgently stop a runaway Standalone Activity that is consuming excessive resources. The Activity code does not implement heartbeating. You run `temporal activity cancel --activity-id my-activity`. An hour later, the Activity is still consuming resources. What is the most likely explanation, and what should you do instead?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The cancel command was malformed; re-run it with --reason flag to force immediate cancellation"
+        },
+        {
+          "key": "B",
+          "text": "Cancellation requires heartbeating to be delivered to the Activity — since the Activity doesn't heartbeat, it will never receive the cancellation signal; use `temporal activity terminate` instead"
+        },
+        {
+          "key": "C",
+          "text": "Standalone Activities ignore cancellation entirely; you must cancel the parent workflow to stop them"
+        },
+        {
+          "key": "D",
+          "text": "The cancellation is queued and will be processed once the current retry attempt completes naturally"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly states: 'if the Activity is heartbeating, a cancellation error will be raised when the next heartbeat response is received.' The contrapositive is equally important: if the Activity does NOT heartbeat, it will never receive the cancellation signal. The cancel command sets state to CancelRequested, but there is no delivery mechanism without heartbeating. For an Activity you need to stop immediately regardless of its code, use `temporal activity terminate`. The documentation notes that 'Activity code cannot see or respond to terminations' — termination is a hard stop from the server side, not a cooperative signal. This distinction between cancel (cooperative, requires heartbeat) and terminate (forceful, server-side) is fundamental to Temporal's Activity lifecycle management.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "cli_and_references_hard_004",
+      "category": "CLI_and_References",
+      "difficulty": "hard",
+      "question": "During a production incident, you pause a failing Activity using `temporal activity pause --activity-id my-activity --workflow-id my-workflow`. The Activity happens to be actively executing at that moment. You check back 2 minutes later expecting it to be paused, but see it completed successfully. What happened?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The pause command was ignored because the Activity was already running — pause only works on Activities that haven't started yet"
+        },
+        {
+          "key": "B",
+          "text": "The pause was applied, but a concurrent worker picked up the Activity before the pause propagated across the cluster"
+        },
+        {
+          "key": "C",
+          "text": "The Activity was currently running, so it ran to completion — pause only prevents the Activity from being re-scheduled on future attempts; it does not interrupt a currently-executing attempt"
+        },
+        {
+          "key": "D",
+          "text": "The Activity completed before the pause command was processed because CLI commands are asynchronous with a multi-second delay"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation clearly states: 'if the Activity is currently running, it will run until the next time it fails, completes, or times out, at which point the pause will kick in.' This is a critical operational misunderstanding — pause is not a preemptive stop. It only prevents future scheduling. So if your Activity happens to succeed on its current attempt while paused, it completes normally and the pause has no visible effect. Pause is most useful for Activities that are waiting for retry (i.e., they've already failed and are in a backoff period) — in that case the documentation confirms 'it will not be run again until it is unpaused.' If you need to immediately stop an executing Activity, use cancel or terminate instead of pause.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    }
+  ]
+}
