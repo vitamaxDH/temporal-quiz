@@ -236,6 +236,7 @@ async function init() {
   // Wire up buttons
   document.getElementById('themeBtn').addEventListener('click', toggleTheme);
   document.getElementById('skipBtn').addEventListener('click', skipQuestion);
+  document.getElementById('prevBtn').addEventListener('click', goPrevQuestion);
   document.getElementById('submitBtn').addEventListener('click', () => {
     if (revealed) { nextQuestion(); } else { submitAnswer(); }
   });
@@ -1071,7 +1072,67 @@ function showQuestion() {
   btn.textContent = 'Submit';
   btn.disabled = true;
 
+  // Show Skip for a fresh question
+  const skip = document.getElementById('skipBtn');
+  if (skip) skip.style.display = '';
+
+  updatePrevButton();
   updateProgress();
+
+  // If this index already has a recorded answer, replay it in read-only mode.
+  const activeSess = state.sessions && state.sessions[0];
+  const historyEntry = activeSess?.history?.[currentIndex];
+  if (historyEntry) {
+    replayAnsweredQuestion(q, historyEntry);
+  }
+}
+
+function replayAnsweredQuestion(q, h) {
+  // Set internal state so keyboard shortcuts behave as "answered".
+  revealed = true;
+  selectedKey = h.selectedKey;
+
+  // Apply correct/wrong/dimmed styling without re-running stats.
+  document.querySelectorAll('.answer').forEach(a => {
+    const k = a.querySelector('.answer-key').textContent.trim();
+    a.classList.remove('selected');
+    if (k === q.answer) {
+      a.classList.add('correct');
+    } else if (k === h.selectedKey && k !== q.answer) {
+      a.classList.add('wrong');
+    } else {
+      a.classList.add('dimmed');
+    }
+  });
+
+  // Re-show the explanation.
+  const explanation = document.getElementById('explanation');
+  explanation.style.display = 'block';
+  explanation.innerHTML = `
+    <div class="explanation-label">Explanation</div>
+    <div class="explanation-text">${formatQuestion(q.explanation)}</div>
+  `;
+
+  // Submit becomes Next so the user can move forward again.
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'Next';
+  btn.disabled = false;
+
+  // No Skip on an already-answered question.
+  const skip = document.getElementById('skipBtn');
+  if (skip) skip.style.display = 'none';
+}
+
+function updatePrevButton() {
+  const prev = document.getElementById('prevBtn');
+  if (!prev) return;
+  prev.disabled = !(mode === 'quiz' && currentIndex > 0);
+}
+
+function goPrevQuestion() {
+  if (mode !== 'quiz' || currentIndex <= 0) return;
+  currentIndex--;
+  showQuestion();
 }
 
 /* ---- Answer selection ---- */
@@ -1442,6 +1503,12 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault();
       return;
     }
+  }
+
+  if (mode === 'quiz' && e.key === 'ArrowLeft' && currentIndex > 0) {
+    goPrevQuestion();
+    e.preventDefault();
+    return;
   }
 
   const key = e.key.toUpperCase();
