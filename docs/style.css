@@ -1326,12 +1326,17 @@ code {
   stroke-linecap: round;
   transition: stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
-  animation: recap-arc-in 0.9s cubic-bezier(0.4, 0, 0.2, 1) both;
+  /* Fade the arcs in on render. The old animation also morphed
+     stroke-dashoffset from 1000 to "unspecified", which on some WebKit
+     builds left the arc stuck at offset 1000 and invisible — only the
+     background ring would render. Animating opacity alone sidesteps that
+     while keeping the soft appearance. */
+  animation: recap-arc-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 .recap-donut-correct { stroke: url(#recapGradCorrect); }
 .recap-donut-wrong   { stroke: url(#recapGradWrong); animation-delay: 0.18s; }
 @keyframes recap-arc-in {
-  0%   { stroke-dashoffset: 1000; opacity: 0.2; }
+  0%   { opacity: 0; }
   100% { opacity: 1; }
 }
 .recap-donut-pct {
