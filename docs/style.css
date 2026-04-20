@@ -590,6 +590,31 @@ html[data-theme="light"] .difficulty-med       { background: rgba(217, 119, 6, 0
 html[data-theme="light"] .difficulty-hard      { background: rgba(234, 88, 12, 0.12); border-color: rgba(234, 88, 12, 0.45); color: #ea580c; }
 html[data-theme="light"] .difficulty-nightmare { background: rgba(220, 38, 38, 0.12); border-color: rgba(220, 38, 38, 0.50); }
 
+/* Difficulty chip in the Customize panel — no outer pill shell, the colored
+   difficulty badge IS the chip. Inactive chips are dimmed; the active state
+   is shown with a matching-color ring + slight lift so it never needs a
+   separate purple selection pill around it. */
+.diff-chip {
+  display: inline-flex;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 999px;
+  padding: 2px;
+  opacity: 0.45;
+  transition: opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.diff-chip:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+.diff-chip.active {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+.diff-chip.active .difficulty-badge {
+  box-shadow: 0 0 0 2px currentColor;
+}
+
 .question-text {
   font-size: 17px;
   font-weight: 400;

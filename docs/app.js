@@ -888,7 +888,7 @@ function renderCustomDifficulties() {
   const diffs = ['easy', 'med', 'hard', 'nightmare'];
   diffs.forEach(d => {
     const pill = document.createElement('div');
-    pill.className = 'pill';
+    pill.className = 'diff-chip';
     if (customConfig.difficulties.includes(d)) pill.classList.add('active');
     pill.innerHTML = difficultyDots(d);
     pill.addEventListener('click', () => {
