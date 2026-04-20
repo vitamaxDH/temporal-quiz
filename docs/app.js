@@ -1,7 +1,7 @@
 /* temporal.quiz - Terminal Elegance quiz application */
 
 const STORAGE_KEY = 'temporal-quiz-state';
-const CIRCUMFERENCE = 2 * Math.PI * 15; // 94.25 for r=15
+const CIRCUMFERENCE = 2 * Math.PI * 18; // 113.097 for r=18 (44px ring)
 
 let manifest = null;
 let questions = [];
