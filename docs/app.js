@@ -473,13 +473,17 @@ function renderLanding() {
   document.getElementById('landingStartBtn').addEventListener('click', startAutoSession);
   document.getElementById('landingCustomizeBtn').addEventListener('click', openCustomize);
   if (resumable) {
-    document.getElementById('resumeSessionBtn').addEventListener('click', resumeSession);
+    document.getElementById('resumeSessionBtn').addEventListener('click', () => resumeSession());
     document.getElementById('abandonSessionBtn').addEventListener('click', abandonUnfinishedSession);
   }
 }
 
 function resumeSession(sess) {
-  sess = sess || resumableSession();
+  // Defensive: if called from an event listener, `sess` will be an Event.
+  // Fall back to the banner-detected resumable session in that case.
+  if (!sess || !Array.isArray(sess.queue) || !Array.isArray(sess.history)) {
+    sess = resumableSession();
+  }
   if (!sess) { renderLanding(); return; }
   // Make sure the session being resumed is at state.sessions[0] so
   // submitAnswer / nextQuestion target the right record.
