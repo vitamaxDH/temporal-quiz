@@ -172,14 +172,8 @@ function formatQuestion(text) {
 
 function difficultyDots(difficulty) {
   const levels = { easy: 1, med: 2, hard: 3, nightmare: 4 };
-  const filled = levels[difficulty] || 1;
-  const total = 4;
   const safe = levels[difficulty] ? difficulty : 'easy';
-  let dots = '';
-  for (let i = 0; i < total; i++) {
-    dots += `<span class="dot ${i < filled ? 'filled' : 'empty'}"></span>`;
-  }
-  return `<span class="difficulty-badge difficulty-${safe}">${dots}<span class="difficulty-label">${difficulty}</span></span>`;
+  return `<span class="difficulty-badge difficulty-${safe}"><span class="difficulty-label">${difficulty}</span></span>`;
 }
 
 function formatCategoryLabel(category) {
