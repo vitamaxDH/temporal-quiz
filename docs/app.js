@@ -451,7 +451,7 @@ function renderLanding() {
     <div class="resume-banner">
       <div class="resume-banner-title">Resume unfinished session?</div>
       <div class="resume-banner-meta">
-        ${resumable.mode === 'custom' ? 'Custom' : 'Daily Mix'}
+        ${resumable.mode === 'custom' ? 'Custom' : 'Quick start'}
         &middot; ${resumable.history.length}/${resumable.planned}
         &middot; started ${escapeHtml(fmtRelative(resumable.started_at))}
       </div>
@@ -468,7 +468,7 @@ function renderLanding() {
       <div class="landing-title">Today's Quiz</div>
       <div class="landing-meta">${totalCount} questions · ${runLabel}</div>
       <div class="landing-actions">
-        <button class="btn btn-primary landing-start" id="landingStartBtn">Daily Mix</button>
+        <button class="btn btn-primary landing-start" id="landingStartBtn">Quick start</button>
         <button class="btn btn-ghost landing-customize" id="landingCustomizeBtn">Pick Topics</button>
       </div>
       <div class="landing-hint">Press Enter to start</div>
@@ -580,7 +580,7 @@ function showSessionScope() {
 
   const fallbackCatList = (manifest?.categories ?? []).map(c => c.category);
 
-  const modeLabel = sess?.mode === 'custom' ? 'Custom' : 'Daily Mix';
+  const modeLabel = sess?.mode === 'custom' ? 'Custom' : 'Quick start';
 
   const catIds = sess?.config?.categories?.length
     ? sess.config.categories
@@ -1834,7 +1834,7 @@ function renderHistory() {
       const diffPart = diffs === 0 ? 'all diff' : `${diffs} diff`;
       summary = `Custom · ${catPart} · ${diffPart}`;
     } else {
-      summary = 'Daily Mix';
+      summary = 'Quick start';
     }
 
     const hist = Array.isArray(s.history) ? s.history : [];
