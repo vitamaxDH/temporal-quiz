@@ -616,7 +616,7 @@ function showSessionScope() {
   `;
 
   showConfirm({
-    title: 'Session scope',
+    title: 'Session status',
     body,
     html: true,
     info: true,
