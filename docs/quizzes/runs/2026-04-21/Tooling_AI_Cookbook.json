@@ -1,0 +1,145 @@
+{
+  "category": "Tooling_AI_Cookbook",
+  "questions": [
+    {
+      "id": "tooling_ai_cookbook_easy_001",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "easy",
+      "question": "What is the main purpose of the Temporal Developer Skill for AI coding agents?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It gives AI agents real-time access to live Temporal cluster metrics and logs."
+        },
+        {
+          "key": "B",
+          "text": "It provides AI agents with expert knowledge of Temporal's programming model, covering topics like workflow determinism, retry policies, and testing strategies."
+        },
+        {
+          "key": "C",
+          "text": "It automatically converts existing code into Temporal Workflows without any developer input."
+        },
+        {
+          "key": "D",
+          "text": "It connects AI agents to the Temporal Cloud dashboard so they can manage running Workflows directly."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal Developer Skill is a domain-specific knowledge package that teaches AI coding agents how Temporal works — things like workflow determinism rules, activity patterns, retry policies, error handling, and versioning. Think of it as giving your AI assistant a Temporal textbook so it can write correct Temporal code alongside you, rather than guessing based on generic training data.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_easy_002",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "easy",
+      "question": "Why does the Temporal Docs MCP Server exist as a separate tool from AI Skills?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Skills only work offline, while the MCP server is required for any internet-connected AI agent."
+        },
+        {
+          "key": "B",
+          "text": "The MCP server replaces Skills entirely and is the only supported way to give AI agents Temporal knowledge."
+        },
+        {
+          "key": "C",
+          "text": "The MCP server gives AI tools real-time access to current documentation, so answers reflect the latest docs rather than potentially outdated training data."
+        },
+        {
+          "key": "D",
+          "text": "The MCP server is only needed for Temporal Cloud users, while Skills are sufficient for self-hosted Temporal clusters."
+        }
+      ],
+      "answer": "C",
+      "explanation": "AI models are trained on data up to a certain cutoff date, which means their built-in knowledge of Temporal can become stale as the platform evolves. The Temporal Docs MCP Server solves this by connecting your AI assistant to live Temporal documentation at query time, ensuring responses are grounded in current, accurate content rather than training snapshots that may be months or years old.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_easy_003",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "easy",
+      "question": "The Temporal Cloud Skill is described as helping AI agents with a specific set of concerns. Which of the following best describes its focus area?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Designing and coding new Temporal Workflows from scratch, including determinism and state management patterns."
+        },
+        {
+          "key": "B",
+          "text": "Troubleshooting Temporal Cloud connectivity, authentication, and configuration issues."
+        },
+        {
+          "key": "C",
+          "text": "Optimizing Worker performance and task queue throughput for high-volume production workloads."
+        },
+        {
+          "key": "D",
+          "text": "Generating SDK boilerplate code and project scaffolding for all supported programming languages."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal Cloud Skill is purpose-built for operators and developers who need help with the infrastructure and access side of Temporal Cloud — things like connecting securely, setting up authentication, and getting configuration right. This is complementary to the Temporal Developer Skill, which focuses on writing correct Workflow code. Having separate Skills for coding vs. cloud operations means each can go deep on its own domain.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_med_001",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "med",
+      "question": "A developer wants their AI coding agent to help them debug a Temporal Cloud connectivity issue, including mTLS certificate configuration and namespace authentication errors. Which Temporal AI tool is specifically designed for this use case?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Temporal Docs MCP Server, because it provides real-time documentation access including Cloud connectivity guides and authentication references."
+        },
+        {
+          "key": "B",
+          "text": "The Temporal Developer Skill, because it covers all Temporal topics including Cloud configuration and authentication as part of its expert-level knowledge."
+        },
+        {
+          "key": "C",
+          "text": "The Temporal Cloud Skill, because it is purpose-built to help AI coding agents troubleshoot Temporal Cloud connectivity, authentication, and configuration issues."
+        },
+        {
+          "key": "D",
+          "text": "A combination of the Developer Skill and Docs MCP Server, because neither tool alone covers Cloud-specific connectivity and authentication scenarios."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Temporal Cloud Skill (github.com/temporalio/skill-temporal-cloud) is specifically designed to help AI agents troubleshoot Temporal Cloud connectivity, authentication, and configuration issues — exactly the scenario described. The Temporal Developer Skill (option B) focuses on programming model concerns like determinism, activity patterns, retry policies, and testing, not Cloud infrastructure. The Docs MCP Server (option A) gives real-time doc access but doesn't provide the curated, domain-specific troubleshooting expertise that a Skill provides. Option D is incorrect because the Cloud Skill alone is sufficient for this purpose.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_med_003",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "med",
+      "question": "What authentication mechanism does the Temporal Docs MCP Server use, and what is the stated reason for requiring it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It uses Temporal Cloud API keys tied to your account so that usage is billed against your organization and access can be revoked by an admin."
+        },
+        {
+          "key": "B",
+          "text": "It uses anonymous authentication via any Google account solely to enforce rate limits and prevent abuse, and Temporal does not collect any contact information from this process."
+        },
+        {
+          "key": "C",
+          "text": "It requires no authentication at all; the server is fully public and open, with rate limiting handled transparently at the network layer."
+        },
+        {
+          "key": "D",
+          "text": "It uses OAuth2 with a GitHub account so the server can verify that the requester is a registered Temporal developer and has agreed to the terms of service."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly states that the Temporal Docs MCP Server 'requires anonymous authentication using any Google account to enforce rate limits and prevent abuse' and that Temporal cannot see nor collect any contact information from this process. Option A is wrong because API keys are a Temporal Cloud concept unrelated to the MCP server. Option C is wrong because authentication is required. Option D invents a GitHub/OAuth2 flow that does not exist. Understanding that a Google account is used purely for rate-limiting — not identity tracking — is important for teams that might have privacy concerns about using the tool.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    }
+  ]
+}

@@ -1,0 +1,285 @@
+{
+  "category": "CLI_and_References",
+  "questions": [
+    {
+      "id": "cli_and_references_easy_001",
+      "category": "CLI_and_References",
+      "difficulty": "easy",
+      "question": "When you run `temporal activity cancel`, what happens to the Activity if it is currently heartbeating?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity is immediately deleted from the Task Queue without completing its current work."
+        },
+        {
+          "key": "B",
+          "text": "The Activity is paused at its current step and waits for an explicit resume command."
+        },
+        {
+          "key": "C",
+          "text": "A cancellation error is raised the next time the Activity sends a heartbeat, allowing the Activity to handle cleanup before stopping."
+        },
+        {
+          "key": "D",
+          "text": "The Activity finishes its current attempt normally, and cancellation only prevents future retry attempts."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Requesting cancellation transitions an Activity to the 'CancelRequested' state. If the Activity is heartbeating, it receives a cancellation error on the next heartbeat response. This design is intentional — it gives the Activity a chance to notice the cancellation, perform any necessary cleanup, and then propagate the error. This is much cleaner than a hard kill, which could leave external resources in a bad state.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:07Z"
+    },
+    {
+      "id": "cli_and_references_easy_002",
+      "category": "CLI_and_References",
+      "difficulty": "easy",
+      "question": "What is the key difference between `temporal activity start` and `temporal activity execute`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`start` launches the Activity and returns immediately with the Activity ID, while `execute` launches the Activity and blocks until it finishes, printing the result."
+        },
+        {
+          "key": "B",
+          "text": "`start` requires a Workflow ID, while `execute` works only with Standalone Activities that have no parent Workflow."
+        },
+        {
+          "key": "C",
+          "text": "`start` uses a retry policy automatically, while `execute` runs the Activity exactly once with no retries permitted."
+        },
+        {
+          "key": "D",
+          "text": "`start` schedules the Activity for a future time, while `execute` runs the Activity right away on the current Worker."
+        }
+      ],
+      "answer": "A",
+      "explanation": "`temporal activity start` fires off a Standalone Activity and immediately returns the Activity ID and Run ID, so your terminal is free. `temporal activity execute` does the same thing but then blocks and waits for the Activity to complete, printing the result to stdout. This mirrors a common programming pattern: fire-and-forget versus blocking call. Use `execute` when you need the result right away in a script or during debugging.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:07Z"
+    },
+    {
+      "id": "cli_and_references_easy_003",
+      "category": "CLI_and_References",
+      "difficulty": "easy",
+      "question": "What does `temporal activity reset` do to an Activity that is currently running (not waiting for a retry)?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It stops the running Activity immediately and schedules a fresh attempt from the beginning right away."
+        },
+        {
+          "key": "B",
+          "text": "It marks the Activity as failed so the Workflow can handle the error through its normal error-handling logic."
+        },
+        {
+          "key": "C",
+          "text": "It waits for the running Activity to complete successfully before applying the reset to a subsequent run."
+        },
+        {
+          "key": "D",
+          "text": "It does not stop the current execution; the reset takes effect the next time the Activity fails, heartbeats, or times out."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Temporal cannot forcibly halt a running Activity mid-execution — Workers own the execution thread. So when you reset a currently-running Activity, Temporal queues the reset to apply at the next natural stopping point: a failure, a heartbeat response, or a timeout. If the Activity is already idle and waiting for a retry, the reset applies immediately. This design respects the durable-execution model while still giving operators a way to restart misbehaving Activities.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:07Z"
+    },
+    {
+      "id": "cli_and_references_med_002",
+      "category": "CLI_and_References",
+      "difficulty": "med",
+      "question": "A developer wants to externally mark a workflow-owned Activity as successfully finished from the CLI, injecting a custom JSON result. Which command and required flags accomplish this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`temporal activity complete --activity-id \u003cid\u003e --result '\u003cjson\u003e'` — no workflow ID is needed because the Activity ID is globally unique."
+        },
+        {
+          "key": "B",
+          "text": "`temporal activity result --activity-id \u003cid\u003e --workflow-id \u003cwfId\u003e` — this command waits for and records the Activity result on behalf of the caller."
+        },
+        {
+          "key": "C",
+          "text": "`temporal activity complete --activity-id \u003cid\u003e --workflow-id \u003cwfId\u003e --result '\u003cjson\u003e'` — both the Activity ID and Workflow ID are required for workflow-owned Activities, along with a JSON result payload."
+        },
+        {
+          "key": "D",
+          "text": "`temporal activity fail --activity-id \u003cid\u003e --workflow-id \u003cwfId\u003e --result '\u003cjson\u003e'` — the `fail` command accepts a result payload when it includes valid JSON to indicate a partial success."
+        }
+      ],
+      "answer": "C",
+      "explanation": "`temporal activity complete` is the right command for externally completing an Activity. For Activities owned by a Workflow (as opposed to Standalone Activities), `--workflow-id` is required so the server knows which workflow execution owns the Activity. `--result` must be a JSON string. Option A is wrong because `--workflow-id` IS required for workflow Activities — Activity IDs are scoped to a workflow run, not globally unique. Option B describes `activity result`, which only waits to observe a result, it doesn't write one. Option D is wrong because `fail` marks an Activity as errored; it does not accept a `--result` flag.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:07Z"
+    },
+    {
+      "id": "cli_and_references_med_003",
+      "category": "CLI_and_References",
+      "difficulty": "med",
+      "question": "When using `temporal activity reset` on a heartbeating Activity, what does the Activity receive the next time it heartbeats after the reset is triggered?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A RetryPolicy exhausted error, causing the Activity to stop retrying and report failure to its parent workflow."
+        },
+        {
+          "key": "B",
+          "text": "A Canceled failure, which the Activity code can handle for cleanup before re-throwing to complete the reset cycle."
+        },
+        {
+          "key": "C",
+          "text": "A TimeoutFailure indicating the StartToClose deadline was exceeded, prompting a fresh attempt to be scheduled automatically."
+        },
+        {
+          "key": "D",
+          "text": "No error — the heartbeat silently succeeds and the reset takes effect only after the current attempt finishes naturally."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The docs explicitly state that after a reset, a heartbeating Activity receives a Canceled failure the next time it heartbeats. This gives the Activity code a chance to detect the reset, perform any necessary cleanup, and then re-throw the error to let Temporal complete the reset. Option A is wrong — RetryPolicy exhaustion is a separate concern unrelated to resets. Option C is wrong — a TimeoutFailure is triggered by actual timeout expiry, not by a reset operation. Option D is wrong — the Activity DOES receive an error via heartbeat; the reset is not silent. This pattern is important to understand if your Activity accumulates in-memory or external state that should be cleaned up on reset.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:07Z"
+    },
+    {
+      "id": "cli_and_references_med_004",
+      "category": "CLI_and_References",
+      "difficulty": "med",
+      "question": "What is the behavioral difference between `--schedule-to-close-timeout` and `--start-to-close-timeout` when starting a Standalone Activity with `temporal activity start`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`--schedule-to-close-timeout` limits only the queue-wait time before a Worker picks up the task, while `--start-to-close-timeout` limits the total execution time across all retries."
+        },
+        {
+          "key": "B",
+          "text": "`--schedule-to-close-timeout` sets the maximum time for the entire Activity Execution including all retries, while `--start-to-close-timeout` limits a single attempt; expiry of start-to-close may trigger a new attempt within the overall budget."
+        },
+        {
+          "key": "C",
+          "text": "Both timeouts are aliases for the same underlying deadline; specifying either one sets the same server-side timer, and only one may be provided at a time."
+        },
+        {
+          "key": "D",
+          "text": "`--start-to-close-timeout` caps how long the task waits in the queue before being picked up; `--schedule-to-close-timeout` begins only after a Worker has claimed the task."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`--schedule-to-close-timeout` is the outer envelope: the maximum wall-clock time for the entire Activity Execution, counting every retry attempt. `--start-to-close-timeout` is per-attempt: it governs a single execution attempt, and when it expires a new attempt can be scheduled as long as the schedule-to-close budget hasn't been exhausted. The CLI requires at least one of the two. Option A has them backwards — the queue-wait deadline is `--schedule-to-start-timeout`, not schedule-to-close. Option C is wrong; they are distinct timers that measure different spans. Option D also reverses the definitions and confuses schedule-to-start with start-to-close. This distinction matters whenever you need retries: set start-to-close short enough for a single attempt to time out and trigger a retry, while schedule-to-close gives the overall budget.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:07Z"
+    },
+    {
+      "id": "cli_and_references_hard_001",
+      "category": "CLI_and_References",
+      "difficulty": "hard",
+      "question": "A long-running Activity in production has been stuck in a retry loop for hours due to a transient bug that's now been fixed. The Activity is currently waiting between retries (not executing). Your team wants to restart it cleanly from the beginning—resetting its attempt count and timeout—without waiting for the next scheduled retry. Which CLI command and behavior correctly describes what will happen?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`temporal activity reset --activity-id X --workflow-id W` will immediately restart the Activity from scratch because it is in a waiting-for-retry state, resetting attempt count and activity timeout as if it were first scheduled."
+        },
+        {
+          "key": "B",
+          "text": "`temporal activity reset --activity-id X --workflow-id W` will queue the reset to take effect only on the next natural heartbeat, regardless of whether the Activity is currently executing or waiting."
+        },
+        {
+          "key": "C",
+          "text": "`temporal activity complete --activity-id X --workflow-id W --result '{}'` is the correct approach because completing the Activity forces the Workflow to reschedule it with a fresh attempt count."
+        },
+        {
+          "key": "D",
+          "text": "`temporal activity pause --activity-id X --workflow-id W` followed by `temporal activity reset` is required; a reset cannot be applied directly to an Activity waiting between retries."
+        }
+      ],
+      "answer": "A",
+      "explanation": "`temporal activity reset` is designed to restart an Activity as if it were first being scheduled—resetting attempt count, activity timeout, and optionally heartbeat details. The key behavioral distinction is that timing depends on the Activity's current state: if the Activity is *waiting for a retry* (i.e., has already failed or timed out), the reset applies *immediately*. If the Activity *may be currently executing*, the reset takes effect the next time it fails, heartbeats, or times out. Since the Activity here is between retries (not executing), the reset fires immediately with no need to wait. Options B and D misrepresent this state-dependent timing, and option C is wrong because completing an Activity marks it as successful rather than rescheduling it.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:07Z"
+    },
+    {
+      "id": "cli_and_references_hard_002",
+      "category": "CLI_and_References",
+      "difficulty": "hard",
+      "question": "You issue `temporal activity cancel --activity-id YourActivityId` against a running Activity that is actively heartbeating every 10 seconds. A colleague says the Activity is now canceled. What actually happens immediately after the CLI command returns, and what determines when the Activity truly enters a Canceled terminal state?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity is terminated synchronously when the CLI command is issued; the worker process receives a SIGINT-equivalent and the Activity stops executing immediately regardless of heartbeat state."
+        },
+        {
+          "key": "B",
+          "text": "The Activity's run state transitions to CancelRequested; the cancellation error is only raised at the worker when the Activity calls heartbeat next, and the Activity reaches Canceled status only if it allows that error to propagate."
+        },
+        {
+          "key": "C",
+          "text": "The Activity transitions directly to Canceled status on the server, and the worker will observe this on any subsequent API call, not specifically on the next heartbeat response."
+        },
+        {
+          "key": "D",
+          "text": "The CLI command fails unless `--reason` is also provided, because cancellation without a reason is rejected by the Temporal server to ensure audit traceability."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Issuing `temporal activity cancel` transitions the Activity's run state to *CancelRequested*—it does NOT immediately terminate execution. The cancellation signal is delivered to the worker through the heartbeat mechanism: the next time the Activity calls heartbeat, the response carries a cancellation error. Only if the Activity code allows this error to propagate does the Activity transition to the Canceled terminal state. This design is intentional—it gives Activities a chance to do cleanup before canceling. If an Activity is not heartbeating, it will never receive the cancellation signal through this path. The `--reason` flag is optional, not required, ruling out option D.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:07Z"
+    },
+    {
+      "id": "cli_and_references_hard_004",
+      "category": "CLI_and_References",
+      "difficulty": "hard",
+      "question": "An on-call engineer needs to manually resolve a stuck Activity that is part of a Workflow (not a Standalone Activity). They run `temporal activity complete --activity-id payment-activity --result '{\"status\":\"ok\"}'` and the command fails. What is the most likely reason, and what flag was missing?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `--result` JSON was malformed; completing an Activity requires the result to be base64-encoded, not raw JSON, so `--input-base64` must be added."
+        },
+        {
+          "key": "B",
+          "text": "The command is missing `--workflow-id`; for Activities invoked by a Workflow (non-Standalone), `--workflow-id` is required to locate the correct Activity execution context on the server."
+        },
+        {
+          "key": "C",
+          "text": "The `--activity-id` flag alone is ambiguous across namespaces; the engineer must also specify `--namespace` explicitly even if a default namespace is configured in global flags."
+        },
+        {
+          "key": "D",
+          "text": "The Activity cannot be manually completed while it is still attempting to execute; `temporal activity pause` must be called first to stop the current attempt before completion is accepted."
+        }
+      ],
+      "answer": "B",
+      "explanation": "For Activities that are part of a Workflow (as opposed to Standalone Activities), `--workflow-id` is required by `temporal activity complete`. The documentation explicitly states: 'Workflow ID. Required for workflow Activities. Omit for Standalone Activities.' Without `--workflow-id`, the server has no way to associate the activity ID with the correct workflow execution, since activity IDs are only unique within a workflow. This is a common operational mistake when engineers forget the distinction between Standalone Activities and workflow-bound Activities. The `--result` flag accepts raw JSON, ruling out option A. Namespace can be set via global flags, ruling out option C. There is no requirement to pause before completing, ruling out option D.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:07Z"
+    },
+    {
+      "id": "cli_and_references_nightmare_001",
+      "category": "CLI_and_References",
+      "difficulty": "nightmare",
+      "question": "A production team is using Standalone Activities (launched via `temporal activity start`) for long-running data processing jobs that checkpoint progress via heartbeats. During an incident, an operator runs `temporal activity reset --activity-id job-42 --workflow-id STANDALONE --reset-heartbeats` to restart a stuck job from scratch. The activity is currently executing and has accumulated 2 hours of heartbeat details. What actually happens, and what subtle interaction must the operator understand?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`temporal activity reset` is not supported for Standalone Activities at all — it only applies to workflow-owned activities — so the command will return an error immediately and the heartbeat state will be untouched until the operator uses `temporal activity cancel` instead."
+        },
+        {
+          "key": "B",
+          "text": "The reset applies immediately because Standalone Activities are not currently running inside a workflow task loop, so the heartbeat details are cleared right away and the activity restarts from attempt 1 with no accumulated checkpoint data visible to the next attempt."
+        },
+        {
+          "key": "C",
+          "text": "Because the activity is currently executing, the reset does not take effect immediately — it is deferred until the next heartbeat, failure, or timeout. At that next heartbeat the activity receives a Canceled failure. If `--reset-heartbeats` is set, the heartbeat details are also cleared at that point, so any checkpoint data accumulated before the signal is lost and the activity must restart from scratch."
+        },
+        {
+          "key": "D",
+          "text": "The reset takes effect immediately and sends a Canceled failure to the running activity, but `--reset-heartbeats` only clears the heartbeat details on the server side; the activity's in-process heartbeat buffer is preserved until the activity itself calls RecordHeartbeat again, so the next attempt can still read the last cached checkpoint locally."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation explicitly states: 'If the activity may be executing (i.e. it has not yet timed out), the reset will take effect the next time it fails, heartbeats, or times out.' This means the currently-running activity continues uninterrupted until its next interaction with the server. At that point it receives a Canceled failure. The `--reset-heartbeats` flag (which also requires `--reset-attempts`) clears the stored heartbeat details on the server — meaning the *next* attempt will see no prior checkpoint. The operator must therefore understand two interacting behaviors: (1) the reset is deferred, not immediate, so the activity may continue consuming resources and making state changes for an unknown window of time; (2) heartbeat details are the *only* mechanism for passing checkpoint state across attempts, so clearing them is destructive and irreversible. A common production mistake is assuming the reset fires like a kill signal — operators send it and believe the job immediately restarts from zero, then are surprised when the old attempt keeps running, possibly writing duplicate output, for many more minutes before the reset kicks in. The correct mental model is: 'reset schedules a cancellation-on-next-server-contact plus optionally a checkpoint wipe.' This also interacts with retry policies: if the activity is on its last retry attempt when the deferred reset fires, the failure is returned to the caller as if the activity was never paused, bypassing the reset's intent entirely.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:07Z"
+    }
+  ]
+}

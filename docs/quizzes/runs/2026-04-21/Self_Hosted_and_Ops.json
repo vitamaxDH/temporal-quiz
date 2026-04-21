@@ -1,0 +1,369 @@
+{
+  "category": "Self_Hosted_and_Ops",
+  "questions": [
+    {
+      "id": "self_hosted_and_ops_easy_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "easy",
+      "question": "When rotating credentials (mTLS certificates or API keys) for Temporal Cloud Workers, what is the recommended approach to avoid downtime?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Stop all Workers first, replace the old credentials with new ones everywhere at once, then restart Workers with the new credentials"
+        },
+        {
+          "key": "B",
+          "text": "Generate new credentials, configure Temporal Cloud to accept both old and new at the same time, migrate Workers gradually, then remove the old credentials only after confirming everything works"
+        },
+        {
+          "key": "C",
+          "text": "Let the old credentials expire naturally, then generate new credentials and update all Workers before any Workflows time out"
+        },
+        {
+          "key": "D",
+          "text": "Create a new namespace with new credentials, migrate Workflows to it, then delete the old namespace once all Workflows have completed"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The recommended rotation process runs old and new credentials in parallel for a period. You generate new credentials, update Temporal Cloud to accept both sets simultaneously, migrate Workers one by one to the new credentials, validate connectivity, and only then remove the old credentials. This 'dual credential' window prevents any Worker from losing authentication during the transition, resulting in near-zero downtime. Swapping credentials all at once (option A) risks a gap where Workers can't authenticate.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_easy_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "easy",
+      "question": "A team is consolidating five separate Activities (validate input, charge payment, update database, send notification, generate receipt) into a single 'processOrder' Activity to reduce Temporal Cloud costs. What is the main risk of this approach?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A single Activity cannot contain more than two or three logical steps, so the code will fail to register with the Worker"
+        },
+        {
+          "key": "B",
+          "text": "Temporal Cloud charges more Actions for Activities with longer names, so renaming to 'processOrder' increases the bill"
+        },
+        {
+          "key": "C",
+          "text": "Combining steps removes per-step visibility and independent retry control, so a notification failure retries the entire flow including the payment step"
+        },
+        {
+          "key": "D",
+          "text": "Merged Activities always run as Local Activities, which have a strict 10-second execution limit that the combined steps would exceed"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Splitting Activities along failure boundaries is a core Temporal best practice. When five steps live in one Activity, a failure in step four (notification) retries all five steps together — including the payment call. You also lose the ability to see in the Temporal UI which step failed, and you can no longer set different retry policies per step. Saving Actions is a valid goal, but not at the cost of losing this observability and control. The docs recommend building Workflows correctly first, then optimizing based on observed costs.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_easy_003",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "easy",
+      "question": "Why does Temporal Cloud recommend using API keys (with service accounts) as the default authentication method for most teams, rather than mTLS certificates?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "API keys provide stronger cryptographic guarantees than mTLS certificates, making them the more secure option in all scenarios"
+        },
+        {
+          "key": "B",
+          "text": "mTLS certificates are only supported for development namespaces and cannot be used in production environments on Temporal Cloud"
+        },
+        {
+          "key": "C",
+          "text": "The Temporal Cloud Operations API and Terraform provider do not support mTLS, so teams using those tools would still need API keys regardless"
+        },
+        {
+          "key": "D",
+          "text": "API keys are simpler to manage and rotate for most teams, and they allow role-based access control at both the account and namespace level via service accounts"
+        }
+      ],
+      "answer": "D",
+      "explanation": "API keys are the recommended default because they are operationally easier — rotation is straightforward, and service accounts let you assign account-level and namespace-level roles for fine-grained access control. mTLS is still a valid and sometimes required choice (for example, when an organization mandates mutual authentication and stronger cryptographic guarantees), but it adds certificate lifecycle complexity. Notably, automation tools like the Operations API and Terraform provider only support API keys anyway, so many teams end up using API keys for at least part of their setup.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "Your organization uses the same Certificate Authority (CA) to issue mTLS certificates for both `dev` and `prod` Temporal Cloud namespaces. You want to prevent developers from accidentally connecting to the production namespace. What is the recommended approach?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Issue certificates from entirely separate CAs for dev and prod so Temporal Cloud can distinguish them at the CA level without any additional configuration."
+        },
+        {
+          "key": "B",
+          "text": "Rely on network-level controls (VPC rules, IP allowlists) to block dev Workers from reaching the prod namespace endpoint, since certificate-based separation is not possible with a shared CA."
+        },
+        {
+          "key": "C",
+          "text": "Give each certificate a common name matching its namespace, then configure Certificate Filters on the prod namespace to only accept certificates whose common name matches the production namespace name."
+        },
+        {
+          "key": "D",
+          "text": "Switch prod to API key authentication instead of mTLS, since shared CAs cannot be used safely and API keys are the only way to enforce namespace-level access boundaries."
+        }
+      ],
+      "answer": "C",
+      "explanation": "When multiple certificates share the same CA, Temporal Cloud's Certificate Filters let you add an extra validation layer on the client certificate presented during authentication. By naming certificates after their namespace (e.g., common name = `prod-namespace`) and configuring a Certificate Filter on the prod namespace to match that common name, dev certificates are rejected even though they are signed by the same CA. Option A is valid but operationally heavier — it requires managing two CAs. Option B relies on infrastructure controls that are orthogonal to Temporal's auth model and provides no in-Temporal enforcement. Option D incorrectly treats the shared-CA scenario as a blocker for mTLS; Certificate Filters solve exactly this problem without forcing an auth-method change.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "A team is rotating their Temporal Cloud mTLS certificates before expiry. They want to avoid any authentication failures during the transition. Which sequence correctly describes the recommended zero-downtime rotation process?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Revoke the old certificate first, then generate a new certificate and distribute it to all Workers before restarting them, so only one credential is ever active at a time."
+        },
+        {
+          "key": "B",
+          "text": "Generate the new certificate, update Temporal Cloud to accept both old and new certificates simultaneously, migrate Workers to the new certificate, validate connectivity, then remove the old certificate."
+        },
+        {
+          "key": "C",
+          "text": "Generate the new certificate and distribute it to Workers first, then update Temporal Cloud to accept the new certificate, and finally revoke the old certificate once all Workers have restarted."
+        },
+        {
+          "key": "D",
+          "text": "Update all Workers to the new certificate in a single deployment, then notify Temporal Cloud of the change, since Workers authenticate outbound and Temporal Cloud will accept any valid certificate from the same CA."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documented best practice is a dual-credential window: (1) generate new credentials, (2) configure Temporal Cloud to accept both old and new, (3) migrate Workers to the new credential, (4) validate, then (5) remove the old credential. This ensures no Worker is left without a valid credential at any point. Option A reverses step order — revoking first causes an outage gap before new credentials are distributed. Option C skips the dual-acceptance window; if Workers are updated before Temporal Cloud is configured to accept the new cert, those Workers will fail to authenticate. Option D incorrectly assumes Temporal Cloud auto-accepts any certificate from a known CA and that the update order doesn't matter — Temporal Cloud must explicitly be configured to trust the new certificate.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_003",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "You are reviewing a Temporal Cloud cost report and notice that a high-throughput order-processing Workflow generates unexpectedly high Actions charges. The Workflow calls a third-party payment API Activity that frequently retries due to brief outages. Which Retry Policy change would most directly reduce excess Action consumption from these retries?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Set `StartToCloseTimeout` on the Activity to a shorter value so failed attempts time out faster and the Workflow can move on without accumulating many retry Actions."
+        },
+        {
+          "key": "B",
+          "text": "Convert the payment Activity to a Local Activity so multiple retries are batched and only count as a single billable Action."
+        },
+        {
+          "key": "C",
+          "text": "Add 4xx HTTP error types to `NonRetryableErrorTypes` and increase `InitialInterval` (for example, to 10s) so transient outages produce fewer retry attempts before the interval cap is reached."
+        },
+        {
+          "key": "D",
+          "text": "Increase `MaximumAttempts` significantly so the Activity is given more time to succeed, reducing the chance it escalates to a Workflow-level failure that would require manual intervention."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Each Activity retry counts as one billable Action. With the default policy's short initial interval and 2x backoff coefficient, a 30-minute outage can produce dozens of retries per Workflow. Increasing `InitialInterval` spreads retries further apart, dramatically reducing retry count during an outage. Adding non-retryable error types for 4xx responses prevents pointless retries on errors that won't self-resolve. Option A shortens the timeout, which makes retries fail faster but does not reduce the *number* of retries — it may actually increase them. Option B is tempting but wrong: Local Activity retries do not count as a single Action; they still each consume Actions, and Local Activities have significant drawbacks for payment operations (group retry semantics, 10-second limit). Option D increases maximum attempts, which is the opposite of what's needed — it allows *more* retries, not fewer.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_004",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "A Workflow processes a nightly batch job and has been running for several months. Engineers notice the Workflow's Event History has grown very large, causing slow UI loads and increasing Temporal Cloud storage costs. What is the most appropriate architectural fix?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Reduce the Namespace retention period from 30 days to 1 day so completed Workflow Histories are purged quickly and Active Storage costs drop."
+        },
+        {
+          "key": "B",
+          "text": "Merge all Activities into a single Activity execution so fewer events are written to the Workflow History per batch run."
+        },
+        {
+          "key": "C",
+          "text": "Store intermediate Activity results in an external database (claim check pattern) so payloads are not written into the Event History, keeping history size small."
+        },
+        {
+          "key": "D",
+          "text": "Implement Continue-As-New at a logical checkpoint in the Workflow so the current execution closes and a fresh execution starts, preventing unbounded Event History growth."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Continue-As-New is the canonical solution for long-running Workflows that accumulate large Event Histories. When called, the current execution completes and a new execution starts with a clean history, passing only the necessary state forward. This directly addresses unbounded history growth for Workflows running days, weeks, or processing thousands of events. Option A reduces retained storage costs for *closed* Workflows but does nothing about the growing Active Storage of the still-running Workflow — and may delete history you need for debugging. Option B reduces the number of activity-related events but the Workflow can still accumulate an unbounded history from timers, signals, and other events over months; this is also an observability anti-pattern. Option C (claim check) is a valid cost optimization for *large payloads* but doesn't solve the problem of too many events in history — a small-payload event still counts toward history length.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "Your Temporal Cloud bill has spiked significantly this month. Investigation reveals a payment processing Workflow that calls an external billing API. When the billing provider had a 45-minute outage, you noticed roughly 25,000 unexpected Actions charged during that window across 1,000 concurrent Workflow instances. The Activity uses Temporal's default Retry Policy. Which combination of changes would most directly reduce retry-driven Action consumption during future outages of this external API?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Convert the billing API call to a Local Activity so that multiple retries collapse into a single billable Action, and rely on the Local Activity's built-in circuit-breaker to pause retries during prolonged outages."
+        },
+        {
+          "key": "B",
+          "text": "Increase the InitialInterval (e.g., to 10s), set a MaximumAttempts cap, and add 4xx HTTP status codes to NonRetryableErrorTypes so transient outages produce fewer retries and provider errors that can't self-resolve don't retry at all."
+        },
+        {
+          "key": "C",
+          "text": "Switch from Signals to a polling Query loop so that the Workflow checks billing API availability before scheduling each retry attempt, preventing unnecessary Activity executions."
+        },
+        {
+          "key": "D",
+          "text": "Reduce the Workflow's ScheduleToCloseTimeout so the entire Workflow fails faster during an outage, limiting total retries per Workflow to a small number before Temporal stops scheduling new attempts."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Each Activity retry counts as one billable Action in Temporal Cloud. With the default Retry Policy (1s initial interval, 2× backoff, unlimited attempts, 100s max interval cap), a 45-minute outage against 1,000 concurrent Workflows generates tens of thousands of retry Actions. The correct levers are: (1) raising InitialInterval so retries spread out and fewer occur before the max cap is hit; (2) setting MaximumAttempts to bound total retries; and (3) adding error types like HTTP 4xx to NonRetryableErrorTypes so errors that will never self-resolve (bad auth, invalid request) don't retry at all. Option A is incorrect — Local Activities do collapse sequential executions into fewer Actions, but they have no built-in circuit-breaker and their retry semantics (all-or-nothing retry of the entire Local Activity sequence) make them unsuitable for an external API call requiring independent retry control. Option C introduces a Query-polling anti-pattern that would generate even more Actions. Option D shortens a timeout that governs the whole Workflow execution, not the retry cadence, and would cause data loss by failing legitimate Workflows rather than pacing retries.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "A security audit finds that your organization uses a single internal CA to sign mTLS certificates for both the dev and prod Temporal Cloud namespaces. The audit recommends ensuring that a compromised dev certificate cannot authenticate to the prod namespace. You cannot immediately migrate to separate CAs. What is the recommended Temporal Cloud-native mitigation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Rotate the prod namespace to API key authentication immediately, since the Operations API and Terraform provider only support API keys anyway, eliminating the shared-CA risk for that namespace entirely."
+        },
+        {
+          "key": "B",
+          "text": "Generate prod certificates with a significantly longer validity period than dev certificates so that a compromised short-lived dev cert expires before it can be used against prod."
+        },
+        {
+          "key": "C",
+          "text": "Issue certificates with a Common Name matching each namespace name, then configure Certificate Filters on the prod namespace to restrict access to only certificates whose Common Name matches the prod namespace."
+        },
+        {
+          "key": "D",
+          "text": "Switch both namespaces to Let's Encrypt certificates so that each namespace gets a publicly trusted cert tied to a distinct DNS name, preventing cross-namespace authentication."
+        }
+      ],
+      "answer": "C",
+      "explanation": "When multiple certificates are signed by the same CA, the CA alone is insufficient to restrict which namespaces a certificate can access. Temporal Cloud's Certificate Filters provide an additional validation layer: they inspect the client certificate presented during mTLS handshake and can restrict access based on fields like the Common Name. The documented convention is to set the certificate's Common Name to match the namespace name, then configure the prod namespace's Certificate Filters to only accept certificates whose CN equals the prod namespace name. A dev cert with CN=dev-namespace will then be rejected by prod even though it was signed by the same CA. Option A is operationally valid but doesn't address the underlying shared-CA concern—it just changes the auth method rather than protecting the existing mTLS setup. Option B is a delay tactic, not a mitigation; a compromised cert is exploitable regardless of its validity window. Option D is explicitly discouraged in the documentation: Let's Encrypt is designed for public-facing services and lacks support for internal certificate requirements like Temporal Cloud mTLS.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_003",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "You are redesigning an order-processing Workflow that currently runs five sequential Activities: validate input, call payment API, update database, send notification, and generate receipt. A teammate proposes merging all five into a single 'processOrder' Activity to reduce Actions from 5 to 1 per Workflow execution. You are seeing roughly 50,000 Workflow completions per day. What is the most significant operational risk of this consolidation that cost savings alone cannot justify?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A merged Activity cannot be scheduled on a separate Task Queue, so all five steps will compete for the same worker pool, reducing throughput and increasing latency for the payment step."
+        },
+        {
+          "key": "B",
+          "text": "The consolidated Activity loses per-step visibility and independent retry control: a notification failure retries the entire Activity including the payment call, and you cannot filter Workflows by failure stage in the UI or use metrics to detect which step is degraded."
+        },
+        {
+          "key": "C",
+          "text": "Temporal charges a penalty Action when an Activity exceeds 10 seconds of wall-clock time, so merging steps that collectively take longer than 10 seconds will cost more Actions than keeping them separate."
+        },
+        {
+          "key": "D",
+          "text": "Merging Activities into one prevents the use of Continue-As-New because Temporal requires at least two distinct Activity types in a Workflow before a Continue-As-New call is valid."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly uses the five-step order processing example to illustrate the core tradeoff of Activity consolidation: fewer Actions but severely degraded observability and retry granularity. When you merge five Activities into one, (1) a failure in any step retries the entire Activity—a transient notification failure will re-execute the payment call, creating double-charge risks and wasted compute; (2) you cannot see in the Temporal UI which step failed, making incident diagnosis harder and increasing MTTR; (3) you lose the ability to filter or alert on per-step failure rates. The documentation warns that premature optimization that compromises observability can increase mean time to detect (MTTD) and mean time to repair (MTTR) incidents, which for a payment flow can have severe business consequences. Option A is incorrect—separate Task Queues are optional, and Activities within the same Workflow can still target different queues even when consolidated; the worker pool concern is not the primary risk here. Option C is fabricated; Temporal does not charge penalty Actions based on Activity duration. Option D is also fabricated; Continue-As-New has no requirement about the number of distinct Activity types.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_004",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "Your team runs long-lived fulfillment Workflows that can stay open for 30–90 days processing thousands of events. Temporal Cloud's usage dashboard shows Active Storage costs are disproportionately high compared to Retained Storage costs. The Workflows accumulate large Event Histories over their lifetimes. Which approach most directly addresses the Active Storage cost driver for these Workflows, and why does it help more than simply shortening the namespace retention period?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Shorten the namespace retention period from 30 days to 7 days, which reduces the time closed Workflow Histories are billed as Retained Storage and indirectly pressures engineers to keep Workflows shorter."
+        },
+        {
+          "key": "B",
+          "text": "Implement Continue-As-New at logical checkpoints to close the current execution and start a fresh one, transitioning accumulated History to cheaper Retained Storage while the Workflow logically continues."
+        },
+        {
+          "key": "C",
+          "text": "Convert all Activities to Local Activities so that sequences of steps consume fewer Actions, shrinking the number of History events written and thereby reducing Active Storage consumption."
+        },
+        {
+          "key": "D",
+          "text": "Enable Workflow History export to S3 for all open Workflows, which offloads the Event History from Temporal's Active Storage tier to external storage at no ongoing storage cost."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Active Storage applies to open (running) Workflows and is significantly more expensive than Retained Storage, which applies to closed Workflow Histories during the retention period. A 30–90-day Workflow accumulating thousands of events sits in the expensive Active Storage tier for its entire lifetime. Continue-As-New closes the current execution at a checkpoint—moving its history to the cheaper Retained Storage tier—and starts a new execution that begins with a clean, small history. The Workflow logically continues, but the accumulated history is no longer billed at Active Storage rates. Shortening the retention period (Option A) only affects Retained Storage—the cost of closed Workflows—and has no impact on the Active Storage cost of currently open Workflows that are the stated problem. Converting to Local Activities (Option C) reduces Action count and can modestly reduce event volume, but Local Activities are primarily an Actions optimization, not an Active Storage solution, and they come with significant retry and execution semantic tradeoffs. Workflow History export (Option D) is for closed Workflows and compliance archival; it does not offload Active Storage for currently running Workflows—and it costs one Action per export.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_nightmare_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "nightmare",
+      "question": "Your platform team runs Temporal Cloud with a single internal CA that signs certificates for both `payments-dev` and `payments-prod` namespaces. A security audit finds that a compromised dev worker was able to authenticate against the production namespace. You want to fix this without issuing separate CAs and without changing the existing certificate rotation pipeline. A colleague proposes adding Certificate Filters keyed on the certificate's Common Name (CN), where each cert's CN is already set to match its namespace name. Which statement best describes the combined behavior of mTLS + Certificate Filters in this scenario, and what operational step is still required after configuring the filters?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Certificate Filters operate at the CA-trust level, so they block any certificate not issued by the namespace-specific CA. Because both namespaces share a CA, filters cannot distinguish between them regardless of CN values, and a separate CA per environment is the only viable fix."
+        },
+        {
+          "key": "B",
+          "text": "Certificate Filters are applied after the mTLS handshake succeeds. The filter inspects the presented client certificate's fields (such as CN) and rejects connections where the CN does not match the configured filter for that namespace. After adding the filter to `payments-prod`, you must also ensure existing prod worker certificates have a CN of `payments-prod`; certificates with a dev CN will then be rejected at authentication time even though both are signed by the same CA."
+        },
+        {
+          "key": "C",
+          "text": "Certificate Filters replace mTLS entirely for namespace isolation. Once configured, Temporal Cloud stops validating the CA chain and only checks CN values, so you can retire the shared CA and issue self-signed certs per worker without a formal CA hierarchy."
+        },
+        {
+          "key": "D",
+          "text": "Certificate Filters prevent access only at the Workflow execution level, not at the worker connection level. A dev worker can still establish the gRPC connection to the prod namespace but will receive permission-denied errors when polling task queues, which means the audit finding is about task queue RBAC rather than mTLS filter configuration."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question exercises the interaction between mTLS certificate validation and Certificate Filters as a second layer of authorization control. The mTLS handshake validates that the client certificate was signed by a trusted CA — but when multiple environments share the same CA, CA-trust alone cannot segregate access. Certificate Filters are applied *after* the TLS handshake succeeds and inspect specific certificate fields (Subject CN, Subject Alternative Names, Organization, etc.) configured per namespace. A filter on `payments-prod` requiring CN=`payments-prod` will cause Temporal Cloud to reject any client certificate whose CN does not match, even if the CA is identical. This means the key operational requirement is that production worker certificates must actually carry CN=`payments-prod` in their Subject — if the rotation pipeline currently issues all certs with a generic CN, you must update cert generation before enabling the filter or you will lock out prod workers too. Option A is wrong because Certificate Filters are explicitly designed to work *within* a shared-CA topology; that's their primary documented use case. Option C is wrong because Certificate Filters are additive, not a replacement for CA validation. Option D is wrong because Certificate Filters act at the authentication layer (connection establishment), not at the task queue polling layer. The broader architectural insight: treat mTLS as proving 'this cert was issued by a trusted authority' and Certificate Filters as proving 'this cert was issued for this specific namespace' — they are complementary controls, and you need both when a single CA spans trust domains.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "self_hosted_and_ops_nightmare_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "nightmare",
+      "question": "A team running Temporal Cloud has a high-volume order-processing system. Each Workflow runs for about 4 hours, executes 12 Activities (average 3 seconds each), and emits 8 UpsertSearchAttributes calls spread throughout execution — one per major state transition. Monthly bill analysis shows Actions costs are 40% higher than projected. An engineer proposes three simultaneous changes: (1) convert all 12 Activities to Local Activities, (2) batch all 8 UpsertSearchAttributes calls into 2 calls, and (3) enable payload compression via a custom Data Converter. Which statement correctly identifies the dominant cost reduction AND the most significant operational risk introduced by this combined change?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The dominant saving comes from batching UpsertSearchAttributes from 8 to 2 calls (saving 6 Actions per Workflow). The main risk is that compression via a custom Data Converter changes the serialization format, requiring a coordinated deploy of all workers before any Workflow with compressed payloads can be replayed, which can cause replay failures during a rolling deployment."
+        },
+        {
+          "key": "B",
+          "text": "The dominant saving comes from converting 12 regular Activities to Local Activities, collapsing multiple back-to-back Local Activities into a single billable Action. The most significant operational risk is that if any one Local Activity fails, all Local Activities in the same Workflow Task are retried together, meaning an unrelated failure (e.g., a transient notification step) will re-execute previously successful steps like a payment API call, potentially causing duplicate charges or side effects."
+        },
+        {
+          "key": "C",
+          "text": "The dominant saving comes from payload compression reducing Active Storage costs, which for 4-hour Workflows represents the largest cost component. The main operational risk is that compression increases CPU usage on workers, potentially causing workers to miss heartbeat deadlines on the converted Local Activities and triggering spurious heartbeat timeouts across the fleet."
+        },
+        {
+          "key": "D",
+          "text": "Batching UpsertSearchAttributes and converting to Local Activities produce equivalent Action savings that cancel each other's risk profile, making compression the net dominant change. The primary risk is that compressed payloads exceed Temporal's blob size limit per event, causing Workflow Task failures that are harder to diagnose than the original large-payload errors."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question exercises the interaction between Local Activities, Actions pricing, retry semantics, and the observability tradeoffs of cost optimization. Breaking down the math: 12 regular Activities = 12 Actions; multiple back-to-back Local Activities collapse into a single billable Action per Workflow Task batch, so in the best case those 12 Activities could represent as few as 1-3 Actions depending on batching boundaries — a potential 9-11 Action reduction per Workflow. Batching UpsertSearchAttributes from 8 to 2 calls saves only 6 Actions. Compression affects Storage, not Actions, and for 4-hour Workflows Storage is explicitly noted to represent ~10% of costs — making it the least impactful of the three changes on the dominant cost driver. The critical operational risk of Local Activities is their shared retry semantics: when a Local Activity fails, the entire Workflow Task that scheduled it is retried, which re-executes all Local Activities in that task. For a payment processing system, this means a failure in a downstream notification step can cause the payment API call to re-execute. Regular Activities have independent retry control — each Activity gets its own retry policy and execution isolation. The docs explicitly state 'if a specific Local Activity fails, all of them will be retried together' and list 'independent retry control for each Activity' as a reason to stick with regular Activities. Option A incorrectly identifies the dominant saving and overstates Data Converter replay risk (codec changes affect deserialization, not determinism per se). Option C confuses Actions costs with Storage costs and invents a heartbeat-CPU coupling that doesn't apply to Local Activities (Local Activities don't have heartbeat timeouts in the same way). Option D incorrectly frames compression as the dominant change. The production insight: Local Activity consolidation is the most powerful cost lever but also the most dangerous for workflows with non-idempotent steps — always audit idempotency before converting.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    }
+  ]
+}

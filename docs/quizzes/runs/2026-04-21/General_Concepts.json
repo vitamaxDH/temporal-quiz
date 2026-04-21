@@ -1,0 +1,313 @@
+{
+  "category": "General_Concepts",
+  "questions": [
+    {
+      "id": "general_concepts_easy_001",
+      "category": "General_Concepts",
+      "difficulty": "easy",
+      "question": "Why does Temporal recommend that Activities be idempotent?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Because Temporal requires all functions to be pure with no side effects"
+        },
+        {
+          "key": "B",
+          "text": "Because Activities may be retried automatically, so running them more than once should not cause unintended harm"
+        },
+        {
+          "key": "C",
+          "text": "Because idempotent functions run faster and use fewer resources on the Worker"
+        },
+        {
+          "key": "D",
+          "text": "Because Temporal deletes Activity results after the first successful run"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Activities can fail and be retried automatically by Temporal. If an Activity is not idempotent, each retry could cause a different outcome — for example, charging a customer twice for the same purchase. Designing Activities to be idempotent means that running them multiple times produces the same end result as running them once, making retries safe. This is a key part of Temporal's durable execution model: the platform handles retries for you, but your code needs to be designed to tolerate them.",
+      "source_doc": "encyclopedia_activities_activity-definition.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "general_concepts_easy_002",
+      "category": "General_Concepts",
+      "difficulty": "easy",
+      "question": "What happens when an Activity fails partway through and is retried by Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal resumes the Activity from the exact line of code where it stopped failing"
+        },
+        {
+          "key": "B",
+          "text": "Temporal skips the Activity and marks it as completed so the Workflow can move on"
+        },
+        {
+          "key": "C",
+          "text": "The Activity starts over from the beginning, unless Heartbeat checkpointing was used to save progress"
+        },
+        {
+          "key": "D",
+          "text": "The Activity is cancelled permanently and the Workflow must handle the error manually"
+        }
+      ],
+      "answer": "C",
+      "explanation": "When an Activity is retried, it begins again from its initial state — there is no automatic mid-function resume. However, if your Activity uses Heartbeats with detail payloads, it can store progress on the Temporal server and pick up from a checkpoint on the next attempt. This is why Temporal encourages breaking large tasks into smaller Activities and designing each one to be safe to re-run from the start.",
+      "source_doc": "encyclopedia_activities_activity-definition.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "general_concepts_easy_003",
+      "category": "General_Concepts",
+      "difficulty": "easy",
+      "question": "What is the purpose of the Start-To-Close timeout on an Activity?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It sets a maximum total time the Workflow is allowed to wait before the Activity is scheduled"
+        },
+        {
+          "key": "B",
+          "text": "It tells the Temporal server how long a single Activity attempt may run before being considered failed"
+        },
+        {
+          "key": "C",
+          "text": "It controls how many times an Activity is allowed to retry before being permanently cancelled"
+        },
+        {
+          "key": "D",
+          "text": "It determines how long the Worker waits before accepting a new Activity Task from the queue"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Because Temporal cannot directly detect when a Worker crashes, it relies on the Start-To-Close timeout to know when to give up on a running Activity attempt. If no completion signal is received within that window, Temporal treats the attempt as failed and retries according to the retry policy. Setting a short timeout means failures are detected faster and retries happen sooner — which is why you should specify at least this timeout for every Activity.",
+      "source_doc": "encyclopedia_activities_activity-definition.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "general_concepts_med_001",
+      "category": "General_Concepts",
+      "difficulty": "med",
+      "question": "A payment processing Activity completes its charge logic successfully, but the Worker crashes before sending the `ActivityTaskCompleted` event to the Temporal Service. What happens next, and why does idempotency matter here?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Workflow marks the Activity as completed based on the last known state in Event History, so the charge is recorded without re-execution and idempotency has no impact."
+        },
+        {
+          "key": "B",
+          "text": "The Temporal Service detects the Worker crash immediately via a heartbeat miss and cancels the Activity Execution, so the charge is never retried."
+        },
+        {
+          "key": "C",
+          "text": "Because the completion event was never recorded, Temporal will retry the Activity after the Start-To-Close timeout expires. A non-idempotent Activity could charge the customer twice."
+        },
+        {
+          "key": "D",
+          "text": "The Activity is marked as permanently failed because the Worker did not report completion, and the Workflow's error handler must manually trigger a compensating transaction."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal doesn't detect Worker crashes directly — it relies on the Start-To-Close timeout. When that timeout fires, the Activity is retried according to its Retry Policy, even if the function already ran to completion on the crashed Worker. This is exactly why Activities should be idempotent: the retry could cause the payment to be charged again. Using an idempotency key (e.g., combining Workflow Run ID + Activity ID) with the payment provider prevents duplicate charges. Option A is wrong because Event History is only updated when the Worker successfully reports completion. Option B is wrong because Temporal uses timeouts, not active crash detection. Option D is wrong because the Activity is retried, not permanently failed, unless retry exhaustion occurs.",
+      "source_doc": "encyclopedia_activities_activity-definition.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "general_concepts_med_002",
+      "category": "General_Concepts",
+      "difficulty": "med",
+      "question": "You have a single Activity that (1) queries a database, (2) calls a microservice with the query result, and (3) writes the response to the filesystem. Step 3 fails due to a permissions error. On retry, which steps are re-executed?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Only step 3 is re-executed, because Temporal checkpoints progress within a single Activity and resumes from the last successful step."
+        },
+        {
+          "key": "B",
+          "text": "All three steps are re-executed from the beginning, because an Activity always restarts from its initial state unless Activity Heartbeat details are used for checkpointing."
+        },
+        {
+          "key": "C",
+          "text": "Steps 2 and 3 are re-executed, because Temporal replays from the point of the last successful external call recorded in the Event History."
+        },
+        {
+          "key": "D",
+          "text": "Only steps 1 and 3 are re-executed, because the microservice response from step 2 is cached by the Worker between retry attempts."
+        }
+      ],
+      "answer": "B",
+      "explanation": "An Activity always restarts from its initial state on retry — there is no intra-Activity checkpointing unless the code explicitly uses Heartbeat details payloads to store and retrieve intermediate state. This means all three steps will run again. The recommended fix is to split the Activity into three separate Activities (one per step), so only the failing step is retried. You trade a slightly larger Event History for better failure isolation and easier idempotency guarantees. Options A, C, and D all incorrectly assume Temporal has sub-Activity resume capability, which it does not.",
+      "source_doc": "encyclopedia_activities_activity-definition.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "general_concepts_med_003",
+      "category": "General_Concepts",
+      "difficulty": "med",
+      "question": "An Activity is executing a long file upload. It heartbeats every 30 seconds with a HeartbeatTimeout of 60 seconds. Midway through the upload the Workflow is cancelled. What must the Activity do to receive the cancellation signal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity receives cancellation automatically on the next scheduled retry attempt, even if it is not currently heartbeating."
+        },
+        {
+          "key": "B",
+          "text": "The Activity must poll the Temporal Service using a dedicated cancellation API endpoint before each heartbeat call."
+        },
+        {
+          "key": "C",
+          "text": "The Activity must be registered with a cancellation handler at definition time; without it the Temporal Service forcefully terminates the Worker process."
+        },
+        {
+          "key": "D",
+          "text": "The Activity must be heartbeating — cancellation is delivered to the Activity through the heartbeat response, so an Activity that never heartbeats will never receive the cancellation."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Cancellation in Temporal is delivered to a running Activity via the heartbeat mechanism. When the Activity calls the heartbeat API, the response from the Temporal Service may include a cancellation request, which the SDK surfaces as a CancelledError (or equivalent). An Activity that never heartbeats has no channel through which to receive cancellation. This is why long-running Activities should heartbeat regularly — both for progress reporting and to remain cancellable. Option A is wrong because cancellation is delivered during execution, not on the next retry. Option B invents a non-existent polling API. Option C is wrong because Temporal never forcefully kills the Worker process.",
+      "source_doc": "encyclopedia_activities_activity-execution.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "general_concepts_hard_001",
+      "category": "General_Concepts",
+      "difficulty": "hard",
+      "question": "A payment processing workflow retries a charge activity after a worker crash. The activity completed successfully before the crash, but the worker never sent the ActivityTaskCompleted event. You've implemented idempotency using a combination of the Workflow Run ID and Activity ID as an idempotency key passed to the payment processor. During the retry, the payment processor rejects the duplicate and returns a 'duplicate transaction' error. What should your activity code do with this error to maintain correct Temporal behavior?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Re-raise the error as a non-retryable ApplicationFailure so Temporal stops retrying and the workflow receives a failure, since the payment was already processed successfully."
+        },
+        {
+          "key": "B",
+          "text": "Swallow the duplicate error and return the original successful result, because the idempotency key proves the charge occurred and the activity should appear completed to the workflow."
+        },
+        {
+          "key": "C",
+          "text": "Let the error propagate as a retryable failure so Temporal retries with a fresh Activity ID, generating a new idempotency key and avoiding the duplicate detection on the payment processor."
+        },
+        {
+          "key": "D",
+          "text": "Convert the error into a Heartbeat detail payload so the next retry attempt can inspect the prior result and short-circuit execution before calling the payment processor again."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The idempotency key (Workflow Run ID + Activity ID) is guaranteed stable across retries of the same Activity Execution. When the payment processor rejects the duplicate, it confirms the charge succeeded. The activity should treat this as a success and return the original result. Option A is dangerous — it surfaces a failure to the workflow even though the business operation succeeded, likely causing incorrect compensation logic. Option C is wrong because retrying with a fresh Activity ID would generate a new idempotency key and attempt a second charge. Option D misuses heartbeats, which are for long-running progress checkpoints, not for storing prior-attempt outcomes across retries. The core principle: when your external system's idempotency guard fires, that's a signal of success, not failure — your activity code must interpret it that way.",
+      "source_doc": "encyclopedia_activities_activity-definition.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "general_concepts_hard_002",
+      "category": "General_Concepts",
+      "difficulty": "hard",
+      "question": "A long-running data pipeline activity processes records in batches and heartbeats every 30 seconds. The activity's start_to_close timeout is 2 hours and the heartbeat timeout is 60 seconds. Midway through processing, the worker is gracefully shut down and the activity is cancelled. On the next worker startup the activity is retried, but the retry starts from record zero instead of the last checkpointed batch. Which of the following is the most likely root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The heartbeat timeout fired before the worker finished shutting down, so Temporal marked the Activity Execution as timed out rather than cancelled, discarding the heartbeat details payload."
+        },
+        {
+          "key": "B",
+          "text": "Heartbeat details are stored only in the worker's local memory and are lost when the process exits, so they are unavailable to the next Activity Task Execution on retry."
+        },
+        {
+          "key": "C",
+          "text": "The activity code is not reading the heartbeat details from the Activity context at the start of execution to determine the resume offset, even though the details were successfully stored on the Temporal Service."
+        },
+        {
+          "key": "D",
+          "text": "The start_to_close timeout is too long relative to the heartbeat timeout, causing the Temporal Service to discard heartbeat details to bound Event History size."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Heartbeat details are persisted on the Temporal Service and are available to the next Activity Task Execution via the Activity context. However, Temporal does not automatically apply them — the activity code must explicitly read the details at startup and use them to skip already-processed work. If the developer never wrote code to check `GetHeartbeatDetails` (or equivalent) at the beginning of the function, every retry starts from scratch regardless of how faithfully heartbeats were sent. Option B is wrong — details are sent to and stored by the server, not the worker. Option A describes a real but separate problem (heartbeat timeout expiry); a graceful shutdown should allow in-flight heartbeats to flush. Option D is fabricated — the Service does not discard heartbeat details based on timeout ratios.",
+      "source_doc": "encyclopedia_activities_activity-definition.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "general_concepts_hard_003",
+      "category": "General_Concepts",
+      "difficulty": "hard",
+      "question": "An engineer notices that a workflow's Event History is growing extremely large. Profiling shows the culprit is a single activity that performs a database lookup, calls a microservice, and writes the result to object storage — all three steps in one function. The activity is retried frequently due to transient object-storage failures, causing the first two steps to re-execute unnecessarily on each attempt. The engineer wants to reduce redundant work and control Event History growth. What is the correct redesign trade-off to understand?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Splitting into three separate activities reduces redundant re-execution on failure but increases Event History size because each activity produces its own ActivityScheduled, ActivityStarted, and ActivityCompleted events."
+        },
+        {
+          "key": "B",
+          "text": "Splitting into three separate activities reduces both redundant re-execution and Event History size, since smaller activities complete faster and produce fewer total events across the workflow lifetime."
+        },
+        {
+          "key": "C",
+          "text": "Keeping one large activity is always preferred for Event History efficiency because a single ActivityCompleted event replaces what would otherwise be three separate completion events."
+        },
+        {
+          "key": "D",
+          "text": "The Event History growth is caused by heartbeat payloads from the large activity; splitting the activity has no effect on history size but does reduce redundant computation on retries."
+        }
+      ],
+      "answer": "A",
+      "explanation": "This is a genuine design trade-off in Temporal. Splitting the monolithic activity into three granular ones means that when the storage-write step fails, only that step retries — the database lookup and microservice call results are already persisted in the Event History. This is exactly the documentation's recommendation for idempotency and failure recovery. However, the trade-off is that three activities each emit multiple events (Scheduled, Started, Completed/Failed), so the Event History will be larger than if one activity succeeded on the first try. Option B incorrectly claims history shrinks. Option C is wrong — a large activity that retries many times generates multiple failure events too, and the 'single completion' argument ignores all the retry events. Option D is incorrect; heartbeat payloads contribute minimally compared to activity event records, and granularity absolutely affects history size.",
+      "source_doc": "encyclopedia_activities_activity-definition.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "general_concepts_nightmare_001",
+      "category": "General_Concepts",
+      "difficulty": "nightmare",
+      "question": "A payment processing workflow in Go uses a single Activity that (1) looks up order details from a database, (2) calls a payment processor API with a generated idempotency key, and (3) writes a receipt to blob storage. The Activity has a `StartToCloseTimeout` of 30 seconds and a retry policy allowing 5 retries. In production, you observe that the payment processor is occasionally charged twice for the same order. The idempotency key is constructed as follows:\n\n```go\nfunc (a *Activities) ProcessPayment(ctx context.Context, orderID string) error {\n    key := fmt.Sprintf(\"%s-%s\", orderID, uuid.New().String())\n    return a.paymentClient.Charge(ctx, key, amount)\n}\n```\n\nThe Activity heartbeats are not configured. Which statement best explains the root cause and the correct fix?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `StartToCloseTimeout` of 30 seconds is too short for a multi-step Activity, causing the server to retry before the payment processor has confirmed the charge. The fix is to increase the timeout to 5 minutes so the Activity has time to complete before a retry is triggered."
+        },
+        {
+          "key": "B",
+          "text": "The idempotency key includes `uuid.New()`, which generates a new random value on every Activity Task Execution — including retries — so the payment processor sees each retry as a distinct charge. The fix is to derive the key from stable, retry-consistent values such as the Workflow Run ID and Activity ID, both of which are constant across retries of the same Activity Execution."
+        },
+        {
+          "key": "C",
+          "text": "Because no heartbeat is configured, the server cannot detect that the payment processor call succeeded before the receipt write failed, so it re-schedules the whole Activity from the beginning. Adding `activity.RecordHeartbeat` after the payment processor call will checkpoint the success and prevent the charge step from re-executing on retry."
+        },
+        {
+          "key": "D",
+          "text": "The three-step Activity violates the atomicity guarantee: Temporal only marks an Activity complete after all steps succeed, but the payment processor call commits an external side effect before Temporal records completion. Splitting the Activity into three separate Activities ensures only the failed step is retried and prevents duplicate charges."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The core issue is that `uuid.New()` is called inside the Activity function body, which re-executes from scratch on every retry attempt. Each retry therefore generates a fresh UUID, making the idempotency key unique per attempt rather than per logical operation — exactly defeating the purpose of an idempotency key. The payment processor has no way to know that attempt 2 is a retry of attempt 1.\n\nThe correct fix is to use values that are guaranteed stable across all retries of the same Activity Execution. Temporal provides exactly this: `activity.GetInfo(ctx).WorkflowExecution.RunID` and `activity.GetInfo(ctx).ActivityID` are constant for every Task Execution within a single Activity Execution, so combining them yields a key that is unique across Workflow Executions but identical across retries of the same execution.\n\nOption A is a distractor: timeout length affects *when* a retry fires, not whether the idempotency key differs between attempts. Option C misunderstands heartbeats: heartbeat details *can* checkpoint progress across retries (e.g., 'payment already charged'), but only if the Activity reads those details on startup and skips the charge step accordingly — the mere act of heartbeating does not prevent re-execution of code before the heartbeat call. Option D is partially correct advice (granular Activities are a best practice) but does not fix the actual bug, because even a single-step 'charge' Activity would still generate a new UUID on each retry if the key derivation is not fixed.\n\nThe broader lesson: any external side effect inside an Activity that must be idempotent needs a key derived from Temporal-provided stable identifiers, not from locally-generated randomness. This is a classic distributed-systems pitfall where the retry model and the idempotency mechanism are mismatched.",
+      "source_doc": "encyclopedia_activities_activity-definition.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "general_concepts_nightmare_002",
+      "category": "General_Concepts",
+      "difficulty": "nightmare",
+      "question": "A long-running data-export Activity in Python is processing a 10 GB file. It heartbeats every 30 seconds with the number of bytes processed as the heartbeat detail, and its `HeartbeatTimeout` is 60 seconds. The Workflow requests cancellation of the Activity mid-export. The Activity code checks for cancellation like this:\n\n```python\nasync def export_data(file_id: str) -\u003e None:\n    details = activity.heartbeat_details()\n    offset = details[0] if details else 0\n    async for chunk in stream_file(file_id, start=offset):\n        process(chunk)\n        offset += len(chunk)\n        activity.heartbeat(offset)\n```\n\nAfter cancellation is requested, an operator notices the Activity continues running for several minutes before stopping. Which interaction between cancellation, heartbeating, and Activity Task Execution lifecycle best explains this behavior?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity's `StartToCloseTimeout` must have expired before cancellation was delivered, because the Temporal service only delivers cancellation signals at timeout boundaries. Reducing the `StartToCloseTimeout` to a value shorter than the observed delay would cause cancellation to arrive sooner."
+        },
+        {
+          "key": "B",
+          "text": "Python's asyncio event loop is blocked by the synchronous `process(chunk)` call, so `activity.heartbeat(offset)` never executes, the server times out the Activity Task on the `HeartbeatTimeout`, and the re-scheduled Task starts fresh rather than receiving a cancellation. Adding `await asyncio.sleep(0)` between chunks yields control back to the event loop so heartbeats can fire."
+        },
+        {
+          "key": "C",
+          "text": "The Activity correctly heartbeats, but cancellation is only delivered to the Activity as a `CancelledError` raised at the next `activity.heartbeat()` call. If `process(chunk)` is a long-running synchronous call, the Activity will not reach the next heartbeat — and therefore not receive the cancellation — until that call returns. Splitting large chunks or polling a cancellation flag inside `process()` would allow timely cancellation."
+        },
+        {
+          "key": "D",
+          "text": "Cancellation requests in Temporal are only propagated to the Activity after the Workflow itself transitions to a cancelled state. Since the Workflow is still running and waiting on the Activity result, the Activity cannot receive the cancellation until the Workflow's own cancellation handler completes and calls `workflow.cancel(handle)`."
+        }
+      ],
+      "answer": "C",
+      "explanation": "In Temporal's Python SDK (and all SDKs), cancellation is not delivered as an out-of-band OS signal — it is delivered at the *next heartbeat call*. The server marks the Activity as cancellation-requested, and when the Activity's next `activity.heartbeat()` call is made, the SDK raises a `CancelledError` at that point. Until that call is reached, the Activity has no knowledge of the cancellation request.\n\nIn this scenario, `process(chunk)` is synchronous and potentially slow. The Activity heartbeats *after* each chunk is processed, so if a chunk takes several minutes (e.g., a large compression or encryption step), the Activity is stuck inside `process(chunk)` and will not call `heartbeat()` — and therefore will not receive or act on the cancellation — until the current chunk finishes. This explains the multi-minute delay.\n\nOption A is incorrect: `StartToCloseTimeout` is independent of cancellation delivery and the scenario describes cancellation being *requested*, not a timeout scenario. Option B would be correct if the event loop were genuinely blocked (preventing heartbeats from firing at all), but the scenario states heartbeats *are* being sent every 30 seconds — the delay is within a chunk, not a total heartbeat failure. Option D is a common misconception: Temporal can cascade cancellation from a Workflow to an Activity *before* the Workflow itself reaches a cancelled terminal state; the Workflow cancellation handler can request Activity cancellation and then wait on it.\n\nThe production lesson is critical: for Activities where cancellation responsiveness matters, either (1) break work into small enough units that you reach a heartbeat call frequently, or (2) explicitly check a cancellation flag inside long synchronous operations using `activity.is_cancelled()` or equivalent. The heartbeat is both the *liveness signal* and the *cancellation delivery mechanism* — if you don't heartbeat, you don't hear about cancellation. This dual role is a fundamental design aspect of Temporal's Activity lifecycle.",
+      "source_doc": "encyclopedia_activities_activity-execution.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    }
+  ]
+}

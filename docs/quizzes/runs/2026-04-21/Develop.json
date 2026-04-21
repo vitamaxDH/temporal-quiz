@@ -1,0 +1,341 @@
+{
+  "category": "Develop",
+  "questions": [
+    {
+      "id": "develop_easy_001",
+      "category": "Develop",
+      "difficulty": "easy",
+      "question": "What is the purpose of adding a 'StaticSummary' when starting a Workflow in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It encrypts the Workflow's input data before sending it to the Temporal server."
+        },
+        {
+          "key": "B",
+          "text": "It provides a short, human-readable description of the Workflow that appears in the Temporal Web UI list view."
+        },
+        {
+          "key": "C",
+          "text": "It sets the maximum number of times the Workflow is allowed to retry on failure."
+        },
+        {
+          "key": "D",
+          "text": "It assigns a priority level to the Workflow so the Task Queue processes it before lower-priority Workflows."
+        }
+      ],
+      "answer": "B",
+      "explanation": "StaticSummary is metadata you attach when starting a Workflow. It shows up as a brief label in the Workflow list view of the Temporal Web UI, making it much easier to identify what a Workflow is doing at a glance — especially when you have many Workflows running at once. It has no effect on execution, retries, or encryption.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_easy_002",
+      "category": "Develop",
+      "difficulty": "easy",
+      "question": "In Temporal's .NET SDK, what is the key difference between 'StaticSummary' and 'CurrentDetails' for a Workflow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "StaticSummary is set once at Workflow start and never changes, while CurrentDetails can be updated at any point during the Workflow's execution."
+        },
+        {
+          "key": "B",
+          "text": "StaticSummary is visible only to administrators, while CurrentDetails is visible to all users in the Web UI."
+        },
+        {
+          "key": "C",
+          "text": "StaticSummary supports rich Markdown formatting, while CurrentDetails only accepts plain text with no formatting."
+        },
+        {
+          "key": "D",
+          "text": "StaticSummary is stored in the event history, while CurrentDetails is stored in a separate external database outside Temporal."
+        }
+      ],
+      "answer": "A",
+      "explanation": "StaticSummary is provided when the Workflow is started and stays fixed for the lifetime of the Workflow — it can't be changed later. CurrentDetails, on the other hand, is a dynamic field you can read and overwrite from inside the Workflow as its state changes. This lets you give observers a real-time status update without needing to dig through the full event history.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_easy_003",
+      "category": "Develop",
+      "difficulty": "easy",
+      "question": "What does Temporal's 'Visibility' feature allow you to do?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It encrypts all data flowing between Workers and the Temporal server to prevent unauthorized access."
+        },
+        {
+          "key": "B",
+          "text": "It controls which team members are allowed to start or cancel Workflow Executions through role-based permissions."
+        },
+        {
+          "key": "C",
+          "text": "It lets you search and filter Workflow Executions using properties like status, type, or custom attributes, instead of only looking up by Workflow ID."
+        },
+        {
+          "key": "D",
+          "text": "It streams real-time logs from your Worker processes into the Temporal Web UI for live debugging."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Visibility is Temporal's subsystem for querying and listing Workflow Executions. While every Workflow has a unique ID you can look it up with, Visibility lets you ask broader questions — for example, 'show me all failed order-processing Workflows from the past hour.' This is powered by Search Attributes (both built-in ones like WorkflowType and ExecutionStatus, and custom ones you define) combined with List Filters.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_med_002",
+      "category": "Develop",
+      "difficulty": "med",
+      "question": "You want to search for all failed Workflow Executions of a specific type within a time range using the Temporal .NET SDK. Which approach correctly queries Workflow Executions this way?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Call `client.DescribeWorkflowAsync()` in a loop over known Workflow IDs, then filter the results locally in application code based on status and start time."
+        },
+        {
+          "key": "B",
+          "text": "Use `Workflow.UpsertTypedSearchAttributes()` inside the Workflow to tag each execution, then read those tags back from the client using `WorkflowHandle.Describe()`."
+        },
+        {
+          "key": "C",
+          "text": "Call `client.ListWorkflowsAsync()` with a List Filter string such as `\"WorkflowType='OrderWorkflow' AND ExecutionStatus='Failed'\"` to retrieve matching executions directly."
+        },
+        {
+          "key": "D",
+          "text": "Subscribe to a Temporal event stream on the client and filter incoming Workflow lifecycle events for the desired type and status at runtime."
+        }
+      ],
+      "answer": "C",
+      "explanation": "`ListWorkflowsAsync()` accepts a List Filter — a SQL-like query string — and returns an async enumerable of matching Workflow executions. Default Search Attributes like `WorkflowType`, `ExecutionStatus`, and `StartTime` are automatically indexed, so no custom attributes are needed for this query. Option A would work but is extremely inefficient and doesn't scale. Option B describes how to set/read search attributes on individual executions, not how to list across many. Option D describes a pattern that doesn't exist in the Temporal .NET SDK — there is no push-based event subscription on the client.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_med_003",
+      "category": "Develop",
+      "difficulty": "med",
+      "question": "When configuring Prometheus metrics in the Temporal .NET SDK, why must `TemporalRuntime` be created before any other Temporal client code, and what property path is used to set the Prometheus endpoint?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The runtime must be created first because Prometheus registers global process-level hooks that conflict with client initialization; the endpoint is set on `client.Options.Metrics.Prometheus`."
+        },
+        {
+          "key": "B",
+          "text": "The runtime should be created first because it is meant to be a singleton shared across all clients; the Prometheus endpoint is configured via `TemporalRuntime` → `Telemetry` → `Metrics` → `Prometheus`."
+        },
+        {
+          "key": "C",
+          "text": "The runtime must be created first to reserve the TCP port before the OS assigns it to another process; the endpoint is set directly on `TemporalClient.ConnectAsync` options as `PrometheusPort`."
+        },
+        {
+          "key": "D",
+          "text": "Runtime creation order is irrelevant because metrics are lazily initialized; the Prometheus endpoint is configured on `WorkerOptions.Telemetry.Prometheus` at Worker startup."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly states that `TemporalRuntime` should be created globally and shared across all clients, so it must be set up before any other Temporal code runs. The configuration path is `new TemporalRuntime(new() { Telemetry = new() { Metrics = new() { Prometheus = new(\"0.0.0.0:9000\") } } })`, and the runtime is then passed via the `Runtime` property of the client connection options. Option A invents a non-existent `client.Options.Metrics.Prometheus` path. Option C is wrong about the reason and the API — there is no `PrometheusPort` field on connect options. Option D is wrong because order does matter (it's not lazily initialized) and metrics are not configured on `WorkerOptions`.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_med_004",
+      "category": "Develop",
+      "difficulty": "med",
+      "question": "A developer wants to tag a Temporal .NET Workflow Execution with a custom Search Attribute named `CustomerId` (of type `Keyword`) when starting it. Which code pattern correctly accomplishes this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Pass a dictionary of key-value pairs to `WorkflowOptions.SearchAttributes` as `new Dictionary\u003cstring, string\u003e { { \"CustomerId\", \"cust-42\" } }` when calling `StartWorkflowAsync`."
+        },
+        {
+          "key": "B",
+          "text": "Call `Workflow.UpsertTypedSearchAttributes()` as the very first statement inside the Workflow's `RunAsync` method, before any activity or timer is scheduled."
+        },
+        {
+          "key": "C",
+          "text": "Set `WorkflowOptions.StaticDetails` to a JSON string containing the customer ID, then parse it back out using `WorkflowHandle.Describe()` on the client side."
+        },
+        {
+          "key": "D",
+          "text": "Create a `SearchAttributeKey.CreateKeyword(\"CustomerId\")` key, build a `SearchAttributeCollection` using its builder with `.Set()`, and assign it to `WorkflowOptions.TypedSearchAttributes` when calling `StartWorkflowAsync`."
+        }
+      ],
+      "answer": "D",
+      "explanation": "The correct approach uses `SearchAttributeKey.CreateKeyword(\"CustomerId\")` to define a typed key, then builds a `SearchAttributeCollection` via its builder (`new SearchAttributeCollection.Builder().Set(key, \"cust-42\").ToSearchAttributeCollection()`), and assigns that collection to `TypedSearchAttributes` on `WorkflowOptions`. The attribute must also be pre-registered in the Temporal Service using `temporal operator search-attribute create`. Option A describes an untyped dictionary API that doesn't exist in the .NET SDK's typed search attribute system. Option B would work for updating the attribute after the Workflow starts but is not the way to set it at start time from the client. Option C misuses `StaticDetails`, which is a human-readable Markdown field for UI display, not a queryable indexed attribute.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_hard_001",
+      "category": "Develop",
+      "difficulty": "hard",
+      "question": "Your team deploys a new version of a long-running .NET Workflow that calls five Activities. After the deploy, you notice in the Temporal Web UI that several in-flight Workflow Executions are stuck in a non-determinism error loop. A colleague suggests the fix is to add `Workflow.CurrentDetails = \"migrating\"` inside the Workflow to signal its state. Why is this suggestion incorrect, and what should you do instead?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Setting `Workflow.CurrentDetails` is a write to the Temporal server and requires a signal handler to be safe during replay, so you must wrap it in a signal before calling it after a deploy."
+        },
+        {
+          "key": "B",
+          "text": "`Workflow.CurrentDetails` is UI-only metadata that has no effect on Workflow execution logic. The non-determinism error means the new code produces a different event sequence than history records; you must use the Workflow versioning API (`Workflow.GetVersion` or `[WorkflowVersion]`) to branch old and new code paths without breaking replay."
+        },
+        {
+          "key": "C",
+          "text": "The correct fix is to update `StaticDetails` in `WorkflowOptions` when restarting the Workflow, because `Workflow.CurrentDetails` can only be read, not written, inside a running Workflow execution."
+        },
+        {
+          "key": "D",
+          "text": "You should call `Continue-As-New` immediately on deploy so the Workflow starts fresh with the new code, which clears the non-determinism error without needing versioning."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`Workflow.CurrentDetails` is a UI enrichment feature—it sets dynamic, human-readable metadata visible in the Temporal Web UI's details view. Writing to it is perfectly legal inside a Workflow, but it has no bearing on event-history determinism. A non-determinism error means the replayed code generates commands (ScheduleActivity, StartTimer, etc.) in a different order or type than what is recorded in history. The correct fix is versioning: use `Workflow.GetVersion` (or the equivalent versioning API) to gate new code paths so that workers replaying old history follow the original branch while new executions follow the updated branch. Calling `Continue-As-New` might seem to sidestep the issue, but it only works for executions that can reach that call—stuck executions in replay can't get there. `StaticDetails` is set at workflow start by the client and is immutable afterward.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_hard_002",
+      "category": "Develop",
+      "difficulty": "hard",
+      "question": "You instrument your .NET Temporal workers with Prometheus metrics by setting `Telemetry.Metrics.Prometheus` on the `TemporalRuntime`. After a canary deploy you observe that some workers report metrics under a different Prometheus job label than others, and one set of workers is missing SDK metrics entirely. The most likely root cause is:",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The workers missing metrics created their `TemporalClient` before constructing the `TemporalRuntime`, so those clients used the default runtime which has no Prometheus endpoint configured."
+        },
+        {
+          "key": "B",
+          "text": "Prometheus scraping requires the `Temporalio.Extensions.DiagnosticSource` package; workers that installed only the base SDK silently drop all metrics."
+        },
+        {
+          "key": "C",
+          "text": "Each `TemporalClient` must individually set `Telemetry.Metrics.Prometheus`; the `TemporalRuntime` only controls tracing, not metrics."
+        },
+        {
+          "key": "D",
+          "text": "The `TemporalRuntime` object must be re-created per worker process; sharing a single runtime instance across processes causes metrics from some workers to be discarded."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The .NET SDK documentation is explicit: the `TemporalRuntime` object should be created once globally and passed to every `TemporalClient`. If any code path creates a `TemporalClient` without supplying the custom-configured runtime, that client falls back to the default runtime which has no Prometheus endpoint, so its metrics are silently dropped. The `TemporalRuntime` is the single place where all telemetry (metrics, tracing) is configured; there is no per-client metrics override. The `Temporalio.Extensions.DiagnosticSource` package is for routing metrics to `System.Diagnostics.Metrics.Meter`, not a prerequisite for Prometheus.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_hard_003",
+      "category": "Develop",
+      "difficulty": "hard",
+      "question": "A payments Workflow stores a customer ID and order tier as Custom Search Attributes (`CustomerId` as Keyword, `OrderTier` as Int). A downstream team queries `ListWorkflowsAsync` with `\"OrderTier \u003e 2 AND ExecutionStatus='Running'\"` and reports that newly upserted `OrderTier` values are sometimes not reflected in query results for up to 30 seconds after `UpsertTypedSearchAttributes` is called inside the Workflow. What is the correct mental model for this behavior?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The upsert is only recorded in the Workflow's history after the current Workflow Task completes and is committed; until the next Workflow Task the old value is still served to all visibility queries."
+        },
+        {
+          "key": "B",
+          "text": "Visibility indexes are updated asynchronously after the history event is persisted, so there is an inherent propagation lag between calling `UpsertTypedSearchAttributes` and the updated value appearing in List Filter queries—this is expected platform behavior, not a bug."
+        },
+        {
+          "key": "C",
+          "text": "The `KeywordList` type must be used instead of `Keyword` for the `CustomerId` attribute; Keyword attributes bypass the visibility index and are only readable via `Describe`, not `ListWorkflowsAsync`."
+        },
+        {
+          "key": "D",
+          "text": "Calling `UpsertTypedSearchAttributes` with `ValueUnset` on any attribute in the same call invalidates the entire update batch, so the `OrderTier` change is silently dropped until the next upsert."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's visibility subsystem (backed by Elasticsearch or the built-in SQLite/Postgres store) is eventually consistent with the Workflow's event history. When `UpsertTypedSearchAttributes` is called, a `UpsertWorkflowSearchAttributes` command is recorded in history at the end of the Workflow Task. That event must then be propagated to the visibility store, which can lag by seconds to tens of seconds depending on cluster load and indexing configuration. This is a fundamental design property of the visibility layer, not a code defect. Teams that need real-time attribute reads should use `Describe` on the `WorkflowHandle` (which reads directly from the history/mutable state) rather than List Filters. The `Keyword` vs `KeywordList` distinction affects multi-value indexing, not List Filter accessibility.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_hard_004",
+      "category": "Develop",
+      "difficulty": "hard",
+      "question": "You add `Summary = \"Processing payment for order #XYZ\"` to `ActivityOptions` when scheduling an Activity, and you set `StaticSummary = \"Order checkout flow\"` in `WorkflowOptions` when starting the Workflow. A teammate asks whether either value can be updated after the Workflow is already running. Which statement is accurate?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Both `StaticSummary` and Activity `Summary` are immutable once set; to change either you must start a new Workflow Execution or a new Activity attempt."
+        },
+        {
+          "key": "B",
+          "text": "Activity `Summary` can be changed by calling `UpsertTypedSearchAttributes` from inside the Activity, but `StaticSummary` remains fixed for the lifetime of the Workflow."
+        },
+        {
+          "key": "C",
+          "text": "`StaticSummary` can be overwritten by setting `Workflow.CurrentDetails` to a new value; Activity `Summary` is immutable per scheduling event."
+        },
+        {
+          "key": "D",
+          "text": "`StaticSummary` is fixed for the lifetime of the Workflow Execution because it is set at start time by the client. `Workflow.CurrentDetails` is the mechanism for dynamic, updateable Workflow-level context. Activity `Summary` is attached to the scheduling event and is also immutable after the Activity is scheduled."
+        }
+      ],
+      "answer": "D",
+      "explanation": "The .NET SDK enriching-UI documentation distinguishes three separate metadata concerns. `StaticSummary` (and `StaticDetails`) are set via `WorkflowOptions` at Workflow start—they are recorded in the `WorkflowExecutionStarted` event and cannot be changed afterward. `Workflow.CurrentDetails` is the designed mechanism for dynamic, mutable Workflow-level context that can be read and written at any point during Workflow execution. Activity `Summary` is supplied in `ActivityOptions` when `ExecuteActivityAsync` is called; it becomes part of the `ActivityTaskScheduled` history event and is therefore immutable once the Activity is scheduled. Confusing `StaticSummary` with `Workflow.CurrentDetails` is a common mistake because both appear in the Workflow overview section of the UI, but only `CurrentDetails` is writable at runtime.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_nightmare_001",
+      "category": "Develop",
+      "difficulty": "nightmare",
+      "question": "A .NET Temporal workflow uses `Workflow.CurrentDetails` to dynamically update its status throughout execution. The team also uses `UpsertTypedSearchAttributes()` mid-workflow to update a `KeywordList` search attribute that drives their custom monitoring dashboard. During a worker rollout with a versioning patch, they notice that on replay, `Workflow.CurrentDetails` assignments are silently re-executed but the UI shows stale details, while `UpsertTypedSearchAttributes()` correctly produces a `UpsertWorkflowSearchAttributes` event that guards replay idempotently. Why does `Workflow.CurrentDetails` behave differently from `UpsertTypedSearchAttributes()` on replay, and what is the production risk?\n\nConsider this code:\n```csharp\n[WorkflowRun]\npublic async Task RunAsync()\n{\n    Workflow.CurrentDetails = \"Step 1: validating order\";\n    await Workflow.ExecuteActivityAsync(\n        (OrderActivities a) =\u003e a.ValidateAsync(),\n        new ActivityOptions { StartToCloseTimeout = TimeSpan.FromSeconds(30) });\n    Workflow.UpsertTypedSearchAttributes(\n        statusKey.ValueSet(\"validated\"));\n    Workflow.CurrentDetails = \"Step 2: charging payment\";\n    await Workflow.ExecuteActivityAsync(\n        (OrderActivities a) =\u003e a.ChargeAsync(),\n        new ActivityOptions { StartToCloseTimeout = TimeSpan.FromSeconds(30) });\n}",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`Workflow.CurrentDetails` writes are durable commands recorded in the event history just like `UpsertWorkflowSearchAttributes`, so both are replayed identically. The stale UI is caused by the visibility store lagging behind the history store, not by any replay difference between the two mechanisms."
+        },
+        {
+          "key": "B",
+          "text": "`Workflow.CurrentDetails` is stored as workflow metadata in the `WorkflowExecutionStarted` or `WorkflowExecutionContinuedAsNew` event payload, not as a separate history command. On replay the SDK re-executes the assignment but the server only persists the latest value at task completion, so if the worker crashes mid-task the intermediate values are lost and the UI reflects the last durably written state rather than the in-flight assignment."
+        },
+        {
+          "key": "C",
+          "text": "`UpsertTypedSearchAttributes()` is non-deterministic and is intentionally suppressed during replay to avoid duplicate visibility index writes, which is why it appears correct. `Workflow.CurrentDetails` is re-executed on replay and overwrites the server-side metadata with the replayed string, causing the UI to reflect the replayed value rather than the live value."
+        },
+        {
+          "key": "D",
+          "text": "`Workflow.CurrentDetails` is metadata sent only to the Temporal Web UI via a side-channel gRPC call that bypasses the event history entirely, so it is never replayed. The stale UI is caused by the worker not re-issuing the metadata gRPC call after the crash, which requires explicitly calling a `FlushMetadataAsync()` method after each assignment."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The critical architectural distinction is between **durable history commands** and **workflow metadata**. `UpsertTypedSearchAttributes()` generates a `UpsertWorkflowSearchAttributes` history event. Because this event is written to the history before the next workflow task completes, it is fully durable and idempotent on replay — the SDK sees the event in history and skips re-issuing the command, so the visibility index is never double-written.\n\n`Workflow.CurrentDetails`, by contrast, sets workflow metadata that is carried as part of the `WorkflowTaskCompleted` event payload (specifically in the `sdk_metadata` / `WorkflowMetadata` proto field). It is not a standalone history command. The SDK accumulates metadata mutations within the current workflow task and flushes them to the server when the task is completed (i.e., when the worker sends `RespondWorkflowTaskCompleted`). If the worker crashes after executing `Workflow.CurrentDetails = \"Step 2\"` but before the workflow task response reaches the server, that assignment is lost. On the next replay the SDK re-runs the assignment in memory, but the server's stored metadata still reflects whatever was last durably committed.\n\nThis has a concrete production risk during rolling deployments or worker restarts: the UI's 'Current Details' panel can show a value that is several steps behind the actual workflow state, silently, with no error or warning. Teams relying on `CurrentDetails` as an operational status board may make incorrect triage decisions.\n\nThe broader principle: in Temporal, **only history events are the source of truth**. Anything that does not produce a history event (metadata, logging, in-memory state) is re-computed on replay but is not guaranteed to be visible to external observers between task completions. For operationally critical status that must survive worker crashes, use `UpsertTypedSearchAttributes` (which produces a history event and indexes into the visibility store) rather than `Workflow.CurrentDetails` (which is best-effort metadata for UI enrichment only).",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "develop_nightmare_002",
+      "category": "Develop",
+      "difficulty": "nightmare",
+      "question": "An engineering team is migrating from a custom logging solution to OpenTelemetry for full distributed tracing of their .NET Temporal application. They configure the `TracingInterceptor` on the client and enable Prometheus metrics via `TemporalRuntime`. During load testing they observe that trace spans for workflow tasks are broken — each workflow task appears as a separate root span rather than a child of the originating client call span, even though activity spans correctly appear as children. They also notice that worker-side metrics are missing entirely. Which combination of misconfiguration explains both symptoms?\n\nThe worker setup looks like:\n```csharp\n// Runtime created per-worker, not globally\nvar runtime = new TemporalRuntime(new()\n{\n    Telemetry = new() { Metrics = new() { Prometheus = new(\"0.0.0.0:9000\") } },\n});\nvar workerClient = await TemporalClient.ConnectAsync(\n    new(\"localhost:7233\") { Runtime = runtime });\nvar worker = new TemporalWorker(workerClient, new TemporalWorkerOptions(\"my-queue\")\n    .AddAllActivities(new MyActivities())\n    .AddWorkflow\u003cMyWorkflow\u003e());\n\n// Client used for starting workflows — separate process\nvar clientOnly = await TemporalClient.ConnectAsync(new(\"localhost:7233\")\n{\n    Interceptors = new[] { new TracingInterceptor() },\n});\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The broken trace context propagation is caused by the `TracingInterceptor` being absent from the worker-side client, since the interceptor must be registered on both the starting client and the worker client for the SDK to inject and extract the OTel trace context through the workflow header. The missing metrics are caused by creating a new `TemporalRuntime` per worker instead of sharing a single global instance, which causes the core runtime to be re-initialized and the previously bound Prometheus port to be abandoned and re-bound, dropping all previously accumulated metric state."
+        },
+        {
+          "key": "B",
+          "text": "Broken spans result from the Prometheus endpoint binding conflicting with the OTel tracer on port 9000, causing the tracing exporter to silently fall back to no-op mode. Missing metrics are caused by not calling `runtime.FlushMetricsAsync()` before the worker polls. Both issues are resolved by using separate ports for Prometheus and OTel and flushing metrics explicitly at startup."
+        },
+        {
+          "key": "C",
+          "text": "Broken trace spans occur because `TracingInterceptor` must be applied at the `TemporalRuntime` level, not on individual client options. When applied only to the starting client, the interceptor serializes the span context into outgoing headers but the worker's core (in native Rust) strips unrecognized headers before dispatching the workflow task. Missing metrics occur because Prometheus scraping requires a `/metrics` HTTP endpoint that must be explicitly registered with ASP.NET middleware, not just the runtime binding."
+        },
+        {
+          "key": "D",
+          "text": "Both the `LoggerFactory` and `TracingInterceptor` must be set on the same client instance; having the interceptor on one client and the logger factory on another causes the SDK to disable span propagation for all workflow tasks as a safety measure, while worker metrics require the Prometheus endpoint to be on port 9090 specifically because the SDK hardcodes that as the metrics scrape port."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Two independent but compounding issues are at play here, each rooted in a different architectural requirement of the .NET SDK.\n\n**Broken trace spans — `TracingInterceptor` on both client and worker:**\nThe `TracingInterceptor` works by serializing the active OpenTelemetry `SpanContext` into Temporal workflow headers on the *client side* when starting a workflow, and then *deserializing and re-activating* that context on the *worker side* when a workflow task or activity task is dispatched. If the interceptor is only registered on the starting client, the span context IS written into the workflow start header — but when the worker's client dispatches the workflow task, there is no interceptor to read and restore the parent span from that header. As a result, the worker creates a brand-new root span rather than a child span. Activity spans work correctly in the question's scenario only if activities happen to be scheduled and executed within a span context that was already restored — but in this case, workflow-level spans (for workflow tasks themselves) break first. The fix is to register `TracingInterceptor` in `TemporalWorkerOptions.Interceptors` (or the worker client's `Interceptors`) as well as on the starting client.\n\n**Missing metrics — `TemporalRuntime` must be a singleton:**\nThe docs explicitly state: *\"That object should be created globally and should be used for all clients.\"* `TemporalRuntime` wraps the native Rust Temporal core. Creating multiple instances does not multiply metric reporters — instead, each new runtime re-initializes the core bindings. The first runtime's Prometheus endpoint may be superseded or the metric registry orphaned. Worker-side metrics (task queue poll counts, workflow task latency, etc.) are emitted from the core runtime, so if the runtime used by the worker is not the one with the active Prometheus binding, those metrics are silently dropped. The correct pattern is to create exactly one `TemporalRuntime` at application startup and share it across all clients via the `Runtime` property on `TemporalClientConnectOptions`.\n\nThe broader production lesson: in Temporal .NET, **observability infrastructure (runtime/metrics) is process-global**, and **tracing context propagation requires symmetric interceptor registration on both the initiating and executing sides**. Missing either causes silent, hard-to-diagnose gaps in your observability stack.",
+      "source_doc": "develop_dotnet_platform_observability.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    }
+  ]
+}

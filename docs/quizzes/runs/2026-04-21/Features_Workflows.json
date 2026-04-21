@@ -1,0 +1,733 @@
+{
+  "category": "Features_Workflows",
+  "questions": [
+    {
+      "id": "features_workflows_easy_001",
+      "category": "Features_Workflows",
+      "difficulty": "easy",
+      "question": "In Temporal, what is the main reason Workflow code cannot use the system clock (e.g., DateTime.Now) or make random calls?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "These operations are too slow and would degrade Workflow performance significantly."
+        },
+        {
+          "key": "B",
+          "text": "Temporal's servers do not have access to the local machine's clock or random seed."
+        },
+        {
+          "key": "C",
+          "text": "Workflows must be deterministic so they can be replayed identically from their Event History."
+        },
+        {
+          "key": "D",
+          "text": "These operations require network access, which is reserved only for Activities."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal replays a Workflow's Event History to reconstruct its state after a Worker restarts or a new deployment rolls out. If Workflow code used the real system clock or random calls, a replay would produce different results than the original run — breaking the guarantee of durable, consistent execution. That's why Temporal provides deterministic replacements like Workflow.DelayAsync and Workflow.Random.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_easy_002",
+      "category": "Features_Workflows",
+      "difficulty": "easy",
+      "question": "What is the key difference between canceling and terminating a Temporal Workflow Execution?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Cancellation deletes the Workflow's Event History, while termination preserves it for auditing."
+        },
+        {
+          "key": "B",
+          "text": "Cancellation sends a graceful signal the Workflow can handle and clean up, while termination stops it immediately without any cleanup code running."
+        },
+        {
+          "key": "C",
+          "text": "Cancellation only works on Activities, while termination works on the entire Workflow Execution."
+        },
+        {
+          "key": "D",
+          "text": "Cancellation is triggered automatically by Temporal on timeout, while termination must be triggered manually by the developer."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Cancellation propagates a CancellationToken that Workflow and Activity code can detect, allowing cleanup logic to run before the Workflow stops. Termination, by contrast, is like killing a process — Temporal records a WorkflowExecutionTerminated event and the Workflow code gets no opportunity to respond. Cancellation is preferred whenever the Workflow can still respond; termination is a last resort for stuck Workflows.",
+      "source_doc": "develop_dotnet_workflows_cancellation.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_easy_003",
+      "category": "Features_Workflows",
+      "difficulty": "easy",
+      "question": "Why is it recommended to use objects (rather than individual primitive values) as Workflow parameters in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Objects are the only parameter type that Temporal's serialization layer can handle correctly."
+        },
+        {
+          "key": "B",
+          "text": "Using objects lets you add or change fields later without breaking the Workflow's method signature."
+        },
+        {
+          "key": "C",
+          "text": "Primitive values cannot be made deterministic inside a Workflow, so they must be wrapped in objects."
+        },
+        {
+          "key": "D",
+          "text": "Objects automatically compress the data sent to the Temporal server, reducing storage costs."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Workflows are long-lived and their definitions evolve over time. If you pass individual primitive arguments and later need to add a new input field, you'd have to change the method signature — potentially breaking compatibility with already-running Workflow Executions. Wrapping inputs in an object means you can add new optional fields without changing the signature, making versioning much smoother.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_easy_004",
+      "category": "Features_Workflows",
+      "difficulty": "easy",
+      "question": "What does resetting a Workflow Execution do in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It restarts the Workflow from the very beginning, discarding all prior Event History entirely."
+        },
+        {
+          "key": "B",
+          "text": "It pauses the Workflow and waits for an operator to manually replay each event one by one."
+        },
+        {
+          "key": "C",
+          "text": "It stops the current Workflow Execution and starts a new one that replays history up to a chosen event, then continues from there with the current code."
+        },
+        {
+          "key": "D",
+          "text": "It rolls back the Temporal server's database to a previous snapshot so the Workflow can re-run from that state."
+        }
+      ],
+      "answer": "C",
+      "explanation": "A Workflow reset is useful when a Workflow is stuck due to a non-deterministic bug you've since fixed. Temporal copies the Event History up to the reset point into a new Execution and resumes from there using your updated code. Any progress made after the reset point is discarded. This is a targeted recovery tool — not a full restart — so you only lose the work done after the problematic event.",
+      "source_doc": "develop_dotnet_workflows_cancellation.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_easy_005",
+      "category": "Features_Workflows",
+      "difficulty": "easy",
+      "question": "What is a Dynamic Workflow in Temporal, and when is it invoked?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A Workflow that scales its concurrency automatically based on current Task Queue load."
+        },
+        {
+          "key": "B",
+          "text": "A Workflow that runs on a schedule and is triggered dynamically by a cron expression at runtime."
+        },
+        {
+          "key": "C",
+          "text": "A Workflow invoked at runtime when no other registered Workflow matches the requested Workflow name."
+        },
+        {
+          "key": "D",
+          "text": "A Workflow that can change its own definition mid-execution in response to incoming Signals."
+        }
+      ],
+      "answer": "C",
+      "explanation": "A Dynamic Workflow acts as a catch-all handler on a Worker. If a client starts a Workflow Execution with a name that no specifically registered Workflow matches, Temporal routes it to the Dynamic Workflow instead. This is useful for building generic dispatchers or handling workflow names that aren't known at compile time. Only one Dynamic Workflow can be registered per Worker.",
+      "source_doc": "develop_dotnet_workflows_dynamic-workflow.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_easy_006",
+      "category": "Features_Workflows",
+      "difficulty": "easy",
+      "question": "In the .NET SDK, why should you avoid using Task.Run inside Workflow code?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Task.Run is deprecated in modern .NET and will throw a compiler error inside Workflow classes."
+        },
+        {
+          "key": "B",
+          "text": "Task.Run uses the default thread-pool scheduler instead of the deterministic scheduler Temporal requires, which can break replay."
+        },
+        {
+          "key": "C",
+          "text": "Task.Run makes network calls under the hood, which violates Temporal's rule against I/O inside Workflows."
+        },
+        {
+          "key": "D",
+          "text": "Task.Run prevents the Temporal SDK from serializing the Workflow's state between Workflow Tasks."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's .NET SDK requires all async work inside a Workflow to use the deterministic TaskScheduler.Current. Task.Run silently dispatches work to TaskScheduler.Default (the thread pool), which runs outside Temporal's controlled scheduler. This breaks determinism and can cause non-reproducible behavior during replay. The SDK even throws an InvalidWorkflowOperationException at runtime if it detects this. Use Workflow.RunTaskAsync as the safe alternative.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_med_001",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "In the Temporal .NET SDK, which attribute marks the entry point method of a Workflow class?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "[WorkflowRun] — placed on the single async method that serves as the Workflow's main execution entry point"
+        },
+        {
+          "key": "B",
+          "text": "[WorkflowMain] — placed on the public method that Temporal invokes when a new Workflow Execution starts"
+        },
+        {
+          "key": "C",
+          "text": "[WorkflowEntry] — placed on the async method that defines where Workflow logic begins executing"
+        },
+        {
+          "key": "D",
+          "text": "[WorkflowStart] — placed on the method that Temporal calls to initialize the Workflow Execution"
+        }
+      ],
+      "answer": "A",
+      "explanation": "[WorkflowRun] is the correct attribute. It must be applied to exactly one asynchronous method on a class already decorated with [Workflow]. The other attribute names ([WorkflowMain], [WorkflowEntry], [WorkflowStart]) do not exist in the Temporal .NET SDK and represent plausible-sounding but incorrect alternatives. In practice, every Workflow class needs both [Workflow] on the class and [WorkflowRun] on its entry point method.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_med_002",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "Inside a Temporal .NET Workflow, which of the following replacements is correct when you need to wait for a condition or pause execution?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Replace Task.Delay with Workflow.DelayAsync, because Task.Delay uses the system clock and .NET built-in timers, both of which violate determinism"
+        },
+        {
+          "key": "B",
+          "text": "Replace Task.Delay with Thread.Sleep, because blocking the thread avoids the non-deterministic task scheduler"
+        },
+        {
+          "key": "C",
+          "text": "Replace Task.Delay with Task.Run(() =\u003e Task.Delay(...)), because wrapping in Task.Run ensures the timer runs off the Workflow scheduler"
+        },
+        {
+          "key": "D",
+          "text": "Replace Task.Delay with Task.Factory.StartNew with TaskScheduler.Default, because the default scheduler processes timers deterministically"
+        }
+      ],
+      "answer": "A",
+      "explanation": "Workflow.DelayAsync is the correct replacement. Task.Delay internally uses .NET's built-in timer infrastructure and the system clock, both of which make replay non-deterministic. Thread.Sleep blocks the thread and is also forbidden. Task.Run puts work on TaskScheduler.Default, which the SDK explicitly prohibits inside Workflows. Task.Factory.StartNew with TaskScheduler.Default has the same problem. Temporal's Workflow.DelayAsync ties the delay to the Workflow's event history, making it fully deterministic across replays.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_med_003",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "What is the key behavioral difference between canceling a Workflow Execution and terminating it in the Temporal .NET SDK?",
+      "choices": [
+        {
+          "key": "B",
+          "text": "Cancellation sends a graceful signal that the Workflow code can catch and handle (e.g., run cleanup Activities), while termination immediately stops execution without giving the Workflow code any chance to respond"
+        },
+        {
+          "key": "A",
+          "text": "Cancellation immediately stops all Activities and the Workflow without any cleanup, while termination waits for running Activities to finish before stopping the Workflow"
+        },
+        {
+          "key": "C",
+          "text": "Cancellation and termination are functionally identical; the only difference is that termination records a different event type in the Workflow History"
+        },
+        {
+          "key": "D",
+          "text": "Cancellation can only be triggered from the Web UI, while termination can be issued programmatically via the WorkflowHandle API"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Cancellation is the graceful path: it cancels Workflow.CancellationToken, which propagates to Activities and timers, and the Workflow code can catch the resulting exception to run cleanup logic. Termination is like killing a process — a WorkflowExecutionTerminated event is recorded, no Workflow Task is scheduled, and the code never gets to respond. In practice, always prefer cancellation unless the Workflow is stuck. Option A reverses the behaviors, option C is wrong because behavior differs significantly, and option D incorrectly restricts which mechanisms can trigger each operation.",
+      "source_doc": "develop_dotnet_workflows_cancellation.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_med_004",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "When a Temporal .NET Workflow is cancelled and you need to run a cleanup Activity, why must you create a new CancellationTokenSource instead of using Workflow.CancellationToken?",
+      "choices": [
+        {
+          "key": "C",
+          "text": "Because Workflow.CancellationToken is already in a cancelled state at that point, so any Activity started with it would be immediately cancelled before it could perform cleanup"
+        },
+        {
+          "key": "A",
+          "text": "Because cleanup Activities must always run on a separate Task Queue, and a new CancellationTokenSource is required to specify that queue"
+        },
+        {
+          "key": "B",
+          "text": "Because the Temporal server rejects Activity scheduling requests that reference a cancelled token, so a fresh token is needed to satisfy server-side validation"
+        },
+        {
+          "key": "D",
+          "text": "Because Workflow.CancellationToken is read-only and cannot be passed as an argument to ExecuteActivityAsync options"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Once the Workflow receives a cancellation request, Workflow.CancellationToken transitions to the cancelled state. Passing that token to a cleanup Activity would cause it to be cancelled immediately before doing any useful work. Creating a detached CancellationTokenSource (not linked to Workflow.CancellationToken) gives the cleanup Activity a fresh, non-cancelled token. This is a common and important pattern in production Workflows that must guarantee cleanup runs. The other options describe fictitious behaviors.",
+      "source_doc": "develop_dotnet_workflows_cancellation.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_med_005",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "Why does the Temporal .NET SDK discourage using Task.WhenAny inside Workflow code, and what is the recommended alternative?",
+      "choices": [
+        {
+          "key": "D",
+          "text": "Task.WhenAny can behave non-deterministically in certain cases (e.g., an enumerable set of tasks with results), so Workflow.WhenAnyAsync should be used instead to guarantee deterministic replay"
+        },
+        {
+          "key": "A",
+          "text": "Task.WhenAny is not available in .NET versions supported by the Temporal SDK, so Workflow.WhenAnyAsync is the only available API for racing tasks"
+        },
+        {
+          "key": "B",
+          "text": "Task.WhenAny always uses TaskScheduler.Default, which causes an immediate exception in all Workflow contexts regardless of the number or type of tasks involved"
+        },
+        {
+          "key": "C",
+          "text": "Task.WhenAny is deprecated in .NET and removed from the BCL, so Workflow.WhenAnyAsync is provided as a drop-in replacement for all task-racing scenarios"
+        }
+      ],
+      "answer": "D",
+      "explanation": "The docs note that Task.WhenAny is problematic specifically for an enumerable set of tasks with results, or more than two tasks with results, due to a known .NET runtime issue. Workflow.WhenAnyAsync is the safe replacement that ensures deterministic behavior during replay. The other options are incorrect: Task.WhenAny is available in all supported .NET versions, it doesn't always throw in Workflow code, and it has not been removed from the BCL. The nuance here is that Task.WhenAny isn't universally broken — only in specific overload patterns — but using Workflow.WhenAnyAsync avoids the footgun entirely.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_med_006",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "What happens to a Workflow Execution when a non-deterministic error is detected and you use the Workflow Reset feature?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The entire Event History is deleted and the Workflow restarts from scratch with the current code, discarding all previously recorded events"
+        },
+        {
+          "key": "C",
+          "text": "The current Workflow Execution is terminated, a new Execution is started with Event History copied up to the chosen reset point, and the Workflow resumes from there using the current code"
+        },
+        {
+          "key": "B",
+          "text": "The Workflow is paused at the point of the error and resumes automatically once the server detects that the non-deterministic code has been deployed away"
+        },
+        {
+          "key": "D",
+          "text": "The Workflow is replayed from the beginning using the original registered code version, and a new Workflow Task is scheduled at the earliest safe checkpoint"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Reset terminates the current Workflow Execution and creates a new one, copying the Event History up to the chosen event ID. The Workflow then resumes from that point using the current (fixed) code. Progress after the reset point is discarded, which is why you should only reset after fixing the underlying issue. Option A is wrong because history is preserved up to the reset point, not deleted. Option B is wrong because Temporal doesn't auto-detect or auto-resume from non-determinism. Option D is wrong because reset uses the current code version, not the original.",
+      "source_doc": "develop_dotnet_workflows_cancellation.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_med_007",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "What is the default Workflow Type name when you use [Workflow] without specifying a name parameter in the Temporal .NET SDK?",
+      "choices": [
+        {
+          "key": "B",
+          "text": "The fully qualified class name including namespace (e.g., MyApp.Workflows.MyWorkflow)"
+        },
+        {
+          "key": "A",
+          "text": "The unqualified class name (e.g., MyWorkflow for a class named MyWorkflow)"
+        },
+        {
+          "key": "D",
+          "text": "The name of the [WorkflowRun] method on the class (e.g., RunAsync)"
+        },
+        {
+          "key": "C",
+          "text": "A UUID generated at Worker registration time to avoid naming collisions across deployments"
+        }
+      ],
+      "answer": "A",
+      "explanation": "When no name is provided to the [Workflow] attribute, the Workflow Type defaults to the unqualified class name. For example, a class named MyWorkflow gets the Workflow Type 'MyWorkflow', not 'MyApp.Workflows.MyWorkflow'. You can override this with [Workflow(\"my-custom-name\")], which is useful for keeping stable names across refactors. The [WorkflowRun] method name and UUIDs are not used. Knowing the default naming convention matters in practice when you need to start a Workflow by type name from a client or another service.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_med_008",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "In the Temporal .NET SDK, what is a Dynamic Workflow and what constraint governs its registration on a Worker?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A Dynamic Workflow handles any Workflow type name not explicitly registered; only one Dynamic Workflow can be registered per Worker, and it must accept IRawValue[] as its sole parameter"
+        },
+        {
+          "key": "C",
+          "text": "A Dynamic Workflow is invoked in parallel with any matching registered Workflow, acting as a fallback logger; multiple Dynamic Workflows can be registered per Worker for different namespaces"
+        },
+        {
+          "key": "B",
+          "text": "A Dynamic Workflow replaces all registered Workflows on the Worker at runtime and accepts strongly-typed parameters like a normal Workflow Definition"
+        },
+        {
+          "key": "D",
+          "text": "A Dynamic Workflow is a Workflow that dynamically selects its Task Queue based on payload content; it has no registration constraints beyond the usual Worker configuration"
+        }
+      ],
+      "answer": "A",
+      "explanation": "A Dynamic Workflow is invoked when no other Workflow with a matching registered name is found. It is enabled by setting Dynamic = true in the [Workflow] attribute, and only one Dynamic Workflow can be registered on a given Worker. It must accept a single IRawValue[] parameter to handle arbitrary incoming payloads. It is not a parallel fallback, does not replace other registrations, and has no Task Queue routing role. This pattern is useful when you want a single catch-all handler, such as for routing or auditing unknown Workflow types.",
+      "source_doc": "develop_dotnet_workflows_dynamic-workflow.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_hard_001",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "Your .NET Temporal workflow is failing intermittently with `InvalidWorkflowOperationException` in production, and the Temporal Web UI shows the workflow task repeatedly retrying without making progress. The stack trace points to a call inside the workflow that uses `Task.Run`. What is actually happening, and what is the correct fix?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Temporal worker is running out of thread pool threads because `Task.Run` saturates the thread pool; the fix is to increase the worker's `MaxConcurrentWorkflowTaskPollers` setting to give more capacity to the scheduler."
+        },
+        {
+          "key": "B",
+          "text": "`Task.Run` schedules work on `TaskScheduler.Default` instead of `TaskScheduler.Current`, violating Temporal's determinism requirement; the SDK detects this via its event source listener and throws `InvalidWorkflowOperationException`, pausing the workflow until the code is corrected. Replace `Task.Run` with `Workflow.RunTaskAsync`."
+        },
+        {
+          "key": "C",
+          "text": "`Task.Run` inside a workflow causes a deadlock because the Temporal scheduler holds a lock while executing workflow code; the fix is to wrap the `Task.Run` call with `Task.ConfigureAwait(false)` to release the synchronization context before running."
+        },
+        {
+          "key": "D",
+          "text": "The `InvalidWorkflowOperationException` is thrown because `Task.Run` makes a network call that is forbidden in workflows; the fix is to move the network logic into an Activity and invoke it with `Workflow.ExecuteActivityAsync`."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`Task.Run` uses `TaskScheduler.Default` (the thread pool scheduler) rather than `TaskScheduler.Current` (the Temporal deterministic scheduler). The .NET SDK installs an event source listener for task events and, when it detects that workflow code has started a task on a non-current scheduler, it throws `InvalidWorkflowOperationException`. This fails the workflow task, which then retries continuously — exactly the 'stuck retrying' symptom you'd see in the Web UI — until the code is fixed. The correct replacement is `Workflow.RunTaskAsync`, which respects the current Temporal scheduler. Using `ConfigureAwait(false)` would actually make things worse, not better, because it explicitly abandons the current context.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_hard_002",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "A team deploys a new version of their .NET workflow that replaces `await Task.WhenAny(taskA, taskB)` with `await Workflow.WhenAnyAsync(taskA, taskB)`. Old workflow runs that were mid-execution before the deploy now throw non-determinism errors during replay. Which principle explains why the old code was dangerous even though it appeared to work, and why the fix can itself cause a replay problem?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`Task.WhenAny` produces non-deterministic task completion ordering when more than two result-bearing tasks are involved; old executions replaying through history will encounter a different task resolution order than was originally recorded, causing a mismatch. The versioning API (`Workflow.Patched`) must gate the new code path to preserve compatibility with in-flight runs."
+        },
+        {
+          "key": "B",
+          "text": "`Task.WhenAny` is fully deterministic in all .NET versions, so no replay error should occur; the non-determinism errors after deploy are caused by a misconfigured task queue routing new workflow tasks to workers running old code."
+        },
+        {
+          "key": "C",
+          "text": "`Task.WhenAny` is non-deterministic because it makes a system call to the OS scheduler to pick a winner; the fix requires changing both the workflow and the activity to use `CancellationToken`-based coordination instead of `WhenAny` at all."
+        },
+        {
+          "key": "D",
+          "text": "The replay error is a false positive from the SDK's event source listener; disabling `DisableWorkflowTracingEventListener` on the worker will suppress the errors without any code changes needed."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The .NET SDK documentation explicitly warns that `Task.WhenAny` is non-deterministic when used with an enumerable set of tasks with results or more than two tasks with results, because the .NET runtime does not guarantee a stable ordering of task completions across replay runs. Old executions that used `Task.WhenAny` recorded a particular ordering in history; replaying them with the new `Workflow.WhenAnyAsync` code can produce a different order, causing a non-determinism error. The correct migration strategy is to use `Workflow.Patched` (the versioning API) to branch old runs to the legacy path and new runs to `Workflow.WhenAnyAsync`, preventing replay mismatches for in-flight executions.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_hard_003",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "You cancel a long-running .NET workflow that is mid-way through a `Workflow.ExecuteActivityAsync` call. The cleanup activity you invoke in the `catch` block immediately fails with `TaskCanceledException`. Examining the code, you notice the cleanup activity call does not pass a custom `CancellationToken`. What is the root cause and how do you fix it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The cleanup activity fails because `ScheduleToCloseTimeout` is not set on the cleanup activity options; adding a timeout resolves the issue because Temporal requires an explicit timeout on all activity calls."
+        },
+        {
+          "key": "B",
+          "text": "The cleanup activity fails because workflow cancellation marks `Workflow.CancellationToken` as cancelled, and since that token is implicitly used by all activity calls in the workflow, the cleanup activity is immediately cancelled too. The fix is to create a new, detached `CancellationTokenSource` and pass its token to the cleanup activity options."
+        },
+        {
+          "key": "C",
+          "text": "The cleanup activity is cancelled because Temporal server sends a second cancellation signal after the first one is acknowledged; the fix is to set `CancellationType = ActivityCancellationType.WaitCancellationCompleted` on the original activity so the server waits before sending further signals."
+        },
+        {
+          "key": "D",
+          "text": "The cleanup activity fails because the activity worker has already shut down in response to the workflow cancellation event; the fix is to register cleanup activities on a separate, dedicated task queue that is not affected by workflow cancellation."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When a workflow receives a cancellation request, `Workflow.CancellationToken` is marked as cancelled. Because this token is implicitly used by all calls within the workflow — including `Workflow.ExecuteActivityAsync` — any activity started after cancellation (or during the cancellation catch block) that uses the default token will be immediately cancelled. The documentation explicitly shows this pattern: create a `new CancellationTokenSource()` (detached from `Workflow.CancellationToken`) and pass `detachedCancelSource.Token` to the cleanup activity's options. This gives the cleanup activity a fresh, uncancelled token so it can run to completion.",
+      "source_doc": "develop_dotnet_workflows_cancellation.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_hard_004",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "A workflow in production is stuck in a state where it cannot be cancelled normally — `CancelAsync` is sent but the workflow never reaches the catch block. An engineer suggests using `TerminateAsync` instead. What is the key operational difference between these two operations, and when is termination the right choice?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Termination and cancellation are functionally identical from the server's perspective; the only difference is that `TerminateAsync` also sends a system notification to downstream services, while `CancelAsync` does not."
+        },
+        {
+          "key": "B",
+          "text": "Cancellation sets a flag that the workflow code must poll for, so if the workflow is stuck in a tight CPU loop it will never see the cancellation; termination bypasses the workflow code entirely and records `WorkflowExecutionTerminated` directly in history. Termination is appropriate when the workflow is stuck and cannot process cancellation."
+        },
+        {
+          "key": "C",
+          "text": "Cancellation only stops the currently running Activity and leaves the workflow open, while termination stops all Activities and closes the workflow; both give the workflow code an opportunity to run a cleanup handler before stopping."
+        },
+        {
+          "key": "D",
+          "text": "Termination is a softer stop than cancellation because it waits for the current workflow task to finish before recording the terminal event, while cancellation interrupts the workflow task mid-execution."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Cancellation is a graceful signal: it cancels `Workflow.CancellationToken`, and the workflow code must be written to observe that cancellation and handle it — typically in a catch block. If the workflow is stuck (e.g., waiting on something that will never resolve, or caught in a non-determinism retry loop), it may never process the cancellation signal. Termination, by contrast, is forceful: the server records `WorkflowExecutionTerminated` in history immediately, no workflow task is scheduled, and the workflow code gets no chance to run cleanup. This is analogous to killing a process. The documentation is clear that termination should be used only as a last resort when cancellation cannot work normally.",
+      "source_doc": "develop_dotnet_workflows_cancellation.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_hard_005",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "After a bug is discovered in a workflow's business logic, an engineer wants to restart execution from a specific point in history rather than from the beginning. They use `temporal workflow reset --event-id 4`. What happens to workflow history events that occurred after event ID 4, and what prerequisite must be met for the reset to succeed long-term?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Events after the reset point are preserved in a side branch of history so the workflow can merge them back later; no code change is required because the workflow replays through those events using the existing logic."
+        },
+        {
+          "key": "B",
+          "text": "Events after the reset point are discarded, history up to event ID 4 is copied to the new execution, and the workflow resumes from that point with current code. The reset will only succeed sustainably if the underlying issue — such as non-deterministic code — has been fixed; otherwise the workflow will fail again at the same point."
+        },
+        {
+          "key": "C",
+          "text": "The reset rewinds the workflow clock but keeps all activity results cached, so activities that already completed will not be re-executed; the prerequisite is that the worker must be restarted after the reset to clear the sticky execution cache."
+        },
+        {
+          "key": "D",
+          "text": "Events after the reset point are archived to the namespace's archival storage and can be retrieved later; the reset itself requires no code change because Temporal automatically skips non-deterministic commands during replay."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When you reset a workflow execution, Temporal copies the event history up to the specified reset point into a new workflow execution and discards all events that occurred after that point. The workflow then resumes from the reset point using the current deployed code. Any progress made after the reset point — completed activities, signals received, timers fired — is lost. Critically, the documentation states that 'reset only works if you've fixed the underlying issue, such as removing non-deterministic code.' If the bug is not fixed, the workflow will encounter the same failure again when it replays to the equivalent point in the new execution.",
+      "source_doc": "develop_dotnet_workflows_cancellation.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_hard_006",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "A .NET workflow class is defined with `[Workflow]` but no name parameter: `[Workflow] public class OrderFulfillmentWorkflow`. A second class uses `[Workflow(\"order-fulfillment\")]`. A client starts both using their respective workflow type names. Six months later, the team renames the first class to `OrderFulfillmentV2Workflow` during a refactor. What breaks, and what should they have done initially to prevent it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Nothing breaks because Temporal uses the assembly-qualified type name as the workflow type identifier, which is stable across class renames as long as the namespace does not change."
+        },
+        {
+          "key": "B",
+          "text": "The second workflow breaks because the explicit name `\"order-fulfillment\"` conflicts with Temporal's internal naming convention after the rename; explicit names should always match the class name to avoid registry conflicts."
+        },
+        {
+          "key": "C",
+          "text": "The first workflow breaks: its type name defaults to the unqualified class name (`OrderFulfillmentWorkflow`), so renaming the class changes the workflow type name. In-flight executions and any client code referencing the old name will stop working. The team should have set an explicit name with `[Workflow(\"order-fulfillment\")]` from the start to decouple the type name from the class name."
+        },
+        {
+          "key": "D",
+          "text": "Both workflows break because Temporal registers workflow types by fully-qualified class name; any class rename or namespace change invalidates all existing workflow executions and requires a full namespace migration."
+        }
+      ],
+      "answer": "C",
+      "explanation": "When no name is provided to `[Workflow]`, the workflow type name defaults to the unqualified class name. Renaming the class from `OrderFulfillmentWorkflow` to `OrderFulfillmentV2Workflow` therefore changes the workflow type name that Temporal uses. Any in-flight executions that were started as `OrderFulfillmentWorkflow` will no longer find a matching registered handler on the worker, and clients starting new executions with the old name will fail. The second class — which uses `[Workflow(\"order-fulfillment\")]` — is immune to this problem because its type name is decoupled from its C# class name. The best practice is to always specify an explicit, stable name in the attribute.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_hard_007",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "An engineer writes a .NET workflow that uses `System.Threading.SemaphoreSlim` to coordinate two concurrent branches of work. In testing, the workflow occasionally deadlocks and the workflow task times out. The engineer is surprised because they are only using `SemaphoreSlim.WaitAsync()` without any timeout. Why does this still risk a deadlock, and what is the correct replacement?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`SemaphoreSlim.WaitAsync()` without a timeout is fully safe in Temporal workflows because it never blocks the thread; the deadlock is caused by the concurrent branch calling an activity without a `ScheduleToCloseTimeout`, which starves the semaphore."
+        },
+        {
+          "key": "B",
+          "text": "Even the async form of `SemaphoreSlim.WaitAsync()` without a timeout is listed as risky because anything beyond that narrow usage — including disposal — can deadlock the workflow. Additionally, `SemaphoreSlim` requires explicit disposal, making it cumbersome. The correct replacement is `Temporalio.Workflows.Semaphore`, which is designed for the Temporal deterministic scheduler."
+        },
+        {
+          "key": "C",
+          "text": "`SemaphoreSlim` deadlocks because it internally uses `Monitor.Enter` which is not compatible with cooperative multitasking; the fix is to use `System.Threading.Mutex` instead, which supports async release patterns."
+        },
+        {
+          "key": "D",
+          "text": "The deadlock is caused by `SemaphoreSlim` capturing `TaskScheduler.Default` at construction time; wrapping the `WaitAsync` call in `Workflow.RunTaskAsync` forces it onto the correct scheduler and eliminates the deadlock."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The .NET SDK documentation acknowledges that `SemaphoreSlim` technically works if you only use the async `WaitAsync()` without timeouts and `Release()` — but it explicitly states that anything else 'can deadlock the workflow' and that its use 'is cumbersome since it must be disposed.' In practice, the risk of accidentally using an unsafe form or forgetting disposal makes it a trap. The documentation's recommendation is to use `Temporalio.Workflows.Semaphore` (or `Temporalio.Workflows.Mutex` for mutual exclusion), which are purpose-built for the Temporal deterministic scheduler and avoid these hazards entirely.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_hard_008",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "Your team operates a .NET Temporal worker and wants to accept any workflow type name at runtime without registering each workflow class individually — for example, to implement a generic routing layer. They register a class with `[Workflow(Dynamic = true)]`. A colleague raises a concern: what constraint does having a Dynamic Workflow impose on the worker, and what must the workflow's `[WorkflowRun]` method signature look like?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A Dynamic Workflow can coexist with any number of other named workflows on the same worker; the only constraint is that its `[WorkflowRun]` method must accept `string workflowType` as its first parameter so it knows which workflow type was requested."
+        },
+        {
+          "key": "B",
+          "text": "Only one Dynamic Workflow can be registered per worker; if a named workflow with a matching type is already registered, the dynamic one is silently ignored. The `[WorkflowRun]` method must accept `Temporalio.Converters.IRawValue[]` as its sole argument to receive the raw, unconverted input payloads."
+        },
+        {
+          "key": "C",
+          "text": "A Dynamic Workflow requires a dedicated task queue separate from named workflows; its `[WorkflowRun]` method can use any parameter types because the SDK automatically deserializes payloads before dispatch."
+        },
+        {
+          "key": "D",
+          "text": "Dynamic Workflows cannot be used alongside Activities on the same worker; they must run on a worker that has no activity registrations. The `[WorkflowRun]` method must return `Task\u003cIRawValue\u003e` instead of a typed return value."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation states two key constraints for Dynamic Workflows in the .NET SDK: (1) only one Dynamic Workflow can be present on a worker — you cannot register multiple dynamic handlers; and (2) the workflow is invoked only when no other registered workflow matches the requested type name, making it a catch-all. The `[WorkflowRun]` method must accept `Temporalio.Converters.IRawValue[]` as its single argument because the SDK cannot know ahead of time what types the caller is sending, so it passes the raw unconverted payloads and leaves deserialization to the implementation. This is the same pattern used by Dynamic Activities in the SDK.",
+      "source_doc": "develop_dotnet_workflows_dynamic-workflow.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_nightmare_001",
+      "category": "Features_Workflows",
+      "difficulty": "nightmare",
+      "question": "A .NET Temporal workflow runs a long Activity and must perform cleanup if cancelled. A developer writes the following cancellation handler:\n\n```csharp\n[WorkflowRun]\npublic async Task RunAsync()\n{\n    try\n    {\n        await Workflow.ExecuteActivityAsync(\n            (MyActivities a) =\u003e a.MyLongRunningActivity(),\n            new() { ScheduleToCloseTimeout = TimeSpan.FromHours(1) });\n    }\n    catch (Exception e) when (TemporalException.IsCanceledException(e))\n    {\n        await Workflow.ExecuteActivityAsync(\n            (MyActivities a) =\u003e a.MyCancellationCleanupActivity(),\n            new() { ScheduleToCloseTimeout = TimeSpan.FromMinutes(5) });\n        throw;\n    }\n}\n```\n\nDuring testing, the cleanup activity itself gets cancelled before it completes. What is the root cause and how should it be fixed?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The cleanup activity must use a longer ScheduleToCloseTimeout because the workflow's remaining time budget is exhausted by the time cancellation is handled, and increasing the timeout gives the cleanup activity enough wall-clock time to complete."
+        },
+        {
+          "key": "B",
+          "text": "The cleanup activity inherits the already-cancelled `Workflow.CancellationToken` by default. A new detached `CancellationTokenSource` must be created and passed via `CancellationToken` in the activity options so the cleanup runs to completion outside the workflow-level cancellation scope."
+        },
+        {
+          "key": "C",
+          "text": "The `when` clause on the catch block prevents the cleanup activity from seeing the original cancellation signal, so the activity starts but then receives a second cancellation from the server. The fix is to remove the exception filter and catch all exceptions unconditionally."
+        },
+        {
+          "key": "D",
+          "text": "The cleanup activity needs a HeartbeatTimeout set in its options so the server knows it is still alive during the cancellation window. Without heartbeating, the server assumes the activity is lost and re-cancels it before it finishes."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When a workflow receives a cancellation request, `Workflow.CancellationToken` is set to the cancelled state. Because the Temporal .NET SDK propagates this token implicitly to all activity invocations within the workflow (it is the default token used in `ExecuteActivityAsync`), any activity started after the cancellation—including the cleanup activity—will also receive the cancelled token and be immediately cancelled. The fix is to create a fresh `CancellationTokenSource` that is NOT linked to `Workflow.CancellationToken` and pass its token explicitly via `CancellationToken` in the `ActivityOptions`. This 'detaches' the cleanup activity from the workflow-level cancellation scope. This interaction between workflow-level CancellationToken propagation and the activity options system is subtle: engineers often assume a new `ExecuteActivityAsync` call starts 'fresh', not realizing the SDK automatically threads the workflow token through every call site. Understanding this prevents a common production bug where critical compensation/cleanup activities silently fail to run during graceful shutdown.",
+      "source_doc": "develop_dotnet_workflows_cancellation.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_nightmare_002",
+      "category": "Features_Workflows",
+      "difficulty": "nightmare",
+      "question": "A senior engineer audits a .NET Temporal workflow codebase and finds the following code inside a `[WorkflowRun]` method:\n\n```csharp\nvar results = await Task.WhenAll(\n    Workflow.ExecuteActivityAsync((Svc s) =\u003e s.FetchDataA(),\n        new() { StartToCloseTimeout = TimeSpan.FromMinutes(2) }),\n    Workflow.ExecuteActivityAsync((Svc s) =\u003e s.FetchDataB(),\n        new() { StartToCloseTimeout = TimeSpan.FromMinutes(2) })\n);\n```\n\nThe engineer flags this code for replacement with `Workflow.WhenAllAsync`. A junior developer argues the documentation says `Task.WhenAll` is 'currently deterministic in .NET and safe'. What is the most accurate characterization of the risk if the code is left unchanged?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`Task.WhenAll` is non-deterministic because it uses `TaskScheduler.Default` internally, which schedules continuations on the thread pool and will immediately throw an `InvalidWorkflowOperationException` at runtime when the SDK's event source listener detects the wrong scheduler."
+        },
+        {
+          "key": "B",
+          "text": "`Task.WhenAll` on two non-result tasks is technically safe today, but the documentation explicitly recommends `Workflow.WhenAllAsync` as a forward-compatibility safeguard because .NET runtime internals are not under Temporal's control and could change the determinism properties of `Task.WhenAll` in a future release."
+        },
+        {
+          "key": "C",
+          "text": "`Task.WhenAll` over activities is unsafe because it bypasses the workflow's internal scheduler entirely, causing both activities to execute outside the event loop and producing duplicate `ActivityTaskScheduled` events in the workflow history, which breaks replay."
+        },
+        {
+          "key": "D",
+          "text": "`Task.WhenAll` is deterministic only when wrapping exactly two tasks; using it with three or more tasks always invokes `TaskScheduler.Default` continuations, which is why the documentation restricts its 'safe' designation to the two-task case specifically."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal .NET SDK documentation acknowledges that `Task.WhenAll` is 'currently deterministic in .NET and safe' but explicitly recommends `Workflow.WhenAllAsync` as a wrapper anyway—the reasoning is defensive: .NET runtime internals are not under Temporal's control, and a future runtime update could silently alter scheduling behaviour and break determinism in existing workflow histories. This is the exact kind of 'technically fine today, catastrophically broken on replay after an upgrade' failure mode that matters in production. The determinism constraint for workflows isn't just about correctness right now—it's about the guarantee that replaying a workflow history years from now against new code and new runtimes will produce the same observable decisions. The `Workflow.WhenAllAsync` wrapper exists to encapsulate that guarantee behind a stable SDK boundary. Option A is incorrect because `Task.WhenAll` itself does not invoke `TaskScheduler.Default` for continuation scheduling in a way that is currently caught. Option C fabricates a mechanism (duplicate history events) that doesn't exist. Option D misrepresents the documentation's nuance—the restriction the docs actually describe concerns an enumerable set of tasks with results or more than two tasks with results, not a simple two-vs-three count.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_nightmare_003",
+      "category": "Features_Workflows",
+      "difficulty": "nightmare",
+      "question": "A team is migrating a .NET Temporal workflow to a new version. The original workflow used `System.Threading.SemaphoreSlim` to guard concurrent access to a shared counter inside the workflow. After reading the Temporal .NET SDK documentation, they propose replacing it with `Temporalio.Workflows.Semaphore`. A colleague argues that the documentation says `SemaphoreSlim` 'technically works if only the async form of `WaitAsync` is used without timeouts'. Which statement best captures the production risk of keeping `SemaphoreSlim` in this workflow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Keeping `SemaphoreSlim` is safe as long as the team disables the SDK's workflow tracing event listener, since the risk is only that `InvalidWorkflowOperationException` gets thrown at runtime. Disabling the listener allows the workflow to proceed normally even with `SemaphoreSlim`."
+        },
+        {
+          "key": "B",
+          "text": "`SemaphoreSlim.WaitAsync` without a timeout is currently deterministic, but `SemaphoreSlim` must be disposed when done, any accidental use of timeout overloads or synchronous `Wait` methods in future code changes will deadlock the workflow, and Temporal provides `Temporalio.Workflows.Semaphore` precisely to eliminate that entire risk category."
+        },
+        {
+          "key": "C",
+          "text": "`SemaphoreSlim` will corrupt the workflow history during replay because it maintains internal state that is not serialized into Temporal's event log. When the workflow replays from history, the semaphore's permit count starts at its initial value rather than its state at the replay point, causing diverged execution."
+        },
+        {
+          "key": "D",
+          "text": "The primary risk is that `SemaphoreSlim` uses OS-level kernel objects that are not controlled by Temporal's deterministic scheduler, so two workflow coroutines acquiring the semaphore simultaneously will both proceed past the wait, eliminating the mutual exclusion guarantee entirely."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal .NET SDK documentation gives a nuanced but important warning: `SemaphoreSlim` 'technically works' under a very narrow set of constraints (async-only, no timeouts, use `Release` not `Dispose`), but characterises its use as 'cumbersome' and notes that anything outside those constraints 'can deadlock the workflow'. The production risk isn't just correctness today—it's code evolution risk. Any future developer adding a timeout overload (a very natural change) or forgetting to avoid the synchronous `Wait` method turns a working workflow into a permanently deadlocked one that cannot be recovered except by reset. `Temporalio.Workflows.Semaphore` removes that entire surface area by being purpose-built for the workflow execution model. Options C and D describe mechanisms that don't match how `SemaphoreSlim` actually works in .NET—semaphores are in-memory objects, not serialized to history, but that doesn't mean they corrupt history; they simply need to behave deterministically on replay, which the async no-timeout pattern happens to satisfy. Option A is dangerous advice: disabling the tracing listener removes a safety net but doesn't make non-deterministic code safe—it just hides the error until a much harder-to-debug production failure.",
+      "source_doc": "develop_dotnet_workflows_basics.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workflows_nightmare_004",
+      "category": "Features_Workflows",
+      "difficulty": "nightmare",
+      "question": "An engineer uses `temporal workflow reset` to recover a stuck .NET workflow after fixing a non-deterministic bug introduced in a deployment. They reset to event ID 10 out of a total history of 50 events. The workflow had received 3 Signals between event IDs 11 and 50. After the reset completes and the workflow resumes, what happens to those 3 Signals and what is the correct mental model for why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The 3 Signals are automatically replayed into the new workflow execution because the server copies the full event history to the new run, including all Signal events. The workflow code processes them again in order once it reaches the point in history where they originally arrived."
+        },
+        {
+          "key": "B",
+          "text": "The 3 Signals are permanently lost. Reset terminates the current execution and starts a new one from event ID 10; any progress and events—including Signals—recorded after event ID 10 are discarded and cannot be recovered, so the senders must resend the Signals if they are still needed."
+        },
+        {
+          "key": "C",
+          "text": "The 3 Signals are buffered by the server and automatically re-delivered to the new workflow execution after it resumes, because Signals are durable server-side objects that survive the reset operation and are associated with the workflow ID rather than the specific run ID."
+        },
+        {
+          "key": "D",
+          "text": "The outcome depends on whether the Signals were sent with `SignalWithStart`: Signals sent to an already-running workflow are lost on reset, while Signals sent via `SignalWithStart` are preserved because they are bound to the workflow ID and re-attached to the new execution automatically."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal documentation on workflow reset is explicit: 'Any progress made after the reset point will be discarded.' Reset copies only the event history up to the specified event ID into the new execution. Events recorded after that point—including Signal events, Activity completions, Timer firings, and Updates—are all gone. This is a critical operator-facing concept: reset is not a rewind-and-replay of everything; it is a hard truncation. The mental model is that the new execution starts with a partial history (events 1–10 in this case) and then runs forward with the current code, making new decisions from that point. Any side-effects that occurred between event 11 and 50—external state changes, downstream API calls, delivered messages—are also not undone; only the workflow's own continuation is reset. This interaction between reset, history, and Signal durability means engineers relying on Signals for idempotent state delivery (e.g., 'payment confirmed' signals) must account for the possibility of re-delivery or loss in operational recovery procedures. Option A incorrectly implies Signal events after the reset point are replayed. Option C incorrectly attributes Signal durability guarantees to the server beyond the reset boundary. Option D invents a distinction between Signal delivery modes that does not affect reset behaviour.",
+      "source_doc": "develop_dotnet_workflows_cancellation.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    }
+  ]
+}
