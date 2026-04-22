@@ -1,0 +1,117 @@
+{
+  "category": "Features_Security",
+  "questions": [
+    {
+      "id": "features_security_nightmare_001",
+      "category": "Features_Security",
+      "difficulty": "nightmare",
+      "question": "A platform team runs Temporal Cloud with mTLS client certificates and a custom Payload Codec (remote codec server) for end-to-end encryption. They rotate the mTLS certificates used by their workers and simultaneously push a new codec server version that changes the encryption key derivation logic. After the rollout, some in-flight workflow executions begin failing during replay with decryption errors on payloads encoded by the previous codec version. Which of the following best explains the root cause and the correct architectural constraint that was violated?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The mTLS certificate rotation invalidated existing TLS sessions between workers and the Temporal Cloud frontend, causing transient connectivity failures that corrupted in-flight event history during transmission—a problem solved by staggering certificate rotations across worker pools with a grace period."
+        },
+        {
+          "key": "B",
+          "text": "The Payload Codec is applied at serialization time and its output is stored verbatim in workflow history. Changing the codec's decryption logic without maintaining backward-compatible key derivation means the new codec cannot decode payloads written by the old version. Codec servers must treat encryption schemes as append-only and support all historical key versions simultaneously."
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud's mTLS layer performs an additional payload integrity check at ingestion; rotating certificates mid-execution causes the cloud frontend to reject re-encrypted payloads from the new codec as having mismatched HMACs, requiring a full namespace drain before any codec or certificate change."
+        },
+        {
+          "key": "D",
+          "text": "The Payload Codec runs inside the worker process, so rotating certificates first causes the codec server to become temporarily unreachable; the worker retries with stale cached payloads and writes double-encoded history events that the new codec then misinterprets during replay."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's Payload Codec (part of the Data Converter pipeline) encodes payloads before they are sent to the server and decodes them after retrieval. Crucially, the encoded bytes are stored verbatim in workflow event history. This means the codec is not a live transform layer—it is a serialization contract. If you change how the codec decrypts data (e.g., new key derivation, new algorithm, new key ID) without preserving the ability to decrypt all previously written payloads, replay will fail whenever the workflow engine re-processes historical events. This is exactly analogous to workflow versioning: just as you cannot change deterministic workflow logic without a GetVersion/patch guard, you cannot change the codec's decryption contract without backward compatibility. The correct operational pattern is to treat encryption schemes as versioned and append-only: the codec server must inspect a key ID or version tag embedded in each payload and route decryption to the appropriate key material. mTLS certificate rotation is completely orthogonal—certificates govern transport-layer authentication between workers/clients and the Temporal Cloud frontend, not the encoding of payload bytes in history. Conflating these two security mechanisms is a common and dangerous mistake: mTLS rotation can be done with a rolling grace period, but codec changes require careful backward-compatibility analysis of all live workflow histories.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T15:16:40Z"
+    },
+    {
+      "id": "features_security_nightmare_002",
+      "category": "Features_Security",
+      "difficulty": "nightmare",
+      "question": "A self-hosted Temporal deployment uses a Payload Codec with AES-256-GCM encryption and a remote codec server. The team enables Workflow History Archival to an S3-compatible store for long-term compliance retention. Six months later, a compliance audit requires decrypting and reading archived workflow histories from two years ago. The codec server has since been redeployed three times with key rotation. Which combination of issues makes this scenario most operationally dangerous?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Archival stores raw serialized history proto files containing encoded (encrypted) payloads, and the codec server is not invoked during archival upload. If the key material used at encoding time has been deleted or the codec server no longer supports old key versions, archived histories become permanently unreadable—a situation not prevented by Temporal's archival mechanism itself."
+        },
+        {
+          "key": "B",
+          "text": "Temporal's archival provider integration automatically re-encodes all payloads using the current codec server at the time of archival upload, so key rotation after archival is safe, but the risk is that the archival upload itself may fail if the codec server is unreachable, silently dropping history from the compliance store."
+        },
+        {
+          "key": "C",
+          "text": "Archival re-encrypts payloads using the Temporal server's internal TLS private key rather than the configured Payload Codec, so the codec server's key rotation has no effect on archived data—the real risk is that the server's TLS key was not backed up separately from the codec server keys."
+        },
+        {
+          "key": "D",
+          "text": "When archival is enabled, Temporal creates a secondary decoded copy of all history events in the visibility store for indexing, meaning the decrypted data is present in plaintext in the visibility store even when a Payload Codec is configured, which is the actual compliance concern the team should address first."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Temporal's Workflow History Archival feature uploads serialized history protobuf files to the configured blob store (S3, GCS, etc.) exactly as they exist in the persistence layer—which means payloads are stored in their already-encoded (encrypted) form as produced by the Payload Codec. Archival does not invoke the codec server at upload time, nor does it re-encode payloads. This has two critical implications for long-term retention: (1) The encrypted payloads in archived histories can only be decoded by a codec server that still holds the exact key material used at the time of original encoding. If keys are rotated and old key material is deleted, archived histories become permanently unreadable. (2) There is no Temporal-native mechanism to re-encrypt archived histories with newer keys. This creates a hard dependency between your key management lifecycle and your archival retention period. The correct operational pattern is to use an HSM or KMS with versioned key retention that matches or exceeds the archival retention period, and to embed key version identifiers in every encrypted payload so the codec server can route to the right key. This is a place where the intersection of self-hosted security (archival config, codec server lifecycle) and Temporal Cloud security (end-to-end encryption whitepaper) both point to the same architectural principle: the codec is a long-term serialization contract, not a short-lived session mechanism.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T15:16:40Z"
+    },
+    {
+      "id": "features_security_nightmare_003",
+      "category": "Features_Security",
+      "difficulty": "nightmare",
+      "question": "A team operating Temporal Cloud configures private connectivity (AWS PrivateLink) for their namespace and also enforces mTLS with client certificates issued by their internal PKI. They later enable a Nexus endpoint to allow a workflow in Namespace A to call a handler in Namespace B. Both namespaces are in the same Temporal Cloud account. After enabling Nexus, callers in Namespace A observe intermittent authorization failures when invoking the Nexus endpoint, even though the mTLS certificates are valid. What is the most likely cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "PrivateLink endpoints are scoped per namespace in Temporal Cloud; Nexus cross-namespace calls must traverse the public Temporal Cloud frontend because the PrivateLink interface only routes traffic for the originating namespace, causing the Nexus invocation to bypass the mTLS termination point and fail authorization on the destination namespace."
+        },
+        {
+          "key": "B",
+          "text": "Nexus cross-namespace authorization in Temporal Cloud is governed by a separate endpoint policy that must explicitly grant the caller namespace permission to invoke the target namespace's Nexus handler. Valid mTLS certificates prove worker identity to the originating namespace but do not automatically confer cross-namespace Nexus invocation rights on the target namespace's policy."
+        },
+        {
+          "key": "C",
+          "text": "mTLS certificates issued by an internal PKI are not trusted by Temporal Cloud's Nexus routing layer because Nexus uses a different TLS trust root than the per-namespace mTLS configuration; cross-namespace calls require certificates issued by Temporal Cloud's managed CA rather than a customer-managed PKI."
+        },
+        {
+          "key": "D",
+          "text": "PrivateLink and mTLS cannot be simultaneously enabled for namespaces that participate in Nexus endpoints; the two security mechanisms have conflicting connection models where PrivateLink assumes single-sided TLS while Nexus requires mutual authentication, requiring the team to choose one or the other for Nexus-enabled namespaces."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud's Nexus feature enables cross-namespace workflow orchestration, but it introduces a distinct authorization plane separate from per-namespace mTLS. When a workflow in Namespace A invokes a Nexus endpoint targeting Namespace B, the Temporal Cloud control plane evaluates the Nexus endpoint's allow policy—specifically whether Namespace A is permitted to call that endpoint. This is a cross-namespace authorization check that is entirely independent of whether the worker in Namespace A has a valid mTLS client certificate. The mTLS certificate proves that the worker is an authorized client of Namespace A; it does not grant cross-namespace invocation rights on Namespace B's Nexus endpoint. The endpoint policy must be explicitly configured to whitelist the caller namespace (or specific identities). This is architecturally analogous to AWS IAM resource policies: a valid caller identity does not imply resource access unless the resource's policy grants it. PrivateLink is also orthogonal here—it governs the network path between the customer's VPC and Temporal Cloud's data plane, not the authorization logic for cross-namespace Nexus calls. The 'intermittent' nature of the failures may reflect partial policy rollout or race conditions during endpoint policy updates, but the root cause is the missing cross-namespace authorization grant. Engineers running multi-namespace Temporal Cloud deployments must treat Nexus endpoint policies as a third security boundary (alongside mTLS and API keys/RBAC) that requires explicit configuration.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T15:16:40Z"
+    },
+    {
+      "id": "features_security_nightmare_004",
+      "category": "Features_Security",
+      "difficulty": "nightmare",
+      "question": "A self-hosted Temporal cluster is being migrated to use dual-visibility (Elasticsearch as the secondary store alongside the primary SQL visibility store) as part of an upgrade. The team also has a custom Data Converter with a Payload Codec that encrypts all workflow inputs and search attribute values before sending them to the server. After enabling dual-visibility, operators notice that search queries against the Elasticsearch store return workflows but the search attribute values are unreadable ciphertext, while the SQL-based visibility queries also return ciphertext. Meanwhile, the web UI's workflow detail view correctly shows decrypted values via the remote codec server. Which statement best describes the interaction between these features?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Search attribute values are indexed by the Temporal server directly from the workflow's event history at Schedule time, bypassing the Payload Codec entirely; the ciphertext in both stores indicates the codec server is not being called during indexing, which is a known limitation requiring a separate decryption sidecar to populate a shadow search attribute index."
+        },
+        {
+          "key": "B",
+          "text": "The Temporal server indexes search attribute values exactly as it receives them from the SDK—after the client-side Payload Codec has already encoded them. Since encoding happens client-side before the gRPC call reaches the server, both visibility stores receive and store the encoded (ciphertext) values. The web UI appears to show decrypted values because it calls the remote codec server to decode payloads on display, but the underlying indexed values in both Elasticsearch and SQL remain ciphertext permanently."
+        },
+        {
+          "key": "C",
+          "text": "Dual-visibility migration causes the Temporal server to re-index all existing search attributes from the primary SQL store into Elasticsearch; during this re-indexing, the codec server is invoked to decode and re-encode search attribute values, introducing a window where plaintext values are briefly stored in the Elasticsearch index before being re-encrypted."
+        },
+        {
+          "key": "D",
+          "text": "Elasticsearch performs full-text tokenization on indexed values, which corrupts binary ciphertext and makes the search attribute fields unqueryable; the SQL store avoids this because it uses exact-match indexing. The team should configure Elasticsearch to use keyword field mappings for all search attributes to prevent tokenization-induced corruption of encrypted values."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question reveals a fundamental and often surprising interaction between Temporal's Data Converter (Payload Codec) architecture and its visibility/search attribute indexing model. The Payload Codec operates entirely on the client side (within the SDK) before any data is transmitted to the Temporal server. When a workflow is started with UpsertSearchAttributes, the SDK encodes the search attribute payloads through the codec chain and sends the resulting ciphertext to the server via gRPC. The Temporal server—whether self-hosted or Cloud—stores and indexes exactly what it receives. It has no knowledge of the encoding scheme and does not invoke the codec server. Consequently, both the SQL visibility store and Elasticsearch receive and index the ciphertext values. This means encrypted search attributes are effectively unsearchable by value (you cannot query 'CustomerTier = GOLD' if GOLD is stored as ciphertext). The web UI correctly shows decrypted values because the Temporal UI (or tctl) calls the remote codec server endpoint to decode payloads at display time—this is a read-path decode, not a write-path behavior. The dual-visibility migration adds no new behavior here: it faithfully replicates the encoded values from SQL to Elasticsearch, preserving the ciphertext in both stores. The architectural lesson is that end-to-end encryption with a Payload Codec trades searchability for confidentiality. Teams that need both must either accept that search attributes are stored in plaintext (i.e., not encode them through the codec) or implement a deterministic encryption scheme (e.g., format-preserving encryption with a shared secret) that allows exact-match queries on ciphertext—a significant cryptographic complexity with its own tradeoffs.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T15:16:40Z"
+    }
+  ]
+}

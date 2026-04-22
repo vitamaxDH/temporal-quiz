@@ -1,0 +1,705 @@
+{
+  "category": "Features_Workers",
+  "questions": [
+    {
+      "id": "features_workers_easy_001",
+      "category": "Features_Workers",
+      "difficulty": "easy",
+      "question": "What is the main job of a Worker Entity within a Worker Process?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It stores the state of Workflow Executions in a database so they survive restarts"
+        },
+        {
+          "key": "B",
+          "text": "It listens to a specific Task Queue and executes the Workflow and Activity tasks it receives"
+        },
+        {
+          "key": "C",
+          "text": "It routes incoming HTTP requests to the correct Workflow or Activity function"
+        },
+        {
+          "key": "D",
+          "text": "It schedules Workflows on a timer and retries them if they do not complete on time"
+        }
+      ],
+      "answer": "B",
+      "explanation": "A Worker Entity polls a specific Task Queue and makes progress on Workflow Executions and Activity Executions. This is why Temporal can provide durable execution — your business logic runs inside a Worker that Temporal dispatches tasks to, rather than your code needing to manage its own scheduling or retry loops.",
+      "source_doc": "develop_dotnet_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_easy_002",
+      "category": "Features_Workers",
+      "difficulty": "easy",
+      "question": "Each Worker Entity must be associated with exactly how many Task Queues?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "As many Task Queues as there are registered Workflow Types, one per type"
+        },
+        {
+          "key": "B",
+          "text": "Two — one for Workflows and one for Activities"
+        },
+        {
+          "key": "C",
+          "text": "Exactly one Task Queue per Worker Entity"
+        },
+        {
+          "key": "D",
+          "text": "There is no limit; a Worker Entity can poll from any number of Task Queues"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Each Worker Entity must associate itself with exactly one Task Queue. Multiple Worker Entities (potentially polling the same queue) can exist inside a single Worker Process, but each entity is bound to one queue. This design keeps routing predictable and allows you to scale specific Task Queues independently.",
+      "source_doc": "develop_dotnet_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_easy_003",
+      "category": "Features_Workers",
+      "difficulty": "easy",
+      "question": "If a Worker receives a task for a Workflow Type it has not registered, what happens?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Worker registers the type automatically by downloading the definition from the Temporal Service"
+        },
+        {
+          "key": "B",
+          "text": "The task is silently ignored and the Temporal Service picks another Worker to handle it"
+        },
+        {
+          "key": "C",
+          "text": "The Worker fails that specific task, but the overall Workflow Execution itself does not fail"
+        },
+        {
+          "key": "D",
+          "text": "The Worker crashes immediately and must be restarted before it can process more tasks"
+        }
+      ],
+      "answer": "C",
+      "explanation": "When a Worker encounters an unknown Workflow or Activity Type, it fails that individual task — but the Workflow Execution remains alive and will be retried or rescheduled. This is a safety net, but the real lesson is to ensure all Workers on the same Task Queue register the same set of Workflow and Activity Types to avoid mismatches.",
+      "source_doc": "develop_go_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_easy_004",
+      "category": "Features_Workers",
+      "difficulty": "easy",
+      "question": "When connecting a Worker to Temporal Cloud instead of a local Temporal Service, what extra information is required?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A Cloud Namespace address with Account ID, plus an mTLS certificate and private key for secure authentication"
+        },
+        {
+          "key": "B",
+          "text": "Only a Cloud API token passed as an environment variable, with no changes to the host address"
+        },
+        {
+          "key": "C",
+          "text": "A username and password added to the worker options, along with a standard localhost address"
+        },
+        {
+          "key": "D",
+          "text": "A JSON config file containing the Namespace name, with TLS handled automatically by the SDK"
+        }
+      ],
+      "answer": "A",
+      "explanation": "Connecting to Temporal Cloud requires three things beyond a local setup: a host address in the format `\u003cNamespace\u003e.\u003cAccountID\u003e.tmprl.cloud:\u003cport\u003e`, an mTLS CA certificate, and an mTLS private key. This mutual TLS requirement ensures that only authorized Workers can connect to your Cloud Namespace, protecting your workflow traffic in transit.",
+      "source_doc": "develop_go_workers_cloud-worker.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_easy_005",
+      "category": "Features_Workers",
+      "difficulty": "easy",
+      "question": "Why must all Workers listening to the same Task Queue be registered with the exact same Workflow and Activity Types?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Because the Temporal Service randomly picks any available Worker for a task, so every Worker must be able to handle any task that arrives on that queue"
+        },
+        {
+          "key": "B",
+          "text": "Because Workers share a single in-memory registry, so adding a type to one Worker adds it to all Workers automatically"
+        },
+        {
+          "key": "C",
+          "text": "Because Temporal requires each Worker to execute all tasks simultaneously to ensure exactly-once delivery"
+        },
+        {
+          "key": "D",
+          "text": "Because mismatched registrations cause the Temporal Service to shut down that Task Queue until the issue is resolved"
+        }
+      ],
+      "answer": "A",
+      "explanation": "Temporal routes tasks to whichever Worker is available on a given Task Queue, without guaranteeing which specific Worker instance will pick up a task. If Workers have different registrations, some tasks may land on a Worker that can't handle them and will fail. Keeping registrations consistent across all Workers on the same queue ensures every task can be processed regardless of which Worker picks it up.",
+      "source_doc": "develop_go_workers_cloud-worker.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_easy_006",
+      "category": "Features_Workers",
+      "difficulty": "easy",
+      "question": "What is a Temporal Cloud Namespace ID, and why does it differ from just the Namespace name?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Namespace ID is an internal UUID used only by the Temporal Service; developers always use the human-readable name in their code"
+        },
+        {
+          "key": "B",
+          "text": "The Namespace ID combines your chosen Namespace name with a unique Account ID suffix (e.g., yournamespace.a2fx6), making it globally unique across all Temporal Cloud accounts"
+        },
+        {
+          "key": "C",
+          "text": "The Namespace ID is a numeric identifier automatically assigned by the SDK, replacing the name only inside TLS certificates"
+        },
+        {
+          "key": "D",
+          "text": "The Namespace ID is the same as the Namespace name but written in lowercase with hyphens instead of underscores"
+        }
+      ],
+      "answer": "B",
+      "explanation": "In Temporal Cloud, multiple customers might choose the same Namespace name. To guarantee global uniqueness, Temporal appends a short Account ID to the name, forming the Namespace ID (e.g., `yournamespace.a2fx6`). This full ID is what you use in both the host address and the client options when connecting a Worker to Temporal Cloud.",
+      "source_doc": "develop_go_workers_cloud-worker.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_med_001",
+      "category": "Features_Workers",
+      "difficulty": "med",
+      "question": "In Go, when a Worker polls a Task for a Workflow Type it does not recognize, what happens?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Worker silently drops the Task and continues polling without any error being recorded."
+        },
+        {
+          "key": "B",
+          "text": "The Task fails, but the associated Workflow Execution is not failed — it will be retried by another Worker that knows the type."
+        },
+        {
+          "key": "C",
+          "text": "The Task fails and immediately causes the associated Workflow Execution to fail with a non-retryable error."
+        },
+        {
+          "key": "D",
+          "text": "The Worker panics and must be restarted before it can process further Tasks from that queue."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When a Worker receives a Task for a Workflow Type or Activity Type it has not registered, it fails that specific Task. Critically, the failure of the Task does NOT cause the Workflow Execution itself to fail — the Temporal server will reschedule the Task, and another Worker on the same Task Queue that knows the type can pick it up. This is why all Workers on the same Task Queue must be registered with the same Workflow and Activity Types: if none of them know the type, the Task will keep failing in a retry loop, but the Workflow Execution itself remains in a running state. Option A is wrong — a failure is recorded. Option C is wrong — the Workflow Execution does not fail. Option D is wrong — unrecognized types cause a task failure, not a Worker panic.",
+      "source_doc": "develop_go_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_med_002",
+      "category": "Features_Workers",
+      "difficulty": "med",
+      "question": "What three pieces of information must you supply when connecting a Go Worker to Temporal Cloud (instead of a local Temporal service)?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A Cloud Namespace address in the format `\u003cNamespace\u003e.\u003cID\u003e.tmprl.cloud:\u003cport\u003e`, an mTLS CA certificate, and an mTLS private key."
+        },
+        {
+          "key": "B",
+          "text": "A standard `localhost:7233` address, a Cloud API key passed as an HTTP header, and the Namespace name as a query parameter."
+        },
+        {
+          "key": "C",
+          "text": "A Cloud Namespace address, a username/password credential pair for basic auth, and the Task Queue name encoded in the host string."
+        },
+        {
+          "key": "D",
+          "text": "A Cloud Namespace address, a self-signed JWT token, and a root CA certificate bundle from the Temporal Cloud portal."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Connecting a Worker to Temporal Cloud requires (1) a host:port address of the form `\u003cNamespace\u003e.\u003cAccountID\u003e.tmprl.cloud:7233`, (2) an mTLS CA certificate (`.pem`), and (3) the matching mTLS private key (`.key`). These are loaded with `tls.LoadX509KeyPair` and placed in `client.ConnectionOptions{TLS: ...}`. Option B is wrong — you do not use localhost or HTTP headers for Cloud. Option C is wrong — Temporal Cloud does not use basic auth username/password. Option D is wrong — Temporal Cloud uses mTLS certificates, not JWT tokens.",
+      "source_doc": "develop_go_workers_cloud-worker.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_med_003",
+      "category": "Features_Workers",
+      "difficulty": "med",
+      "question": "In the .NET SDK, what happens if you register an Activity instance using `AddAllActivities(activities)` when creating a `TemporalWorker`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Only the Activity methods explicitly listed in `TemporalWorkerOptions` are registered; the rest are ignored at runtime."
+        },
+        {
+          "key": "B",
+          "text": "Each Activity method on the instance is registered as a separate Activity Type, and the instance's state is shared across all Activity executions on that Worker."
+        },
+        {
+          "key": "C",
+          "text": "A new instance of the Activity class is created per execution, so any state set on the passed instance is not available during Activity runs."
+        },
+        {
+          "key": "D",
+          "text": "Only static methods on the Activity class are registered; instance methods require a separate `AddScopedActivities` call."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When you call `AddAllActivities(activities)` in the .NET SDK, every Activity method on the provided instance is registered, and that same instance is reused for all executions on that Worker. This is why the docs note you can create 'an activity instance with some state' — shared resources like database connections or configuration can be held on the instance. Option A is wrong — `AddAllActivities` registers all methods, not a subset. Option C is wrong — the passed instance IS used, not discarded. Option D is wrong — instance methods are registered normally; `AddScopedActivities` is for dependency-injection scenarios, not required for instance method registration.",
+      "source_doc": "develop_dotnet_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_med_004",
+      "category": "Features_Workers",
+      "difficulty": "med",
+      "question": "In Go, what is the behavioral difference between calling `worker.Run(worker.InterruptCh())` versus `worker.Start()` followed later by `worker.Stop()`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`Run` blocks the calling goroutine and listens for an OS interrupt signal to stop, while `Start` starts the Worker in the background and requires an explicit `Stop()` call to shut it down."
+        },
+        {
+          "key": "B",
+          "text": "`Run` starts the Worker and immediately returns, while `Start` blocks until the first Task is received and then returns control to the caller."
+        },
+        {
+          "key": "C",
+          "text": "`Run` registers Workflow and Activity types before polling begins, while `Start` assumes types are already registered and begins polling immediately."
+        },
+        {
+          "key": "D",
+          "text": "`Run` can only be used in tests; `Start` is the production-safe method because it supports graceful shutdown with configurable drain time."
+        }
+      ],
+      "answer": "A",
+      "explanation": "`worker.Run(worker.InterruptCh())` is a convenience method that blocks the main goroutine and automatically handles OS interrupt signals (Ctrl-C / SIGINT / SIGTERM) to gracefully stop the Worker. `worker.Start()` starts the Worker in a background goroutine and returns immediately; to shut it down you must call `worker.Stop()` yourself. This distinction matters when writing CLI-style Worker programs — `Run` is the simpler choice for long-running processes, while `Start`/`Stop` gives more control for embedding a Worker inside a larger application. Options B, C, and D all mischaracterize one or both methods.",
+      "source_doc": "develop_go_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_med_005",
+      "category": "Features_Workers",
+      "difficulty": "med",
+      "question": "When using the Go SDK's `RegisterActivityWithOptions`, what does setting `SkipInvalidStructFunctions: true` accomplish?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It prevents the Worker from executing Activity methods that return more than one value, since multi-return functions are treated as invalid."
+        },
+        {
+          "key": "B",
+          "text": "It tells the Worker to skip registering Activity methods on a struct that don't match the expected Activity function signature, instead of panicking."
+        },
+        {
+          "key": "C",
+          "text": "It disables runtime type checking on Activity input and output arguments, allowing any struct to be used as a payload without serialization errors."
+        },
+        {
+          "key": "D",
+          "text": "It suppresses duplicate-registration errors when the same struct is registered on multiple Workers sharing the same process."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`SkipInvalidStructFunctions: true` instructs the SDK to silently skip methods on an Activity struct that don't conform to a valid Activity function signature (for example, methods with incompatible signatures or unexported methods), rather than panicking at registration time. The default is `false`, meaning registration panics if an invalid method is encountered. This option is useful when you have a large struct with mixed-purpose methods and only want to expose valid ones as Activities without filtering them manually. Option A is wrong — multi-return functions are valid Activity signatures in Go. Option C is wrong — it doesn't affect serialization. Option D is wrong — that is handled by `DisableAlreadyRegisteredCheck`.",
+      "source_doc": "develop_go_workers_cloud-worker.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_med_006",
+      "category": "Features_Workers",
+      "difficulty": "med",
+      "question": "The .NET SDK's `Temporalio.Extensions.Hosting` package provides `AddScopedActivities\u003cMyActivities\u003e()`. What does the 'Scoped' lifetime mean in this context?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A single `MyActivities` instance is created when the Worker starts and shared across all Activity executions for the lifetime of the Worker process."
+        },
+        {
+          "key": "B",
+          "text": "A new `MyActivities` instance is created for each Activity execution, with dependencies injected fresh from the DI container per execution scope."
+        },
+        {
+          "key": "C",
+          "text": "The `MyActivities` instance is created once per Task Queue, so Workers sharing the same queue share the same instance."
+        },
+        {
+          "key": "D",
+          "text": "The `MyActivities` class is only available for Activities scheduled within the same Workflow Execution, scoped to that execution's lifetime."
+        }
+      ],
+      "answer": "B",
+      "explanation": "In .NET Dependency Injection, a 'scoped' lifetime means a new instance is created per scope — in the context of `AddScopedActivities`, the Temporal hosting extension creates a new DI scope (and thus a new `MyActivities` instance) for each Activity execution. This is the standard way to inject resources like database connections that should not be shared across concurrent executions. Option A describes a singleton lifetime. Option C is incorrect — Task Queues don't define DI scopes. Option D is incorrect — scoping is at the Activity execution level, not the Workflow Execution level.",
+      "source_doc": "develop_dotnet_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_med_007",
+      "category": "Features_Workers",
+      "difficulty": "med",
+      "question": "In the Go SDK's `worker.Options`, what is the purpose of `TaskQueueActivitiesPerSecond` as distinct from `WorkerActivitiesPerSecond`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`WorkerActivitiesPerSecond` caps the rate at which a single Worker process dispatches Activities, while `TaskQueueActivitiesPerSecond` is a server-enforced rate limit applied across all Workers polling that Task Queue."
+        },
+        {
+          "key": "B",
+          "text": "`TaskQueueActivitiesPerSecond` limits Activity execution only to off-peak hours defined in the Task Queue schedule, while `WorkerActivitiesPerSecond` applies at all times."
+        },
+        {
+          "key": "C",
+          "text": "Both options set the same limit; `TaskQueueActivitiesPerSecond` is a deprecated alias for `WorkerActivitiesPerSecond` kept for backward compatibility."
+        },
+        {
+          "key": "D",
+          "text": "`WorkerActivitiesPerSecond` applies to Workflow Task executions, while `TaskQueueActivitiesPerSecond` applies exclusively to Activity Task executions on the same Worker."
+        }
+      ],
+      "answer": "A",
+      "explanation": "`WorkerActivitiesPerSecond` is a client-side rate limit: it caps how fast this particular Worker process starts Activity executions. `TaskQueueActivitiesPerSecond` sends a rate-limit hint to the Temporal server, which then enforces the limit across ALL Workers polling that Task Queue — making it a cluster-wide throughput control for a given queue. This is the key distinction: one is local to a Worker process, the other is a global throttle on the server side. This matters when you want to protect a downstream dependency regardless of how many Worker instances you scale to. Options B, C, and D all misrepresent this distinction.",
+      "source_doc": "develop_go_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_med_008",
+      "category": "Features_Workers",
+      "difficulty": "med",
+      "question": "Your Temporal Cloud Namespace ID is shown in the Cloud UI URL as `https://cloud.temporal.io/namespaces/payments.a2fx6/`. Which value should you use for the `Namespace` field and the host string when connecting a Go Worker?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Namespace: `payments`, host: `payments.tmprl.cloud:7233` — the account suffix is only needed in the UI URL, not in client connection options."
+        },
+        {
+          "key": "B",
+          "text": "Namespace: `payments.a2fx6`, host: `payments.a2fx6.tmprl.cloud:7233` — the Namespace ID including the account suffix is required for both fields."
+        },
+        {
+          "key": "C",
+          "text": "Namespace: `a2fx6`, host: `a2fx6.tmprl.cloud:7233` — only the account ID portion is used for routing; the namespace name is passed as a separate header."
+        },
+        {
+          "key": "D",
+          "text": "Namespace: `payments.a2fx6`, host: `payments.tmprl.cloud:7233` — the full namespace ID is used for the `Namespace` field but only the namespace name for the host."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal Cloud Namespace ID includes both the namespace name and the account ID appended together: `payments.a2fx6`. This full ID must appear in both the `Namespace` field of `client.Options` and in the host string as `payments.a2fx6.tmprl.cloud:7233`. Stripping the account suffix in either place will cause connection or routing failures. Option A is wrong — omitting the account suffix from both fields will fail. Option C is wrong — the account ID alone is not a valid namespace identifier. Option D is wrong — the host string must also include the full namespace ID including the account suffix.",
+      "source_doc": "develop_go_workers_cloud-worker.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_hard_001",
+      "category": "Features_Workers",
+      "difficulty": "hard",
+      "question": "Your Go Temporal worker fleet handles a high-throughput pipeline. After a deploy, you notice in the Temporal Web UI that certain Workflow Executions are stuck — their Workflow Tasks keep failing and retrying, but the executions themselves are not failing. Your investigation reveals some workers in the fleet were deployed with a new Workflow Type registered, while older pods still running the previous version are not aware of it. What is the exact failure mode happening here, and what guarantees does Temporal provide?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal automatically routes Workflow Tasks only to Workers that have the correct Workflow Type registered, so old workers simply skip unknown tasks without failing them, causing tasks to queue up indefinitely rather than fail."
+        },
+        {
+          "key": "B",
+          "text": "When an old Worker polls a Workflow Task for a type it does not recognize, it fails that specific Task. The Temporal server then reschedules the Task, and eventually a new Worker that does know the type will pick it up and succeed — the Workflow Execution itself is never marked as failed by this process."
+        },
+        {
+          "key": "C",
+          "text": "Polling a Task for an unknown Workflow Type causes the Worker to crash its entire process, which triggers the server to mark the Workflow Execution as failed after a configurable number of repeated Worker crashes."
+        },
+        {
+          "key": "D",
+          "text": "The Temporal server detects the type mismatch before dispatching the Task and holds it in a pending state until a compatible Worker comes online, so no Task failures are ever recorded in the event history."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Per the documentation, 'If a Worker polls a Task for a Workflow Type or Activity Type it does not know about, it fails that Task. However, the failure of the Task does not cause the associated Workflow Execution to fail.' This is the key guarantee: Task-level failure is isolated from Execution-level failure. The server reschedules the Task, so during a rolling deploy where some pods know the new type and some don't, tasks will occasionally fail and retry until a compatible worker picks them up. The Workflow Execution stays alive throughout. This is why you see repeated Task failures in the Web UI but the Workflow never transitions to a terminal failed state. It also means you must be careful with partial deploys: if NO workers ever know the type, the Workflow will be stuck retrying forever.",
+      "source_doc": "develop_go_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_hard_002",
+      "category": "Features_Workers",
+      "difficulty": "hard",
+      "question": "You are connecting a Go worker to Temporal Cloud and your security team requires mutual TLS. After wiring up the certificate, a junior engineer asks why the target address format for Temporal Cloud is `\u003cnamespace\u003e.\u003cid\u003e.tmprl.cloud:7233` rather than just a hostname. They also ask whether the Namespace field in `client.Options` must match the namespace embedded in the host string. What is the correct answer?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The namespace embedded in the hostname is only used for DNS routing at the load balancer layer; the `Namespace` field in `client.Options` is what Temporal actually uses for all API calls, so they can safely differ if your DNS is configured correctly."
+        },
+        {
+          "key": "B",
+          "text": "Both values must match because the Temporal Cloud control plane cross-validates the SNI hostname against the `Namespace` field on every RPC call, and a mismatch causes the connection to be rejected at the TLS handshake stage."
+        },
+        {
+          "key": "C",
+          "text": "The host format encodes both the namespace name and the unique account ID (e.g., `yournamespace.a2fx6`), and the `Namespace` field in client options must be set to that same `\u003cname\u003e.\u003caccount-id\u003e` value so the server can route and authorize requests to the correct namespace."
+        },
+        {
+          "key": "D",
+          "text": "The account ID in the hostname is only needed during initial certificate provisioning; after authentication succeeds, subsequent RPC calls use only the `Namespace` field in client options, so the account ID portion of the host can be omitted post-handshake."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation states the Namespace Id 'must include the Account Id: `yournamespace.a2fx6`' and the host format is `\u003cnamespace\u003e.\u003cid\u003e.tmprl.cloud:\u003cport\u003e`. The Go code sample sets both `HostPort` and `Namespace` to the full `\u003cyournamespace\u003e.\u003cid\u003e` form. This is because Temporal Cloud is a multi-tenant system where the five- or six-digit account ID distinguishes your namespace from others in the same cluster. The `Namespace` field in `client.Options` must use this composite identifier so the server correctly scopes all workflow and activity operations. Omitting the account ID from either value would cause routing failures or authorization errors.",
+      "source_doc": "develop_go_workers_cloud-worker.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_hard_003",
+      "category": "Features_Workers",
+      "difficulty": "hard",
+      "question": "A platform team is rolling out Temporal to a .NET microservices organization that uses ASP.NET Core's Host builder and dependency injection heavily. One team wants their Activity implementations to hold a scoped database connection (i.e., one connection per Activity execution). Another team plans to share one singleton Activity instance across all concurrent executions on the same worker. Which approach does the .NET SDK's Hosting extension support for scoped dependencies, and what is the practical consequence of choosing singleton instead?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Hosting extension only supports singleton Activity instances; scoped registration is not available, so teams needing per-execution database connections must manually instantiate connections inside each Activity method instead of relying on DI."
+        },
+        {
+          "key": "B",
+          "text": "Both scoped and singleton registrations work identically in the Hosting extension because the worker creates a new DI scope for every Activity Task regardless of how the Activities class is registered."
+        },
+        {
+          "key": "C",
+          "text": "The Hosting extension supports `AddScopedActivities\u003cT\u003e()`, which creates a new instance per Activity execution so scoped dependencies like database connections are isolated. Using a singleton Activity instead means all concurrent Activity executions share the same instance, which is unsafe if the Activity class holds per-execution mutable state or non-thread-safe resources."
+        },
+        {
+          "key": "D",
+          "text": "The Hosting extension supports scoped Activities, but the scope lifetime matches the Worker process lifetime rather than the Activity execution lifetime, making it functionally equivalent to singleton for connection management purposes."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The .NET Hosting extension code sample shows `AddScopedActivities\u003cMyActivities\u003e()`, which registers the Activity class at the scoped DI lifetime. This means the DI container creates a fresh `MyActivities` instance per Activity Task execution, giving each execution its own scoped resources such as database connections. The non-hosted approach in the docs passes a pre-constructed Activity instance (`new MyActivities()`) to `AddAllActivities()`, which is effectively singleton — all concurrent executions on that worker share the object. If `MyActivities` holds non-thread-safe state or a single database connection, concurrent Activity executions on the same worker would race on that shared state. Teams with per-execution resource needs must use the scoped approach via the Hosting extension.",
+      "source_doc": "develop_dotnet_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_hard_004",
+      "category": "Features_Workers",
+      "difficulty": "hard",
+      "question": "A Go worker is processing both regular (remote) Activities and Local Activities. Your SRE team notices that CPU is pegged on worker pods and wants to apply back-pressure. They configure `MaxConcurrentActivityExecutionSize` to 10 and assume this also caps Local Activity concurrency. Grafana shows Local Activity slots are still saturating the pod. What is wrong with their assumption, and which option actually controls Local Activity concurrency?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`MaxConcurrentActivityExecutionSize` controls the total slot budget shared across both regular and Local Activities; the engineers must also set `TaskQueueActivitiesPerSecond` to enforce the rate limit that indirectly prevents Local Activity saturation."
+        },
+        {
+          "key": "B",
+          "text": "`MaxConcurrentActivityExecutionSize` caps only regular (remote) Activity concurrency; Local Activities are governed by a separate `MaxConcurrentLocalActivityExecutionSize` option, so both must be tuned independently to apply back-pressure to each execution path."
+        },
+        {
+          "key": "C",
+          "text": "Local Activities bypass all concurrency controls in `worker.Options` because they run inline in the Workflow goroutine rather than on the Activity worker, so the only way to limit them is to add explicit throttling inside the Workflow code itself."
+        },
+        {
+          "key": "D",
+          "text": "`MaxConcurrentActivityExecutionSize` controls both regular and Local Activity slots, but Local Activities also require `EnableSessionWorker: true` to respect that limit; without it, the cap is silently ignored for Local Activities."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The `worker.Options` table in the documentation lists `MaxConcurrentActivityExecutionSize` and `MaxConcurrentLocalActivityExecutionSize` as separate, independent fields. Regular (remote) Activities and Local Activities have distinct execution paths and distinct concurrency controls. Setting only `MaxConcurrentActivityExecutionSize` has no effect on Local Activity concurrency. Similarly, the rate-limiting options are also split: `WorkerActivitiesPerSecond` vs `WorkerLocalActivitiesPerSecond`. SREs tuning worker back-pressure need to configure both pairs independently to prevent either type from saturating CPU.",
+      "source_doc": "develop_go_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_hard_005",
+      "category": "Features_Workers",
+      "difficulty": "hard",
+      "question": "Your team registers an Activity struct in Go using `RegisterActivity(myActivityStruct)`. The struct has four exported methods (`ProcessOrder`, `ValidateOrder`, `ArchiveOrder`, `SendNotification`) and two unexported helper methods. After deploying, you find that `SendNotification` is never picked up by the worker despite being exported. A colleague suggests using `RegisterActivityWithOptions` with `SkipInvalidStructFunctions: true`. What does this option actually do, and is it the right fix here?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`SkipInvalidStructFunctions: true` tells the worker to silently ignore exported methods that don't match the Activity method signature, which would hide the root cause. The real issue is likely that `SendNotification` has an incompatible signature, and `SkipInvalidStructFunctions: true` would suppress the panic that exposes this."
+        },
+        {
+          "key": "B",
+          "text": "`SkipInvalidStructFunctions: true` extends registration to include unexported methods, so it would cause `sendNotification` (lowercase) to be registered but would not help with `SendNotification` since exported methods are always registered automatically."
+        },
+        {
+          "key": "C",
+          "text": "`SkipInvalidStructFunctions: true` is unrelated to method visibility; it controls whether the worker retries registration of a struct after a transient error, and neither setting would resolve a missing exported method."
+        },
+        {
+          "key": "D",
+          "text": "`SkipInvalidStructFunctions: true` causes the registration to silently skip all exported struct methods, not just invalid ones, so using it would cause all four Activity methods to be unregistered — the opposite of the desired outcome."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The documentation states: 'When registering a struct that has Activities, skip functions that are not valid. If false, registration panics.' So `SkipInvalidStructFunctions: true` does not add methods — it suppresses panics for exported methods that are invalid (e.g., wrong signature, missing context parameter). If `SendNotification` isn't being picked up, the most likely cause is that its method signature doesn't conform to the Activity function contract (e.g., missing `context.Context` as the first parameter, or wrong return types). With the default `SkipInvalidStructFunctions: false`, the worker would panic at startup, clearly signaling the problem. Setting it to `true` would make the registration silently skip `SendNotification`, masking the bug rather than fixing it. The right fix is to correct the method signature.",
+      "source_doc": "develop_go_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_hard_006",
+      "category": "Features_Workers",
+      "difficulty": "hard",
+      "question": "During a graceful shutdown sequence in .NET, your Temporal worker receives a Ctrl+C signal. The worker is mid-execution on three Activity Tasks and two Workflow Tasks. Your code uses `CancellationTokenSource` tied to `Console.CancelKeyPress` and passes the token to `worker.ExecuteAsync(cancellationToken)`. What happens to in-flight executions when the cancellation token fires, and what exception does `ExecuteAsync` throw?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Cancelling the token immediately terminates all in-flight Activity and Workflow Tasks without waiting for them to complete, and `ExecuteAsync` throws `TaskCanceledException` rather than `OperationCanceledException`."
+        },
+        {
+          "key": "B",
+          "text": "The token cancellation signals the worker to stop polling for new tasks; in-flight tasks are allowed to complete (or time out per their own timeouts), and `ExecuteAsync` throws `OperationCanceledException` once the worker has drained."
+        },
+        {
+          "key": "C",
+          "text": "Cancelling the token causes `ExecuteAsync` to return normally without throwing any exception, making it impossible to distinguish a cancelled shutdown from a clean exit without inspecting the token's `IsCancellationRequested` property."
+        },
+        {
+          "key": "D",
+          "text": "The cancellation token only affects new task polling; in-flight tasks are immediately orphaned and their heartbeat timeouts will eventually cause the server to reschedule them, and `ExecuteAsync` throws `OperationCanceledException`."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The .NET sample code catches `OperationCanceledException` specifically: `catch (OperationCanceledException) { Console.WriteLine(\"Worker cancelled\"); }`. This is the exception type thrown by `ExecuteAsync` when its cancellation token is fired. The idiomatic .NET pattern for cooperative cancellation uses `OperationCanceledException`, not `TaskCanceledException` (though `TaskCanceledException` is a subclass). The key operational point is that cancelling the token initiates a graceful shutdown: the worker stops accepting new Tasks from the Task Queue but allows in-flight Tasks to finish, preventing abrupt interruption of work that would otherwise cause the server to reschedule those tasks after heartbeat timeouts expire. This distinction matters in production because an abrupt kill (SIGKILL) would leave tasks orphaned until their Schedule-To-Start or heartbeat timeouts fire.",
+      "source_doc": "develop_dotnet_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_hard_007",
+      "category": "Features_Workers",
+      "difficulty": "hard",
+      "question": "A team running Go workers on Temporal Cloud wants to add a second worker binary to the same Task Queue. The new binary will handle a new Workflow Type `ReportingWorkflow` in addition to all the existing types. The existing workers are not yet redeployed. Monitoring shows the existing workers are polling the same Task Queue. What is the correct operational constraint they must satisfy, and what breaks if they ignore it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "All Workers on the same Task Queue must register the exact same set of Workflow and Activity Types. If the new workers register `ReportingWorkflow` but old workers do not, old workers will fail any `ReportingWorkflow` Task they poll, causing repeated Task failures until the Task is claimed by a new worker or until old workers are redeployed with the new type registered."
+        },
+        {
+          "key": "B",
+          "text": "Workers on the same Task Queue can register different subsets of types; Temporal's server-side routing ensures each Task is only dispatched to a Worker that has registered the matching type, so old workers will simply never receive `ReportingWorkflow` Tasks."
+        },
+        {
+          "key": "C",
+          "text": "Adding a new Workflow Type to a subset of workers on a Task Queue is fully safe because Temporal's sticky scheduling ensures `ReportingWorkflow` executions are pinned to the new workers that registered them, and old workers only receive Tasks for workflows they already own."
+        },
+        {
+          "key": "D",
+          "text": "The constraint applies only to Activity Types, not Workflow Types. Workflow Types can differ across Workers on the same Task Queue because Workflow Tasks are always replayed deterministically from history, so any worker can reconstruct the state regardless of which type it registered."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Both the Go and .NET documentation state: 'All Workers listening to the same Task Queue name must be registered to handle the exact same Workflows Types and Activity Types.' And: 'If a Worker polls a Task for a Workflow Type or Activity Type it does not know about, it fails that Task.' Temporal does NOT do server-side routing by type — it dispatches tasks to any poller on the Task Queue. Old workers that poll a `ReportingWorkflow` Task will fail it, and the server will reschedule it. Eventually a new worker will pick it up successfully, but during the transition window you'll see repeated Task failures in the Web UI. The Workflow Execution itself won't fail (the task failure doesn't propagate to execution failure), but it's operationally messy and can delay execution. The correct approach is to deploy the new type to ALL workers on that Task Queue simultaneously or use a separate Task Queue for the new type.",
+      "source_doc": "develop_go_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_hard_008",
+      "category": "Features_Workers",
+      "difficulty": "hard",
+      "question": "A Go worker is configured with `DisableStickyExecution: false` (the default) and a `StickyScheduleToStartTimeout` of 5 seconds. An engineer proposes setting `DisableStickyExecution: true` to improve resilience during rolling deploys. What is the actual trade-off, and in which scenario does disabling sticky execution provide a concrete operational benefit worth the cost?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Disabling sticky execution removes the performance optimization where the same worker that executed the last Workflow Task gets priority for the next one. The benefit of disabling it is that all workers in the fleet become equally eligible for every Workflow Task immediately, which reduces latency during rolling deploys when the original sticky worker pod is terminated and the `StickyScheduleToStartTimeout` would otherwise delay reassignment."
+        },
+        {
+          "key": "B",
+          "text": "Disabling sticky execution forces all Workflow Tasks onto a shared non-sticky queue, which increases throughput by eliminating per-worker queuing but also increases history replay cost because every task dispatch requires a full history replay regardless of cached state."
+        },
+        {
+          "key": "C",
+          "text": "Sticky execution is only relevant for Activity Tasks; disabling it for Workflow Tasks has no effect because Workflow Tasks are always dispatched to the worker with the lowest current load, making the sticky vs non-sticky distinction irrelevant for workflow scheduling."
+        },
+        {
+          "key": "D",
+          "text": "Disabling sticky execution prevents the worker from caching Workflow state in memory between tasks, which reduces memory pressure on pods but has no effect on task scheduling latency because the server always dispatches to the least-loaded worker anyway."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Sticky execution is the optimization where a Workflow Task is preferentially dispatched to the same worker that last executed that workflow, allowing the worker to reuse its in-memory event history cache and skip a full replay from the server. When `DisableStickyExecution` is false (default), the server waits up to `StickyScheduleToStartTimeout` for the original worker to pick up the task before falling back to the normal task queue. During a rolling deploy, if the sticky worker pod is killed, the server must wait out the full `StickyScheduleToStartTimeout` (5 seconds in this example) before the task becomes available to other workers. Setting `DisableStickyExecution: true` eliminates this wait — all workers compete for every task immediately — at the cost of more frequent full history replays from the server (higher latency and server load per task). The trade-off is replay cost vs. reassignment latency during pod churn.",
+      "source_doc": "develop_go_workers_run-worker-process.html",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_nightmare_001",
+      "category": "Features_Workers",
+      "difficulty": "nightmare",
+      "question": "A Go-based Temporal Cloud worker fails to start in production. The engineer confirms the mTLS certificate and private key files exist on disk, the Namespace ID format is `yournamespace.a2fx6`, and the worker registers all required Workflow and Activity types. The connection attempt returns a transport-level auth failure. Reviewing the code, the engineer finds:\n\n```go\ntemporalClient, err := client.Dial(client.Options{\n    HostPort:  \"yournamespace.a2fx6.tmprl.cloud:7233\",\n    Namespace: \"yournamespace\",\n    ConnectionOptions: client.ConnectionOptions{\n        TLS: \u0026tls.Config{Certificates: []tls.Certificate{cert}},\n    },\n})\n```\n\nWhich change will most likely resolve the auth failure?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Switch the port from 7233 to 443, because Temporal Cloud requires HTTPS traffic on port 443 rather than the gRPC port 7233 used by self-hosted clusters."
+        },
+        {
+          "key": "B",
+          "text": "Set `Namespace` to the full Namespace ID `yournamespace.a2fx6` instead of just `yournamespace`, because Temporal Cloud authenticates the namespace field against the full ID that includes the account suffix, and mismatching it causes mTLS-level rejection."
+        },
+        {
+          "key": "C",
+          "text": "Replace the `tls.Config` with a `tls.Config` that sets `InsecureSkipVerify: true`, because Temporal Cloud uses a self-signed CA that Go's crypto/tls cannot validate by default."
+        },
+        {
+          "key": "D",
+          "text": "Move the certificate loading to happen after `client.Dial` completes, because loading the cert before dialing creates a race condition in the TLS handshake negotiation."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud authenticates workers using both mTLS certificates AND the Namespace ID, which must include the Account ID suffix (e.g., `yournamespace.a2fx6`). When the `Namespace` field in `client.Options` is set to only `yournamespace` (without the account suffix), the server-side routing and authorization logic cannot match the incoming connection to the correct namespace, producing a transport-level auth failure even though the certificate itself is valid. The HostPort correctly uses the full Namespace ID, but the `Namespace` field must also carry the full `\u003cname\u003e.\u003caccountId\u003e` form. This is a subtlety unique to Temporal Cloud: on self-hosted clusters the namespace is just a short name, but Cloud namespaces have a composite identity. Port 7233 is correct for gRPC-based Cloud connections. Temporal Cloud uses publicly trusted CAs, not self-signed ones, so `InsecureSkipVerify` would be both wrong and dangerous. Cert loading order has no bearing on TLS handshake correctness. In production, this error pattern commonly appears when engineers copy self-hosted connection code and forget that Cloud requires the full Namespace ID in both the HostPort AND the Namespace field.",
+      "source_doc": "cloud-worker (develop_go_workers_cloud-worker.html)",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_nightmare_002",
+      "category": "Features_Workers",
+      "difficulty": "nightmare",
+      "question": "A team runs a Go Temporal worker fleet with sticky execution enabled (the default). They deploy a new worker version that adds three new Activity types and renames one Workflow type. During the rolling deploy, some workflow tasks are failing and being retried. The on-call engineer argues this is a critical incident; the tech lead says the failures are expected and self-healing. Which of the following best explains who is correct and why?\n\n```go\n// Old worker\nw.RegisterWorkflow(OrderWorkflow)\nw.RegisterActivity(PaymentActivity)\n\n// New worker\nw.RegisterWorkflow(FulfillmentWorkflow) // renamed from OrderWorkflow\nw.RegisterActivity(PaymentActivity)\nw.RegisterActivity(ShippingActivity)\nw.RegisterActivity(NotificationActivity)\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The tech lead is correct for activity failures but the on-call is correct for workflow failures: new activity types failing on old workers are retried and rescheduled harmlessly, but a renamed workflow type causes in-flight executions to fail permanently because history replay cannot find the implementation."
+        },
+        {
+          "key": "B",
+          "text": "The on-call is correct: renaming a Workflow type breaks determinism for all in-flight executions of OrderWorkflow because the server will route tasks to workers that only know FulfillmentWorkflow, causing non-retryable workflow task failures that require manual intervention."
+        },
+        {
+          "key": "C",
+          "text": "The tech lead is correct: when a worker receives a task for an unknown Workflow or Activity type, it fails that specific task, but the failure is retried by the server and will eventually land on a worker that does know the type, so no execution is permanently harmed during a rolling deploy."
+        },
+        {
+          "key": "D",
+          "text": "The on-call is correct: sticky execution means in-flight workflows are pinned to specific old workers, so once those old workers shut down, their sticky tasks time out and are rescheduled to new workers which do not recognize OrderWorkflow, causing permanent execution failures."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation is explicit: 'If a Worker polls a Task for a Workflow Type or Activity Type it does not know about, it fails that Task. However, the failure of the Task does not cause the associated Workflow Execution to fail.' This is a core design principle. Unknown-type task failures are retried by the server and will eventually be picked up by a worker that knows the type. During a rolling deploy this means tasks transiently fail on mismatched workers but succeed once routed to an appropriate one. However, the scenario contains a real trap: renaming OrderWorkflow to FulfillmentWorkflow without maintaining registration of the old name WILL permanently break in-flight OrderWorkflow executions once all old workers are gone, because no worker will recognize that type anymore. The correct production practice is to keep old type names registered (using RegisterWorkflowWithOptions Name field for aliases) or complete the migration with versioning. Sticky execution does introduce the additional consideration that sticky-pinned tasks may time out (per StickyScheduleToStartTimeout) when the pinned worker disappears, but after that timeout the task is rescheduled normally. Answer C correctly describes the immediate transient behavior, which is the narrow question asked about the rolling deploy window. The broader lesson: transient task failures during rolling deploys are expected and self-healing, but removing a Workflow type registration that has active executions is a permanent breaking change that requires versioning, not just a deploy strategy.",
+      "source_doc": "run-worker-process (develop_go_workers_run-worker-process.html)",
+      "generated_at": "2026-04-22T15:16:41Z"
+    },
+    {
+      "id": "features_workers_nightmare_003",
+      "category": "Features_Workers",
+      "difficulty": "nightmare",
+      "question": "A .NET team uses the `Temporalio.Extensions.Hosting` extension with dependency injection. Their `MyActivities` class depends on `IMyDatabaseClient` registered as `AddScoped`. During a load test they observe that a single Activity Execution is sharing database state with a concurrent Activity Execution running in the same worker process, causing data corruption. The relevant registration code is:\n\n```csharp\nctx.AddScoped\u003cIMyDatabaseClient, MyDatabaseClient\u003e()\n   .AddHostedTemporalWorker(\"localhost:7233\", \"default\", \"my-task-queue\")\n   .AddScopedActivities\u003cMyActivities\u003e()\n   .AddWorkflow\u003cMyWorkflow\u003e();\n```\n\nWhat is the most likely root cause of the shared state problem?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `AddScopedActivities` call registers `MyActivities` as a singleton under the hood despite the scoped lifetime declaration, because the hosted worker extension reuses a single DI scope across all concurrent activity executions for performance reasons."
+        },
+        {
+          "key": "B",
+          "text": "`IMyDatabaseClient` is registered as `AddScoped` but .NET's hosted service DI creates a root-scope singleton for hosted services by default, so `MyDatabaseClient` is effectively a singleton shared across all concurrent Activity Executions in the process."
+        },
+        {
+          "key": "C",
+          "text": "The `MyActivities` instance holding the `IMyDatabaseClient` reference is created once via `AddAllActivities(activities)` style registration (non-DI path) rather than scoped-per-execution, meaning all concurrent executions share the same object instance and its database connection."
+        },
+        {
+          "key": "D",
+          "text": "The `AddWorkflow\u003cMyWorkflow\u003e()` call causes the DI container to inject the same `IMyDatabaseClient` into both the workflow and activity scopes, creating cross-contamination because workflow and activity scopes share a DI lifetime in the hosting extension."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is a classic .NET DI scoped-lifetime trap in hosted services. In ASP.NET Core, scoped services resolve correctly per HTTP request because each request gets its own scope. However, hosted services (IHostedService implementations) do not automatically create child scopes — they run in the root DI scope, which behaves like a singleton. The Temporalio.Extensions.Hosting extension registers the worker as a hosted service. If `IMyDatabaseClient` is registered as `AddScoped` but resolved from the root scope (which hosted services do by default), the DI framework creates one instance and reuses it for the entire application lifetime — effectively a singleton. The `AddScopedActivities` extension method is designed to create a new scope per Activity Execution, which is the correct pattern for database clients, but this only works correctly if the underlying `IMyDatabaseClient` is properly scoped and not captured in a root-scope singleton. The documentation's sample explicitly shows the intent: `AddScoped\u003cIMyDatabaseClient, MyDatabaseClient\u003e()` paired with `AddScopedActivities\u003cMyActivities\u003e()` — both must work together correctly, and if your DI configuration inadvertently promotes the scoped client to root scope, shared state corruption follows. In production, engineers must verify that stateful dependencies are genuinely per-execution-scoped, often by inspecting DI container behavior with logging or testing concurrent executions explicitly.",
+      "source_doc": "run-worker-process (develop_dotnet_workers_run-worker-process.html)",
+      "generated_at": "2026-04-22T15:16:41Z"
+    }
+  ]
+}
