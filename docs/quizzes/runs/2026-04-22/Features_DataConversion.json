@@ -5,29 +5,29 @@
       "id": "features_dataconversion_easy_001",
       "category": "Features_DataConversion",
       "difficulty": "easy",
-      "question": "What is the main purpose of a Payload Converter in Temporal?",
+      "question": "What is the main job of a Payload Converter in Temporal?",
       "choices": [
         {
           "key": "A",
-          "text": "To encrypt Workflow history so unauthorized users cannot read sensitive business data"
+          "text": "To encrypt workflow history so that no one can read it at rest"
         },
         {
           "key": "B",
-          "text": "To serialize application objects into a binary Payload for transport and deserialize them back"
+          "text": "To serialize your application objects into a binary Payload and deserialize them back"
         },
         {
           "key": "C",
-          "text": "To route messages between Workers and the Temporal Server across Task Queues"
+          "text": "To route tasks to the correct Worker based on the data type being processed"
         },
         {
           "key": "D",
-          "text": "To validate that Workflow inputs match the expected types before execution begins"
+          "text": "To compress large workflow inputs so they fit within Temporal's size limits"
         }
       ],
       "answer": "B",
-      "explanation": "A Payload Converter's job is serialization: it transforms your application objects (like Python dataclasses or Go structs) into a binary Payload — a format Temporal can transport and store — and then reconstructs the original object on the other side. Without this, Temporal would have no way to pass data between your code and its own internal storage. This is distinct from encryption (handled by a Payload Codec) or routing (handled by Task Queues).",
+      "explanation": "A Payload Converter converts your application's data (like Python objects or Go structs) into a binary form called a Payload — which is what Temporal actually transports between the client, server, and workers. The reverse conversion happens when the data is received on the other end. This is separate from encryption (handled by Payload Codecs) and has nothing to do with routing or compression.",
       "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_easy_002",
@@ -37,669 +37,669 @@
       "choices": [
         {
           "key": "A",
-          "text": "It picks the converter that was registered most recently, giving newer converters priority over older ones"
+          "text": "It picks the converter whose name most closely matches the data type being serialized"
         },
         {
           "key": "B",
-          "text": "It asks each converter in parallel and uses whichever responds first with a successful result"
+          "text": "It runs all converters in parallel and uses the result from the fastest one"
         },
         {
           "key": "C",
-          "text": "It tries each converter in the configured order and uses the first one that returns a non-nil Payload"
+          "text": "It randomly selects a converter and falls back to the next one if an error occurs"
         },
         {
           "key": "D",
-          "text": "It inspects the value's type annotation and jumps directly to the matching converter by name"
+          "text": "It tries each converter in order and uses the first one that successfully handles the value"
         }
       ],
-      "answer": "C",
-      "explanation": "The Composite Data Converter works like a chain of responsibility: it passes the value to each Payload Converter in order. The first converter that successfully handles the value (returning a non-nil Payload) wins. This is why order matters — if your custom converter appears after the JSON converter, the JSON converter may grab the value first. Placing your custom converter before the JSON fallback ensures it gets the first opportunity.",
+      "answer": "D",
+      "explanation": "The Composite Data Converter passes the value through each Payload Converter in sequence. The first converter that returns a non-nil (or successful) Payload 'wins' and is used. This is why ordering matters — if a more general converter like JSON comes before a more specific one, it might handle values that your custom converter was meant to handle first.",
       "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_easy_003",
       "category": "Features_DataConversion",
       "difficulty": "easy",
-      "question": "Which of the following data types does the Python SDK's default Payload Converter support WITHOUT any customization?",
+      "question": "Why does the documentation recommend that Workflow inputs use a single dataclass or Pydantic model instead of multiple separate parameters?",
       "choices": [
         {
           "key": "A",
-          "text": "Pydantic models with nested relationships and validation constraints"
+          "text": "Temporal's SDK only supports a single input parameter and will throw an error with multiple arguments"
         },
         {
           "key": "B",
-          "text": "IPv4 address objects from the standard library's ipaddress module"
+          "text": "A single model lets you add optional fields with defaults later without breaking existing callers"
         },
         {
           "key": "C",
-          "text": "Python dataclasses and anything that can be serialized to JSON"
+          "text": "Using a single model improves serialization speed because fewer conversions are needed"
         },
         {
           "key": "D",
-          "text": "datetime.date and datetime.time objects from the standard library"
+          "text": "Multiple parameters are not supported for Signals and Queries, only for Workflows"
         }
       ],
-      "answer": "C",
-      "explanation": "The default Python converter handles None, bytes, protobuf messages, and anything JSON-serializable — which includes dataclasses, sets, UUIDs, and standard enums. Pydantic models require a separate Pydantic Data Converter. IPv4Address and datetime.date/time also require custom converters or the Pydantic converter. Knowing the default boundaries helps you decide when customization is actually needed.",
+      "answer": "B",
+      "explanation": "While the SDK technically allows multiple parameters, a single dataclass or model is strongly preferred for forward compatibility. When you need to add a new field to a workflow's interface later, you can add it with a default value on the model without changing the method signature — existing callers that don't pass the new field will still work. This is a common practice for evolving APIs safely over time.",
       "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_easy_004",
       "category": "Features_DataConversion",
       "difficulty": "easy",
-      "question": "Why does the Temporal documentation strongly recommend defining Workflow inputs as a single dataclass or model rather than multiple separate parameters?",
+      "question": "What does a Payload Codec do that is different from a Payload Converter?",
       "choices": [
         {
           "key": "A",
-          "text": "Multiple parameters cause Temporal to create separate Payload objects, which increases storage costs significantly"
+          "text": "A Payload Codec transforms already-serialized Payloads (for example, to encrypt or compress them), while a Payload Converter handles the initial object-to-binary serialization"
         },
         {
           "key": "B",
-          "text": "A single structured object lets you add new fields with defaults later without breaking compatibility with older Workflow versions"
+          "text": "A Payload Codec converts application objects to JSON, while a Payload Converter handles binary protobuf encoding"
         },
         {
           "key": "C",
-          "text": "Temporal's serialization layer only supports a single top-level object per message, so multiple parameters will raise an error"
+          "text": "A Payload Codec is used only on the Worker side, while a Payload Converter is used only on the client side"
         },
         {
           "key": "D",
-          "text": "Using multiple parameters prevents Temporal from applying retry logic correctly across Workflow boundaries"
+          "text": "A Payload Codec defines the schema for workflow inputs, while a Payload Converter enforces that schema at runtime"
         }
       ],
-      "answer": "B",
-      "explanation": "This recommendation is about forward compatibility. When you wrap all your inputs in one dataclass, you can add new optional fields (with defaults) in the future and existing callers — including in-flight Workflows — will still work because the extra fields simply get their default values. If you used positional parameters instead, adding a new parameter would break any caller not passing it. This is an important practice for building durable, long-running systems.",
-      "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "answer": "A",
+      "explanation": "The two components operate at different layers. A Payload Converter turns your application objects into Payloads (the serialization step). A Payload Codec then transforms those already-serialized Payloads — for example, to encrypt or compress them before they leave the process. Importantly, the documentation notes these two can be customized independently of each other, giving you flexibility over each layer separately.",
+      "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_easy_005",
       "category": "Features_DataConversion",
       "difficulty": "easy",
-      "question": "What is the difference between a Payload Converter and a Payload Codec in Temporal's data conversion architecture?",
+      "question": "When would you need to create a custom Payload Converter instead of relying on the default one?",
       "choices": [
         {
           "key": "A",
-          "text": "A Payload Converter handles Workflow data while a Payload Codec handles only Activity data; they operate on separate paths"
+          "text": "Whenever your workflow runs for more than a few seconds, since long-running workflows require custom serialization"
         },
         {
           "key": "B",
-          "text": "A Payload Converter transforms types into Payloads (serialization), while a Payload Codec applies further transformations like encryption to already-serialized Payloads"
+          "text": "Only when using the Go SDK, because the Python SDK's default converter handles all types automatically"
         },
         {
           "key": "C",
-          "text": "A Payload Converter runs inside the Worker process while a Payload Codec runs inside the Temporal Server, keeping concerns separated"
+          "text": "When your application uses data types that the default converter does not support natively"
         },
         {
           "key": "D",
-          "text": "They are two names for the same component; the documentation uses both terms interchangeably depending on the SDK language"
+          "text": "Whenever you use Signals or Queries, because those always require explicit serialization configuration"
         }
       ],
-      "answer": "B",
-      "explanation": "These are two distinct layers. The Payload Converter is responsible for serialization — turning your custom types into binary Payloads. The Payload Codec is applied on top of those Payloads for cross-cutting concerns like compression or encryption. Crucially, the docs note they 'can be customized independently,' meaning you can swap in a custom codec without touching your converter, and vice versa. Understanding this layered architecture helps you apply the right tool for each concern.",
+      "answer": "C",
+      "explanation": "The default Data Converter handles many common types out of the box — None, bytes, protobuf messages, and JSON-serializable types in Python, for example. You only need a custom converter when your data includes types outside that supported set, like a custom network address type (IPv4Address) or some other domain-specific object that the default JSON serializer wouldn't know how to handle correctly.",
       "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_easy_006",
       "category": "Features_DataConversion",
       "difficulty": "easy",
-      "question": "When adding a custom Payload Converter to Go's default Data Converter, where should you insert it to ensure it doesn't interfere with existing type handling?",
+      "question": "If you want to add support for a custom type but still keep all the default conversion behavior, what is the recommended approach?",
       "choices": [
         {
           "key": "A",
-          "text": "At the very beginning of the list, so it runs first and can delegate to defaults if the type doesn't match"
+          "text": "Replace the entire default Data Converter with a new one that only contains your custom converter"
         },
         {
           "key": "B",
-          "text": "Immediately after the NilPayloadConverter, so null values are still handled correctly by the custom converter"
+          "text": "Insert your custom converter into the ordered list alongside the default converters, typically before the JSON fallback"
         },
         {
           "key": "C",
-          "text": "Just before the final JSONPayloadConverter, so it handles your specific types before JSON catches everything else"
+          "text": "Subclass the default JSON converter and override its entire serialization logic from scratch"
         },
         {
           "key": "D",
-          "text": "At the very end of the list, after the JSONPayloadConverter, so JSON is always the preferred encoding format"
+          "text": "Configure a separate Data Converter only for the specific workflow that uses the custom type"
         }
       ],
-      "answer": "C",
-      "explanation": "The JSON converter is the 'catch-all' fallback — it will successfully serialize almost anything. Placing your custom converter just before it means your specific types are handled correctly by your custom logic, while all other types fall through to JSON as usual. Putting it at the very end (after JSON) means JSON would always win first. Putting it at the very beginning could cause issues if your converter accidentally matches types it wasn't designed for.",
+      "answer": "B",
+      "explanation": "The recommended pattern is to build a new Composite Data Converter that includes both your custom converter and all the original default converters. By placing your custom converter just before the general JSON converter (which acts as a fallback for everything else), you extend the default behavior rather than replacing it. This way, all the types that worked before still work, and your new type is also supported.",
       "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_med_001",
       "category": "Features_DataConversion",
       "difficulty": "med",
-      "question": "In Go, you want to add a custom Payload Converter that handles a proprietary binary format, but you still want the standard Nil, ByteSlice, ProtoJSON, Proto, and JSON converters to remain active as fallbacks. Which approach correctly achieves this?",
+      "question": "In Go, you want to add a custom Payload Converter but still use the default converters as fallbacks. Which pattern correctly inserts your custom converter just before the default JSON fallthrough?",
       "choices": [
         {
           "key": "A",
-          "text": "Call `converter.NewCompositeDataConverter(YourCustomPayloadConverter())` so Temporal appends the defaults after your converter automatically."
+          "text": "converter.NewCompositeDataConverter(YourCustomPayloadConverter()) — passing only your converter causes Temporal to append the default converters automatically after it"
         },
         {
           "key": "B",
-          "text": "Pass all the standard converters plus your converter to `NewCompositeDataConverter`, inserting `YourCustomPayloadConverter()` before `NewJSONPayloadConverter()` so JSON remains the last-resort fallback."
+          "text": "converter.NewCompositeDataConverter(converter.NewNilPayloadConverter(), converter.NewByteSlicePayloadConverter(), converter.NewProtoJSONPayloadConverter(), converter.NewProtoPayloadConverter(), YourCustomPayloadConverter(), converter.NewJSONPayloadConverter()) — explicitly list all defaults with your converter placed before NewJSONPayloadConverter"
         },
         {
           "key": "C",
-          "text": "Register `YourCustomPayloadConverter()` separately via `client.Options.CustomConverters` — the CompositeDataConverter is only needed when replacing all defaults."
+          "text": "converter.NewCompositeDataConverter(converter.NewJSONPayloadConverter(), YourCustomPayloadConverter()) — JSON must come first so your converter can override specific types while JSON handles the rest"
         },
         {
           "key": "D",
-          "text": "Wrap the existing default Data Converter in a Payload Codec instead; Payload Converters cannot be combined with the default set once a custom one is introduced."
+          "text": "converter.NewCompositeDataConverter(YourCustomPayloadConverter(), converter.NewNilPayloadConverter(), converter.NewByteSlicePayloadConverter(), converter.NewProtoJSONPayloadConverter(), converter.NewProtoPayloadConverter(), converter.NewJSONPayloadConverter()) — placing your converter first ensures it is tried before any built-in converter"
         }
       ],
       "answer": "B",
-      "explanation": "To keep the defaults while adding a custom converter, you explicitly list all converters in `NewCompositeDataConverter`, placing your custom one just before `NewJSONPayloadConverter()`. The JSON converter is the final catch-all, so anything your converter doesn't handle falls through to it. Option A is wrong — passing only your converter replaces all defaults rather than extending them. Option C is wrong — there is no `CustomConverters` field; the Composite Data Converter is the mechanism for combining multiple converters. Option D is wrong — Payload Codecs and Payload Converters are independent layers; you can absolutely combine custom converters with the defaults.",
+      "explanation": "The Go SDK's CompositeDataConverter applies converters in the exact order they are listed, stopping at the first one that returns a non-nil Payload. To keep the default behavior intact while adding a custom converter, you must explicitly list all the default converters and insert yours just before NewJSONPayloadConverter — the JSON converter is intentionally the 'catch-all' fallthrough. Option A is wrong because passing only your converter discards all defaults; the SDK does not append them automatically. Option C reverses the order so JSON would swallow everything before your converter ever runs. Option D puts your converter first, meaning it would be tried before Nil, ByteSlice, and Proto converters, which could cause unexpected behavior for those types.",
       "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_med_002",
       "category": "Features_DataConversion",
       "difficulty": "med",
-      "question": "During serialization in a CompositeDataConverter (Go), the converter tries each registered Payload Converter in order. What determines which converter actually handles a given value?",
+      "question": "In the Go SDK's default Data Converter, in what order are the built-in Payload Converters applied?",
       "choices": [
         {
           "key": "A",
-          "text": "The converter with the highest priority score registered at startup is always chosen, regardless of insertion order."
+          "text": "JSON → ProtoJSON → Proto → ByteSlice → Nil, so that the most common type (JSON) is tried first to minimize conversion overhead"
         },
         {
           "key": "B",
-          "text": "Every registered converter processes the value and the results are merged; the last non-nil Payload wins."
+          "text": "Nil → JSON → ByteSlice → ProtoJSON → Proto, prioritizing nil and generic JSON before binary formats"
         },
         {
           "key": "C",
-          "text": "The first converter in the list whose `ToPayload` returns a non-nil Payload handles the value; subsequent converters are skipped."
+          "text": "ProtoJSON → Proto → Nil → ByteSlice → JSON, because protobuf types are more common in production workflows"
         },
         {
           "key": "D",
-          "text": "Temporal inspects the value's Go type at compile time and routes it to the matching converter by type name, ignoring list order."
+          "text": "Nil → ByteSlice → ProtoJSON → Proto → JSON, with JSON last so it acts as the catch-all fallthrough for any otherwise unhandled type"
         }
       ],
-      "answer": "C",
-      "explanation": "The CompositeDataConverter iterates through converters in the order they were provided and stops as soon as one returns a non-nil Payload. This is why order matters — if a more-general converter (like JSON) is placed before a specific one, it will intercept values that the specific converter was meant to handle. Option A is wrong — there is no priority score; order is the only mechanism. Option B is wrong — processing stops at the first successful converter, not after all of them. Option D is wrong — the selection is purely runtime and order-based, not compile-time type routing.",
+      "answer": "D",
+      "explanation": "The Go SDK default Data Converter applies converters in this exact sequence: NilPayloadConverter, ByteSlicePayloadConverter, ProtoJSONPayloadConverter, ProtoPayloadConverter, and finally JSONPayloadConverter. JSON is intentionally last because it can handle almost any serializable type — placing it last makes it the catch-all so more specific converters (Nil, byte slices, Protobuf) get first priority. Option A reverses the order. Option B puts JSON second, skipping ByteSlice and Proto first. Option C starts with Proto types, which is not the defined default order.",
       "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_med_003",
       "category": "Features_DataConversion",
       "difficulty": "med",
-      "question": "A Python developer wants to use `datetime.datetime` objects as Workflow parameters. What is required to make this work correctly with the Temporal Python SDK?",
+      "question": "In Python, you need to use `datetime.date` and `datetime.datetime` objects as Workflow parameters. Which approach correctly enables this?",
       "choices": [
         {
           "key": "A",
-          "text": "No changes are needed — `datetime.datetime` is JSON-serializable by default, so the `DefaultPayloadConverter` handles it out of the box."
+          "text": "Use the default DataConverter — datetime types are JSON-serializable via `json.dumps()` and are natively handled by the DefaultPayloadConverter without any extra configuration"
         },
         {
           "key": "B",
-          "text": "Write a custom `EncodingPayloadConverter` that serializes the datetime to an ISO string, then register it before the default JSON converter."
+          "text": "Write a custom EncodingPayloadConverter that serializes datetime objects to ISO strings, register it before the default JSON converter in a CompositePayloadConverter"
         },
         {
           "key": "C",
-          "text": "Use the `pydantic_data_converter` when creating the client, since `datetime.date`, `datetime.time`, and `datetime.datetime` are only supported with the Pydantic Data Converter."
+          "text": "Use the Pydantic Data Converter by installing Pydantic and passing `pydantic_data_converter` as the `data_converter` argument when creating the Client"
         },
         {
           "key": "D",
-          "text": "Wrap the datetime in a protobuf `Timestamp` message, which the default converter already knows how to handle via `google.protobuf.message.Message`."
+          "text": "Wrap datetime values in a dataclass and use the default DataConverter, since dataclasses are supported and their fields are resolved through the JSON converter"
         }
       ],
       "answer": "C",
-      "explanation": "The documentation explicitly states that `datetime.date`, `datetime.time`, and `datetime.datetime` can only be used with the Pydantic Data Converter. The `DefaultPayloadConverter` does not natively support these types. To use it, you install Pydantic and pass `pydantic_data_converter` in `Client(data_converter=...)`. Option A is wrong — `datetime.datetime` is not directly serializable by `json.dumps()` without a custom encoder, and the default converter does not handle it. Option B would technically work but is unnecessary given the built-in Pydantic converter. Option D would work technically but is a significant over-engineering compared to using the provided Pydantic converter.",
+      "explanation": "The documentation explicitly states that `datetime.date`, `datetime.time`, and `datetime.datetime` can *only* be used with the Pydantic Data Converter. They are not handled by the DefaultPayloadConverter. Option A is wrong — although some types are JSON-serializable, datetime objects are not among the types natively supported by the default converter. Option B would work technically but is unnecessary extra effort when the Pydantic Data Converter already supports the full datetime module. Option D is also incorrect — wrapping a datetime in a dataclass doesn't change how the inner datetime field is serialized; the default JSON converter still can't handle it.",
       "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_med_004",
       "category": "Features_DataConversion",
       "difficulty": "med",
-      "question": "In Python, you have an `IPv4Address` custom type that needs to work inside collections like `List[IPv4Address]` and `Optional[IPv4Address]`, not just as a top-level argument. What is the recommended approach?",
+      "question": "A Python developer implements a custom `EncodingPayloadConverter` for `IPv4Address` types but notices the type doesn't work when used inside a `List[IPv4Address]` parameter. What is the recommended fix?",
       "choices": [
         {
           "key": "A",
-          "text": "Add a standalone `EncodingPayloadConverter` for `IPv4Address` at the front of the converter list so it intercepts IPv4Address values before any other converter runs."
+          "text": "Register the `IPv4AddressEncodingPayloadConverter` with a higher priority index in the CompositePayloadConverter so it intercepts list elements before the JSON converter processes the outer list"
         },
         {
           "key": "B",
-          "text": "Customize the existing JSON converter by providing a custom `JSONEncoder` and `JSONTypeConverter`, then replace the default `JSONPlainPayloadConverter` with your customized version."
+          "text": "Customize the JSON converter by providing a custom `JSONEncoder` and `JSONTypeConverter`, then replace the default `JSONPlainPayloadConverter` with the customized version in the CompositePayloadConverter"
         },
         {
           "key": "C",
-          "text": "Subclass `DefaultPayloadConverter` and override its `to_payload` method to check for `IPv4Address` types before delegating to the parent implementation."
+          "text": "Switch to the Pydantic Data Converter, which natively handles `IPv4Address` inside collections because Pydantic resolves all standard library types"
         },
         {
           "key": "D",
-          "text": "Register a Payload Codec that intercepts payloads with the JSON encoding and post-processes the data to decode embedded IPv4Address strings into objects."
+          "text": "Convert the `List[IPv4Address]` to `List[str]` at the Workflow boundary and reconstruct the IPv4Address objects inside the Workflow function after deserialization"
         }
       ],
       "answer": "B",
-      "explanation": "When a custom type must work inside collections, optionals, and other composite types, you need to extend the JSON converter itself — not add a separate encoding converter. The JSON converter is the last in the chain and handles all nested type resolution. You provide a custom `JSONEncoder` (for serialization) and a `JSONTypeConverter` (for deserialization with type hints), then swap out the `JSONPlainPayloadConverter` in the defaults list. Option A creates a separate encoding layer that won't help when the JSON converter processes a `list` containing IPv4Addresses — the list itself will be handed to JSON, not the elements individually. Option C is not how the CompositePayloadConverter extensibility model works. Option D conflates Payload Codecs (for encryption/compression) with type conversion logic.",
+      "explanation": "The documentation explicitly calls out this exact scenario: when you need a custom type to work inside lists, unions, and other collections, you should customize the existing JSON converter rather than adding a separate encoding converter. The JSON converter handles complex nested types, so you need to extend it with a custom `JSONEncoder` for serialization and a `JSONTypeConverter` for deserialization. Option A won't help because the issue is that the JSON converter sees a list and recursively serializes elements using its own logic — a separate encoding converter never gets a chance to handle inner elements. Option C is incorrect because `IPv4Address` is not a Pydantic or standard library type that the Pydantic Data Converter covers by default. Option D works around the problem but is an ugly hack that pollutes Workflow interfaces.",
       "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_med_005",
       "category": "Features_DataConversion",
       "difficulty": "med",
-      "question": "Which statement correctly describes the relationship between a Payload Converter and a Payload Codec in Temporal's data conversion architecture?",
+      "question": "Which statement accurately describes the relationship between a Payload Converter and a Payload Codec in Temporal's data conversion architecture?",
       "choices": [
         {
           "key": "A",
-          "text": "A Payload Converter and a Payload Codec serve the same purpose and cannot be used together — you must choose one or the other per client."
+          "text": "A Payload Codec replaces the Payload Converter — once you configure a codec (e.g., for encryption), Temporal bypasses the converter layer entirely and the codec handles both serialization and encoding"
         },
         {
           "key": "B",
-          "text": "A Payload Codec wraps a Payload Converter and is required whenever you use a custom Payload Converter; the default JSON converter bypasses the Codec layer."
+          "text": "Payload Converters and Payload Codecs operate at the same layer and are configured together as a single unit; you cannot customize one without also replacing the other"
         },
         {
           "key": "C",
-          "text": "Payload Converters and Payload Codecs are independent layers that can each be customized separately; a custom Converter does not require a custom Codec and vice versa."
+          "text": "Payload Converters and Payload Codecs can be customized independently of each other — converters handle type serialization while codecs handle encoding/compression/encryption of the resulting Payload bytes"
         },
         {
           "key": "D",
-          "text": "Payload Codecs run first to decode raw bytes before the Payload Converter attempts type conversion, so a Codec is mandatory for any non-JSON type."
+          "text": "A Payload Codec is only relevant for Protobuf types; for JSON workflows the Payload Converter alone handles both serialization and any required encryption or compression"
         }
       ],
       "answer": "C",
-      "explanation": "Both the Go and Python documentation explicitly state that 'Payload Converters can be customized independently of a Payload Codec.' The two layers serve different purposes: Payload Converters handle type serialization (Go struct → Payload), while Payload Codecs handle transformation of already-serialized Payloads (e.g., encryption or compression). You can use a custom converter with the default (no) codec, or add an encryption codec without touching the converters. Option A is wrong — they can be used together and are independent. Option B is wrong — a Codec is not required when customizing converters. Option D is wrong — a Codec is optional and is not a prerequisite for handling non-JSON types.",
+      "explanation": "Both the Go and Python documentation state explicitly that 'Payload Converters can be customized independently of a Payload Codec.' Converters are responsible for transforming application types into the Payload format (serialization), while Codecs operate on the resulting Payload bytes for purposes like compression or encryption. This separation lets you, for example, add a custom type converter without touching your encryption codec, or add an encryption codec without changing your serialization logic. Option A is wrong — codecs don't replace converters; they operate at a different layer. Option B is wrong because they are independently customizable. Option D is wrong because Codecs apply to all Payload types, not just Protobuf.",
       "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_med_006",
       "category": "Features_DataConversion",
       "difficulty": "med",
-      "question": "A Python team has multiple Workflows that each accept several positional parameters of different types. What does the Temporal Python SDK documentation recommend to ensure forward compatibility as these signatures evolve?",
+      "question": "In Python, a team defines a Workflow signal with three separate parameters: `(user_id: str, action: str, metadata: dict)`. What does the documentation recommend instead, and why?",
       "choices": [
         {
           "key": "A",
-          "text": "Define each Workflow with `*args` and `**kwargs` so that new parameters can be appended without modifying existing callers."
+          "text": "Keep three parameters — Python's type hints allow the default converter to handle each individually, and multiple parameters improve readability in handler signatures"
         },
         {
           "key": "B",
-          "text": "Use a single `dataclass` or Pydantic model as the sole parameter, so fields with default values can be added later without breaking compatibility."
+          "text": "Combine them into a single `dataclass` or Pydantic model parameter, so fields with defaults can be added later without breaking backward compatibility with callers using the old signature"
         },
         {
           "key": "C",
-          "text": "Version each Workflow function name (e.g., `my_workflow_v2`) when the signature changes, keeping the old version active until all in-flight executions complete."
+          "text": "Combine them into a `dict` parameter — dicts are JSON-serializable by default and allow schema evolution without changing the function signature"
         },
         {
           "key": "D",
-          "text": "Keep all parameters as JSON-compatible primitives (`str`, `int`, `bool`) to guarantee the default converter handles them through all SDK versions."
+          "text": "Use `*args` and `**kwargs` in the signal definition so that the number and names of parameters can evolve freely as requirements change over time"
         }
       ],
       "answer": "B",
-      "explanation": "The documentation explicitly recommends using a single `dataclass` or Pydantic model parameter for Workflows, Updates, Signals, and Queries. This pattern lets you add new optional fields (with defaults) to the model without breaking existing callers that send the old schema. The same advice applies to return values. Option A is fragile and bypasses type safety — Temporal's type system works with concrete types. Option C is a valid Temporal versioning pattern for logic changes but is heavier than necessary for a parameter addition. Option D unnecessarily restricts the data model and doesn't address schema evolution.",
+      "explanation": "The Python documentation explicitly recommends using a single `dataclass` or Pydantic model parameter for Workflows, Updates, Signals, and Queries. The reason is schema evolution: if you add a new optional field with a default value to a dataclass, existing callers that don't send that field still work correctly. With multiple positional parameters, adding a new parameter is a breaking change. Option A is wrong because it ignores the compatibility concern. Option C works at the serialization level but a raw `dict` loses type safety and doesn't benefit from Temporal's type-hint-based deserialization. Option D using `*args/**kwargs` is not a recommended Temporal pattern and Temporal's SDK can't apply type hints for deserialization to variadic arguments.",
       "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_med_007",
       "category": "Features_DataConversion",
       "difficulty": "med",
-      "question": "You are using the Temporal Python SDK with a custom `EncodingPayloadConverter` for `IPv4Address`. In `to_payload`, your implementation returns `None` for any value that is not an `IPv4Address`. Why is returning `None` specifically the correct behavior?",
+      "question": "When implementing a custom `EncodingPayloadConverter` in Python, what should `to_payload()` return when the converter does NOT handle the given value?",
       "choices": [
         {
           "key": "A",
-          "text": "Returning `None` signals an error condition, causing Temporal to retry serialization with exponential backoff until a compatible converter is found."
+          "text": "Raise a `TypeError` so the CompositePayloadConverter knows to stop trying further converters and surface the error to the caller immediately"
         },
         {
           "key": "B",
-          "text": "Returning `None` tells the `CompositePayloadConverter` that this converter cannot handle the value, so it moves on to the next converter in the list."
+          "text": "Return an empty `Payload()` object with no data, signaling that the value is intentionally left as an empty message"
         },
         {
           "key": "C",
-          "text": "Returning `None` serializes the value as a null Payload, which is the correct representation for unsupported types in Temporal's binary protocol."
+          "text": "Call `super().to_payload(value)` to delegate to the base EncodingPayloadConverter's default handling logic"
         },
         {
           "key": "D",
-          "text": "Returning `None` is only correct for the last converter in the list; all other converters must raise a `TypeError` to skip the value properly."
+          "text": "Return `None` so the CompositePayloadConverter knows to pass the value to the next converter in the sequence"
         }
       ],
-      "answer": "B",
-      "explanation": "In Temporal's CompositePayloadConverter, each `EncodingPayloadConverter.to_payload` is tried in order. When a converter returns `None`, it signals 'I don't handle this type' and the composite converter proceeds to the next one. This is how the chain-of-responsibility pattern works: only the converter that returns a non-None Payload actually claims the value. Option A is wrong — None is not an error; it's a 'pass' signal. Option C is wrong — None means 'skip me', not 'encode as null'; the NilPayloadConverter handles actual Python `None` values. Option D is wrong — all converters in the list use None to indicate they cannot handle a value; raising an exception would be an error path.",
+      "answer": "D",
+      "explanation": "Looking at the Python example in the documentation, the `to_payload` method returns `None` when the value is not an instance of the handled type (e.g., `IPv4Address`). This signals to the `CompositePayloadConverter` that this converter doesn't handle the value, and the composite will move on to the next converter in the sequence. This is the same pattern used in Go. Option A is wrong — raising an exception would terminate conversion entirely rather than allowing fallthrough. Option B is wrong — an empty Payload is a valid result that would be accepted as the serialized form of the value, not a 'skip' signal. Option C is wrong — the base `EncodingPayloadConverter` doesn't implement `to_payload` in a way that handles arbitrary types.",
       "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_med_008",
       "category": "Features_DataConversion",
       "difficulty": "med",
-      "question": "In the Go SDK's default Data Converter, `NewProtoJSONPayloadConverter` appears before `NewProtoPayloadConverter` in the converter list. What is the practical consequence of this ordering?",
+      "question": "A team wants to use Pydantic models in their Python Temporal workflows. After running `pip install pydantic`, they create a Client but forget to configure the data converter. What happens when a Pydantic model is passed as a Workflow argument?",
       "choices": [
         {
           "key": "A",
-          "text": "Protobuf messages are always encoded as human-readable JSON first; binary proto encoding is only used when the JSON converter explicitly rejects the message."
+          "text": "It works without issue — Pydantic models are dataclasses under the hood and the default JSON converter handles them transparently via `json.dumps()`"
         },
         {
           "key": "B",
-          "text": "The two converters are interchangeable in the default list; Temporal routes Protobuf messages to `NewProtoPayloadConverter` regardless of their position."
+          "text": "Serialization succeeds because Pydantic models are JSON-serializable, but deserialization likely fails or produces a plain `dict` instead of the Pydantic model instance on the other side"
         },
         {
           "key": "C",
-          "text": "`NewProtoPayloadConverter` takes precedence because binary encoding is more efficient, and `NewProtoJSONPayloadConverter` only activates for string-typed proto fields."
+          "text": "Temporal raises a configuration error at startup because it detects Pydantic is installed but `pydantic_data_converter` is not set"
         },
         {
           "key": "D",
-          "text": "Both converters attempt to process every value simultaneously, and Temporal picks the smaller of the two resulting Payloads to minimize network overhead."
+          "text": "The default converter silently falls back to pickle serialization for Pydantic models, which works but may cause issues across different Python versions"
         }
       ],
-      "answer": "A",
-      "explanation": "Because the CompositeDataConverter tries converters in the order they are registered and stops at the first non-nil result, placing `NewProtoJSONPayloadConverter` before `NewProtoPayloadConverter` means Protobuf messages are encoded as JSON (human-readable, cross-language compatible) by default. The binary `NewProtoPayloadConverter` would only be reached if the JSON one returned nil for a particular message — which it won't for standard proto messages. This ordering is intentional: JSON-encoded Protobuf is easier to inspect in the Temporal UI and is readable by other language SDKs. Option B is wrong — ordering is the sole routing mechanism. Option C is wrong — there is no efficiency tie-breaker; the first match wins. Option D is wrong — converters run sequentially and the first success terminates the chain.",
-      "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "answer": "B",
+      "explanation": "Pydantic models can serialize to JSON (Pydantic provides `.model_dump()` and `.dict()`), but the default Temporal `DefaultPayloadConverter` uses standard `json.dumps()` logic combined with dataclass handling — it is not aware of Pydantic's specific type system. On deserialization, Temporal won't know to reconstruct a Pydantic model from the raw JSON dict, so you'd likely get a plain `dict` back rather than a typed model instance. The documentation makes it explicit that you must set `pydantic_data_converter` on the Client to properly use Pydantic models. Option A is wrong because Pydantic models are not standard Python dataclasses. Option C is wrong — Temporal does not inspect installed packages at startup. Option D is wrong — the default converter never uses pickle.",
+      "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_hard_001",
       "category": "Features_DataConversion",
       "difficulty": "hard",
-      "question": "Your Go-based Temporal worker handles workflow inputs that are either protobuf messages or a custom domain type. You build a CompositeDataConverter with this order: [NilPayloadConverter, ByteSlicePayloadConverter, YourCustomPayloadConverter, ProtoJSONPayloadConverter, ProtoPayloadConverter, JSONPayloadConverter]. During load testing you observe that protobuf messages are now serialized by YourCustomPayloadConverter instead of ProtoJSONPayloadConverter, producing unexpected binary output in the Temporal Web UI. What is the root cause?",
+      "question": "Your Go Temporal workers handle a mix of Protobuf messages and custom domain objects. After deploying a new Composite Data Converter, you notice that Protobuf payloads are being serialized as generic JSON blobs instead of compact binary proto. Inspecting your converter setup, you find it is configured as: `NewCompositeDataConverter(NewProtoJSONPayloadConverter(), YourCustomPayloadConverter(), NewProtoPayloadConverter(), NewJSONPayloadConverter())`. What is the most likely cause?",
       "choices": [
         {
           "key": "A",
-          "text": "ProtoJSONPayloadConverter must always be first in the list; it is a special built-in that the SDK checks before any user-supplied converter regardless of position."
+          "text": "`NewProtoJSONPayloadConverter()` comes before `NewProtoPayloadConverter()` in the chain, so Protobuf messages match the JSON proto converter first and are never passed to the binary proto converter."
         },
         {
           "key": "B",
-          "text": "YourCustomPayloadConverter returns a non-nil Payload for protobuf messages because it likely falls back to a generic type check, and since it is positioned before ProtoJSONPayloadConverter the Data Converter stops trying further converters once it succeeds."
+          "text": "The custom `YourCustomPayloadConverter()` intercepts all non-nil values before the Protobuf binary converter can run, causing Protobuf messages to fall through to JSON."
         },
         {
           "key": "C",
-          "text": "The CompositeDataConverter in Go applies all converters in parallel and picks the result with the smallest byte size, so placing a custom converter early has no effect on which converter wins for protobuf types."
+          "text": "`NewCompositeDataConverter` ignores Protobuf-specific converters when a custom converter is present, always falling back to JSON for structured types."
         },
         {
           "key": "D",
-          "text": "ByteSlicePayloadConverter intercepts protobuf messages because protobuf types implement the io.Reader interface, so the position of YourCustomPayloadConverter is irrelevant to the observed behavior."
+          "text": "The absence of `NewNilPayloadConverter()` as the first entry causes the serialization chain to short-circuit before reaching the binary proto converter."
         }
       ],
-      "answer": "B",
-      "explanation": "The CompositeDataConverter iterates through the list in order and stops at the first converter that returns a non-nil Payload. If YourCustomPayloadConverter handles protobuf messages (e.g., because it uses a broad type assertion or reflect-based check), it will claim those values before ProtoJSONPayloadConverter ever gets a chance. The fix is to place YourCustomPayloadConverter after the proto converters, mirroring the recommended pattern in the docs: [Nil, ByteSlice, ProtoJSON, Proto, YourCustom, JSON]. Understanding this 'first match wins' rule is essential when composing converters — wrong ordering silently changes serialization format, which can also break replay if the worker was previously serializing with a different converter.",
+      "answer": "A",
+      "explanation": "The Composite Data Converter tries each Payload Converter in order and stops at the first one that returns a non-nil Payload. `NewProtoJSONPayloadConverter()` handles Protobuf messages and returns a non-nil Payload (as JSON), so `NewProtoPayloadConverter()` (binary) is never reached. To get compact binary proto, `NewProtoPayloadConverter()` must appear before `NewProtoJSONPayloadConverter()` in the chain. This ordering sensitivity is a frequent source of serialization surprises in production.",
       "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_hard_002",
       "category": "Features_DataConversion",
       "difficulty": "hard",
-      "question": "A Python workflow team upgrades their serialization layer to use `pydantic_data_converter` so they can pass Pydantic models as workflow arguments. After deploying, they notice that existing running workflows — whose history contains payloads encoded with the default `DataConverter` — are failing during replay with deserialization errors. What is the most accurate explanation for this failure?",
+      "question": "A Python Temporal workflow uses `datetime.date` fields in its input dataclass. Workers running the default `DefaultPayloadConverter` consistently fail to deserialize these fields on receipt, raising a type conversion error. The workflow worked fine with plain `str` fields. What change resolves this without altering the workflow's data model?",
       "choices": [
         {
           "key": "A",
-          "text": "Pydantic models serialize to a different binary encoding than the default JSON converter, so replaying against old history events produces payloads that the new Pydantic converter cannot read because the encoding metadata key differs."
+          "text": "Register a custom `EncodingPayloadConverter` that encodes `datetime.date` as ISO-8601 strings and add it ahead of the default converters in a `CompositePayloadConverter`."
         },
         {
           "key": "B",
-          "text": "The `pydantic_data_converter` requires Pydantic v1; since the team is on Pydantic v2, the converter silently falls back to the default converter and raises a version mismatch error during replay."
+          "text": "Switch to using `datetime.datetime` instead of `datetime.date`, since the default converter only supports the full datetime type from the standard library."
         },
         {
           "key": "C",
-          "text": "Replay is unaffected by Data Converter changes because Temporal replays only the deterministic commands, not the actual payload bytes; the error must be caused by a non-deterministic code change introduced alongside the upgrade."
+          "text": "Configure the client with `pydantic_data_converter`, since `datetime.date`, `datetime.time`, and `datetime.datetime` are only supported by the Pydantic Data Converter."
         },
         {
           "key": "D",
-          "text": "Temporal workers always ignore the Data Converter setting when replaying history and use whatever converter is currently registered in the namespace's server-side configuration, so the client-side change has no effect."
+          "text": "Annotate the dataclass field with `temporalio.common.RawValue` so the default JSON converter treats it as a passthrough string, avoiding the type resolution issue."
         }
       ],
-      "answer": "A",
-      "explanation": "When Temporal replays a workflow, it re-deserializes the payloads stored in history using the worker's currently configured Data Converter. The default DataConverter serializes objects as plain JSON with encoding metadata 'json/plain', while pydantic_data_converter may produce payloads with different encoding metadata or structure. If the new converter cannot decode payloads produced by the old one (or vice versa), replay will fail. The safe migration path is to ensure the new converter can read old payloads before deploying — or to only apply the new converter to new workflow executions via versioning. This is a concrete example of why Data Converter changes are a breaking change for in-flight workflows, not just new ones.",
+      "answer": "C",
+      "explanation": "The documentation explicitly states that `datetime.date`, `datetime.time`, and `datetime.datetime` can only be used with the Pydantic Data Converter. The default `DefaultPayloadConverter` does not natively handle these types, even though it handles many JSON-serializable types. Installing Pydantic and passing `pydantic_data_converter` when creating the Client is the documented solution. This is a common production surprise when developers assume Python's standard datetime types are universally supported.",
       "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_hard_003",
       "category": "Features_DataConversion",
       "difficulty": "hard",
-      "question": "A Python developer needs to pass `IPv4Address` values both as standalone arguments AND as elements inside `List[IPv4Address]` return types from activities. They implement an `EncodingPayloadConverter` that handles `IPv4Address` directly and prepend it before the default converters. In production, standalone `IPv4Address` arguments work, but `List[IPv4Address]` return values fail deserialization. What design change would fix this?",
+      "question": "You need IPv4Address values to work correctly inside `Optional[IPv4Address]` and `List[IPv4Address]` type hints in a Python workflow. You implement a custom `EncodingPayloadConverter` for IPv4Address and register it at the front of the converter chain. During testing, deserialization of `Optional[IPv4Address]` fields returns raw strings instead of `IPv4Address` objects. What is the root cause?",
       "choices": [
         {
           "key": "A",
-          "text": "Switch the custom converter to use binary proto encoding instead of text encoding, because the JSON converter used for list deserialization only supports proto-encoded nested types."
+          "text": "The custom `EncodingPayloadConverter` is never called for nested or parameterized types; only the outermost type's converter is invoked during deserialization."
         },
         {
           "key": "B",
-          "text": "Register the converter on both the worker and the client separately; the current issue is that the client is using the default converter while the worker uses the custom one, causing asymmetric encoding and decoding."
+          "text": "Collection and union type hints are resolved by the JSON converter, not by earlier encoding converters. Without customizing the JSON converter via a `JSONTypeConverter`, the inner type hint is not dispatched to your converter."
         },
         {
           "key": "C",
-          "text": "Customize the existing JSON converter by supplying a custom JSONEncoder and JSONTypeConverter, rather than adding a separate encoding converter, because collection types are deserialized through the JSON converter's type-hinted path, not through the top-level converter dispatch."
+          "text": "Pydantic's type system is required for any optional or collection type resolution; the `CompositePayloadConverter` alone cannot handle parameterized generics."
         },
         {
           "key": "D",
-          "text": "Increase the converter's encoding priority by placing it after `JSONPlainPayloadConverter`; lists are handled by converters positioned later in the chain, so the current early position causes it to be skipped."
+          "text": "The `from_payload` method on the custom converter raises an assertion error when `type_hint` is `None`, which happens for wrapped types like `Optional`, causing silent fallback to string."
         }
       ],
-      "answer": "C",
-      "explanation": "When a collection like `List[IPv4Address]` is deserialized, Temporal first dispatches the outer List payload to the JSON converter (since lists are JSON-serializable). The JSON converter then recursively resolves element types using its `JSONTypeConverter` pipeline. A standalone `EncodingPayloadConverter` is invoked only for top-level payloads, so it never sees the individual `IPv4Address` elements inside a list. The fix is to customize the JSON converter itself — provide a `JSONEncoder` for serialization and a `JSONTypeConverter` for deserialization so the JSON converter knows how to handle `IPv4Address` when it appears as a nested type hint. The docs explicitly call this out: 'If you need your custom type to work in lists, unions, and other collections, customize the existing JSON converter instead of adding a new encoding converter.'",
+      "answer": "B",
+      "explanation": "When a value is part of a collection, union, or optional type, the JSON converter is responsible for resolving the inner type hint—not the earlier encoding converters. A standalone `EncodingPayloadConverter` placed first in the chain handles top-level values of that type, but collection members are serialized as JSON and must be handled at the JSON layer. The fix is to customize the JSON converter using a `JSONTypeConverter` (and optionally a `JSONEncoder`), as shown in the documentation's IPv4Address example. This is a subtle but critical distinction between the two customization approaches.",
       "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_hard_004",
       "category": "Features_DataConversion",
       "difficulty": "hard",
-      "question": "An engineering team wants to add encryption to all Temporal payloads using AES-256 without changing how their Go workflow arguments are serialized (they want to keep using JSON). They are debating whether to write a custom Payload Converter or a custom Payload Codec. Which approach is correct and why?",
+      "question": "A team adds a new custom Payload Converter to their Go Temporal workers and passes it as the sole argument to `NewCompositeDataConverter(YourCustomPayloadConverter())`. After deploying, workflows that previously accepted standard structs (serialized as JSON) begin failing during replay because existing history events can no longer be deserialized. What is the most direct explanation?",
       "choices": [
         {
           "key": "A",
-          "text": "They should write a custom Payload Converter that wraps the default JSONPayloadConverter and applies AES-256 encryption inside `ToPayload`, because encryption must happen at the serialization layer to prevent raw data from ever appearing in a Payload object."
+          "text": "Removing `NewNilPayloadConverter()` from the chain causes `nil` values already stored in history to be passed to `YourCustomPayloadConverter()`, which panics and breaks replay."
         },
         {
           "key": "B",
-          "text": "They should write a custom Payload Codec, because Payload Converters and Payload Codecs are independently composable — the Codec layer transforms already-serialized Payloads (e.g., encrypts/decrypts bytes) without altering the serialization format, keeping JSON serialization intact."
+          "text": "Replacing the entire default converter chain means `NewJSONPayloadConverter()` is no longer present, so history payloads encoded with JSON encoding cannot be deserialized by the new chain."
         },
         {
           "key": "C",
-          "text": "They should write a custom Payload Converter and set it as the sole converter in the CompositeDataConverter, replacing JSON entirely, because Payload Codecs only handle compression and cannot perform encryption."
+          "text": "Temporal validates converter chains on worker startup and rejects configurations missing the default converters, raising a configuration error before replay begins."
         },
         {
           "key": "D",
-          "text": "They should configure the Temporal server's built-in AES encryption via a namespace-level setting, since client-side encryption is not supported in the Go SDK's Payload Converter or Codec architecture."
+          "text": "The custom converter attempts to deserialize the binary proto metadata header present in all history events, causing a type assertion failure during replay."
         }
       ],
       "answer": "B",
-      "explanation": "Temporal's converter architecture intentionally separates two concerns: (1) Payload Converters handle serialization — converting Go/Python types to a binary Payload; (2) Payload Codecs handle transformation of the already-serialized Payload bytes, such as encryption or compression. The docs state explicitly: 'Payload Converters can be customized independently of a Payload Codec.' A Payload Codec receives the serialized Payload from the converter, encrypts the bytes, and returns a new Payload — the JSON structure is never altered. This separation means you can combine any serialization format with any encoding pipeline (encrypt, compress, etc.) without coupling them. Using a Converter for encryption would conflate concerns and complicate the decoding path.",
+      "explanation": "History events are immutable and stored with the encoding chosen at the time they were written. If existing events were serialized using the JSON encoding (via `NewJSONPayloadConverter()`), removing that converter from the chain means the workers can no longer deserialize those payloads during replay, breaking determinism. The documentation explicitly warns about this: when adding a custom converter, you should keep the defaults (especially `NewJSONPayloadConverter()` as a catch-all) and insert your custom converter just before the JSON fallthrough. Replacing the entire chain with a single custom converter is a common but dangerous migration mistake.",
       "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_hard_005",
       "category": "Features_DataConversion",
       "difficulty": "hard",
-      "question": "Your Python Temporal application uses dataclasses as workflow input parameters. A developer proposes splitting a large workflow input into multiple positional parameters to make the call site cleaner. The tech lead pushes back, citing compatibility concerns. Which statement best explains the tech lead's concern in the context of Temporal's data handling?",
+      "question": "A Python workflow is defined with three separate input parameters of different types. Over time, the team needs to add new optional fields. After adding a new parameter at the end of the function signature with a default value, older workflow executions that were serialized before the change start failing during replay. What practice, recommended in the Temporal documentation, would have prevented this?",
       "choices": [
         {
           "key": "A",
-          "text": "Multiple positional parameters cannot be serialized by the default DataConverter because it only handles a single JSON object per payload slot; using multiple parameters will cause a serialization error at workflow start."
+          "text": "Using `*args` and `**kwargs` in workflow definitions to avoid positional binding, allowing the serializer to skip unrecognized parameters without error."
         },
         {
           "key": "B",
-          "text": "Using multiple positional parameters makes it harder to add new optional fields in the future without breaking backward compatibility with running workflows and clients on older code, whereas a single dataclass allows adding fields with defaults without changing the serialized structure in a breaking way."
+          "text": "Defining workflows, signals, queries, and updates with a single `dataclass` or Pydantic model parameter, so new optional fields can be added without breaking serialization compatibility."
         },
         {
           "key": "C",
-          "text": "The Temporal Python SDK maps each positional parameter to a separate Payload in the workflow's input list, and the server imposes a hard limit of one Payload per workflow execution, so multiple parameters will be rejected."
+          "text": "Bumping the workflow type name with a version suffix when adding parameters, so old executions continue using the prior type's serialization schema."
         },
         {
           "key": "D",
-          "text": "Multiple parameters work fine for workflow start, but Signals and Queries are limited to a single parameter, so adopting multiple parameters for workflows creates an inconsistent API pattern across workflow interaction types."
+          "text": "Keeping all parameters as `bytes` and performing custom deserialization inside the workflow, so the payload converter never encounters unfamiliar types during replay."
         }
       ],
       "answer": "B",
-      "explanation": "The Python SDK docs explicitly state: 'users are strongly encouraged to use a single dataclass or Pydantic model parameter so that fields with defaults can be easily added without breaking compatibility.' With a single dataclass, you can add a new optional field (with a default value) and both old and new callers continue to work — old callers don't send the field, and the new code uses the default. With multiple positional parameters, adding a new parameter changes the function signature, breaking callers that pass fewer arguments. This is especially critical for long-running Temporal workflows where the definition may evolve while executions are in flight or Schedules continue to fire against older signatures.",
+      "explanation": "The Python documentation explicitly recommends using a single `dataclass` or Pydantic model parameter for workflows, signals, queries, and updates. When all inputs are bundled into a single model, new optional fields with defaults can be added without changing the function signature, preserving backward compatibility with existing serialized history. Multiple positional parameters create brittleness: adding, removing, or reordering them changes the serialized payload structure and breaks replay of in-flight executions. This is one of the most impactful data modeling practices for long-running workflow compatibility.",
       "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_hard_006",
       "category": "Features_DataConversion",
       "difficulty": "hard",
-      "question": "A Go team uses a `CompositeDataConverter` with a custom converter at position 3 (after Nil and ByteSlice) for their internal `Money` type. They later add a second custom converter for a `Currency` type and place it at position 4. During integration testing, they find that `Currency` values are sometimes serialized by the `Money` converter instead. What is the most likely cause?",
+      "question": "Your team uses a Payload Codec for encryption alongside a custom `CompositePayloadConverter` in Go. A security review flags that some payloads visible in the Temporal Web UI are not encrypted, even though the Payload Codec is configured on the worker. Which architectural detail of Temporal's converter pipeline best explains this behavior?",
       "choices": [
         {
           "key": "A",
-          "text": "The Go SDK applies converters in reverse order during integration tests as a consistency check, so `Currency` values encounter the `Money` converter last rather than first."
+          "text": "Payload Codecs are applied after Payload Converters during serialization, so if the Payload Converter emits a payload with an unrecognized encoding, the Codec skips it to avoid corrupting the data."
         },
         {
           "key": "B",
-          "text": "The `Money` converter's `ToPayload` method returns a non-nil Payload for `Currency` values — likely because it uses a loose type assertion or struct field inspection that matches both types — causing it to claim `Currency` values before the `Currency` converter is tried."
+          "text": "Payload Converters and Payload Codecs are independent layers. If the Codec is not configured on the Remote Data Converter used by the Temporal Web UI, raw (unencoded) payloads are displayed directly from history."
         },
         {
           "key": "C",
-          "text": "Both converters share the same encoding metadata key by default, and the Data Converter resolves collisions by always preferring the converter with the lower index, which is the `Money` converter."
+          "text": "The `NewNilPayloadConverter()` always emits payloads with a null encoding marker that bypasses the Codec layer, so nil-valued fields are never encrypted regardless of codec configuration."
         },
         {
           "key": "D",
-          "text": "CompositeDataConverter caches the first converter that successfully handles a type and reuses it for all subsequent values of any type, so once `Money` is serialized, all subsequent custom types go through the `Money` converter."
+          "text": "Payload Codecs only operate on activity input and output, not on workflow input, search attributes, or memo fields, which are stored in plaintext by design."
         }
       ],
       "answer": "B",
-      "explanation": "The CompositeDataConverter uses a 'first non-nil wins' strategy: it calls each converter's ToPayload in order and returns as soon as one succeeds. If the Money converter's type check is too broad — for example, using reflect to check for numeric fields or a shared interface that Currency also satisfies — it will claim Currency values before the Currency converter runs. This is a subtle but real production bug. The fix is to make each converter's type check narrowly specific (e.g., use a concrete type assertion like `_, ok := value.(Money)` rather than duck-typing). This also illustrates why ordering in the converter chain matters: putting the more specific converters earlier reduces the risk of false positives.",
+      "explanation": "Temporal's converter architecture separates Payload Converters (type serialization) from Payload Codecs (encoding transformations like compression or encryption). The Codec is applied at the SDK boundary on the client/worker side. The Temporal Web UI can only decrypt payloads if a Remote Data Converter (a codec server) is configured and accessible to the UI. Without it, the UI reads raw (potentially encrypted) bytes from history and cannot display decoded content—or if encryption isn't being applied at all, payloads are stored in cleartext. The documentation explicitly notes that Payload Converters can be customized independently of a Payload Codec, emphasizing they are separate concerns in the pipeline.",
       "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
-    },
-    {
-      "id": "features_dataconversion_hard_007",
-      "category": "Features_DataConversion",
-      "difficulty": "hard",
-      "question": "A Python team using `pydantic_data_converter` needs to pass `datetime.date` objects as workflow arguments. A colleague on the team points out that with the standard `DefaultPayloadConverter`, passing `datetime.date` values causes serialization errors. What does the documentation say about this, and why does `pydantic_data_converter` solve it?",
-      "choices": [
-        {
-          "key": "A",
-          "text": "`datetime.date` is handled by the `BytesPayloadConverter` in the default converter pipeline, but Pydantic overrides this with a string-based ISO format, which is actually less precise than the default binary representation."
-        },
-        {
-          "key": "B",
-          "text": "`datetime.date` is natively supported by the default converter via `json.dumps`, but the Pydantic converter adds validation logic on top that enforces timezone-awareness, which is why the error occurs only in the default converter."
-        },
-        {
-          "key": "C",
-          "text": "`datetime.date`, `datetime.time`, and `datetime.datetime` can only be used with the Pydantic Data Converter. The default converter relies on `json.dumps`, which does not serialize `datetime` types natively, so these types fail without the Pydantic converter."
-        },
-        {
-          "key": "D",
-          "text": "`datetime.date` works with both the default and Pydantic converters, but the Pydantic converter is preferred because it stores dates as Unix timestamps, making cross-language compatibility easier in polyglot Temporal environments."
-        }
-      ],
-      "answer": "C",
-      "explanation": "The Python SDK documentation explicitly states: '`datetime.date`, `datetime.time`, and `datetime.datetime` can only be used with the Pydantic Data Converter.' The default converter's JSON path relies on `json.dumps`, which raises a TypeError for datetime objects because they are not JSON-serializable by default. The Pydantic Data Converter handles these types natively through Pydantic's type coercion and serialization layer. This is a common footgun: developers assume Python's stdlib datetime types 'just work' with Temporal, but they silently fail at runtime unless the Pydantic converter (or a custom converter) is configured. The fix is straightforward — use `pydantic_data_converter` on the client — but the team must ensure all workers also use the same converter to keep serialization symmetric.",
-      "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_hard_008",
       "category": "Features_DataConversion",
       "difficulty": "hard",
-      "question": "A team operates a Go Temporal service where workflow inputs include protobuf messages. They decide to replace the default Data Converter entirely with `converter.NewCompositeDataConverter(YourCustomPayloadConverter())` — omitting all built-in converters including the proto converters. After deploying, they observe that protobuf inputs are now serialized as opaque JSON-encoded byte arrays rather than readable proto JSON, and the Temporal Web UI loses the ability to display field names. Which aspect of the CompositeDataConverter design explains this, and what is the operational impact?",
+      "question": "A Go service team wants to add support for a new custom type `MoneyAmount` alongside existing Protobuf and JSON-serialized workflow data. They place `YourCustomPayloadConverter()` after `NewProtoPayloadConverter()` but before `NewJSONPayloadConverter()` in the chain. During load testing, they observe that MoneyAmount fields inside structs serialized as JSON are not correctly decoded. What is the most precise explanation?",
       "choices": [
         {
           "key": "A",
-          "text": "Removing `ProtoJSONPayloadConverter` means the Temporal server can no longer route messages to the correct activity worker, because the server uses protobuf encoding metadata for task queue affinity decisions."
+          "text": "The custom converter is registered after the Protobuf converter, so Protobuf messages containing embedded MoneyAmount fields are intercepted before the custom converter can process the nested value."
         },
         {
           "key": "B",
-          "text": "When all built-in converters are omitted, `YourCustomPayloadConverter` must handle every type including protobuf. If it serializes proto messages as generic JSON blobs (e.g., marshaling the raw bytes), the encoding metadata will not match 'json/protobuf', so the Web UI and any debugger relying on proto field names will receive opaque data rather than structured output."
+          "text": "The `CompositeDataConverter` only calls each converter once per top-level payload, not recursively for nested fields. A `MoneyAmount` nested inside a JSON-encoded struct is decoded entirely by `NewJSONPayloadConverter()`, which has no knowledge of the custom type."
         },
         {
           "key": "C",
-          "text": "The Go SDK automatically re-adds `ProtoJSONPayloadConverter` at the end of any CompositeDataConverter regardless of what converters are supplied, so removing it explicitly has no effect; the observed issue must be caused by a bug in YourCustomPayloadConverter's deserialization path."
+          "text": "Placing the custom converter before `NewJSONPayloadConverter()` causes a conflict: both converters claim the same `application/json` encoding header, making deserialization non-deterministic."
         },
         {
           "key": "D",
-          "text": "Omitting `NilPayloadConverter` from the list is the actual root cause; without it, nil workflow inputs are serialized as empty proto messages by the custom converter, corrupting the entire payload chain including non-nil proto messages."
+          "text": "The Go SDK requires that custom converters implement `CanConvert()` to return `true` for sub-fields; without this interface, nested type conversions are silently skipped."
         }
       ],
       "answer": "B",
-      "explanation": "When you call `NewCompositeDataConverter` with only your custom converter, you are fully responsible for handling every type your workflows encounter. If `YourCustomPayloadConverter` handles unknown types by falling back to raw JSON marshaling of the proto struct (or the proto's byte representation), the resulting Payload will have custom encoding metadata — not the 'json/protobuf' key that the Web UI and SDK tooling expect for structured display. The operational impact is real: the Temporal Web UI shows raw bytes instead of human-readable field names, making debugging and observability significantly harder. The recommended pattern (shown in the docs) is to include all default converters and insert your custom one just before `JSONPayloadConverter`, preserving built-in handling for proto, byte slice, and nil types. This is also a Data Converter + Payload Codec design interaction: stripping converters affects observability independently of any codec encryption layer.",
+      "explanation": "In Temporal's Composite Data Converter, each converter operates on a complete top-level Payload, not on fields within a payload. When a Go struct containing a `MoneyAmount` field is serialized, the entire struct is handed to the first converter that claims it—in this case `NewJSONPayloadConverter()`. The JSON converter serializes the whole struct including the `MoneyAmount` field, but it only knows how to decode types registered with the standard Go JSON encoder. The custom `PayloadConverter` can only handle `MoneyAmount` when it is the top-level value passed to the chain. For nested custom types, the solution is to implement custom JSON marshaling on the containing struct (e.g., `MarshalJSON`/`UnmarshalJSON`), not to add a separate Payload Converter entry in the chain.",
       "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_dataconversion_nightmare_001",
+      "category": "Features_DataConversion",
+      "difficulty": "nightmare",
+      "question": "A Python Temporal worker handles workflow inputs that include `IPv4Address` values both as standalone parameters and embedded inside `List[IPv4Address]` and `Optional[IPv4Address]` fields. An engineer implements a custom `EncodingPayloadConverter` that handles `IPv4Address` directly and inserts it before the default converters. After deploying, standalone `IPv4Address` arguments serialize correctly, but `List[IPv4Address]` fields raise deserialization errors during workflow replay. What is the root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `EncodingPayloadConverter` approach only intercepts top-level payload boundaries; when `IPv4Address` is nested inside a collection, the JSON converter handles the entire list as a single payload and its default encoder/decoder has no knowledge of `IPv4Address`, so round-tripping fails. The fix is to customize the JSON converter's encoder and `JSONTypeConverter` instead."
+        },
+        {
+          "key": "B",
+          "text": "Python's `CompositePayloadConverter` applies converters in parallel for collection types rather than sequentially, so inserting a custom converter first doesn't affect how list elements are dispatched. You must register the converter with a separate `CollectionPayloadConverter` registry to handle nested types."
+        },
+        {
+          "key": "C",
+          "text": "Replay fails because the workflow history stores the encoding metadata as `text/ipv4-address`, but during replay the worker loads the default `DataConverter` first before applying custom converters, causing a metadata mismatch that surfaces only for parameterized generic types."
+        },
+        {
+          "key": "D",
+          "text": "The issue is that `Optional[IPv4Address]` uses `Union` internally, and the `CompositePayloadConverter` skips custom converters for `Union` type hints due to a known SDK limitation. Using `dataclasses.replace` to patch the converter class name is insufficient; you must subclass `DataConverter` directly to handle unions."
+        }
+      ],
+      "answer": "A",
+      "explanation": "When a `List[IPv4Address]` or `Optional[IPv4Address]` is serialized, the `CompositePayloadConverter` doesn't decompose the collection into individual elements—it treats the entire value as a single unit and dispatches it to whichever `EncodingPayloadConverter` claims it. Because `IPv4Address` isn't JSON-serializable by default, the fallback JSON converter wins for the collection, serializing it as a JSON array of stringified addresses. On deserialization, the JSON converter receives the raw JSON string but has no `JSONTypeConverter` that can map the string back to `IPv4Address` instances, so it returns raw strings instead, causing type errors during replay. The fix documented in Temporal's Python SDK is to customize the JSON converter itself—replacing the `JSONPlainPayloadConverter` with one that has a custom `json.JSONEncoder` (to serialize `IPv4Address` as a string) and a custom `JSONTypeConverter` (to reconstruct `IPv4Address` from that string based on the type hint). This is a critical production insight: the `EncodingPayloadConverter` approach is sufficient for top-level values of a specific type, but for types that appear inside collections, optionals, or unions, you must extend the JSON layer because that's where nested type dispatch happens. The two strategies are not interchangeable—they operate at different levels of the converter pipeline.",
+      "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_nightmare_002",
       "category": "Features_DataConversion",
       "difficulty": "nightmare",
-      "question": "A Python team defines a workflow that uses an `IPv4Address` argument and wants it to work inside `Optional[IPv4Address]` and `List[IPv4Address]` type hints on signals and queries. They implement a custom `EncodingPayloadConverter` approach (not the JSON customization approach) and register it first in their `CompositePayloadConverter`. What limitation will they encounter that would NOT exist if they had customized the JSON converter instead?",
+      "question": "A Go team uses a `CompositeDataConverter` built with converters in this order: `NilPayloadConverter`, `ByteSlicePayloadConverter`, `ProtoJSONPayloadConverter`, `ProtoPayloadConverter`, `JSONPayloadConverter`. They add a new activity that returns a custom struct `OrderResult` which implements `proto.Message` (via a generated protobuf). During a canary deploy, old workers replay histories written by new workers and panic with a deserialization error on `OrderResult` payloads. New workers, however, replay old histories fine. What is the most likely cause?",
       "choices": [
         {
           "key": "A",
-          "text": "The custom `EncodingPayloadConverter` approach will fail entirely for bare `IPv4Address` arguments too, since `CompositePayloadConverter` only invokes converters whose encoding metadata exactly matches the payload's stored encoding, and a new encoding type is unrecognized by default workers."
+          "text": "New workers serialize `OrderResult` with `ProtoJSONPayloadConverter` (encoding: `json/protobuf`), producing JSON with proto field name conventions. Old workers, using the same converter order, attempt `ProtoJSONPayloadConverter` first but fail to resolve the concrete proto type from the payload metadata because the type URL references a package path not yet registered in the old binary's proto registry."
         },
         {
           "key": "B",
-          "text": "The custom `EncodingPayloadConverter` handles only top-level `IPv4Address` values. When `IPv4Address` is nested inside a collection or `Optional`, the outer container is handled by the JSON converter which has no knowledge of `IPv4Address`, so it cannot deserialize the inner value from its JSON representation."
+          "text": "The `ByteSlicePayloadConverter` intercepts the proto message before `ProtoJSONPayloadConverter` can claim it, because `proto.Message` implements the `[]byte` interface through its `Marshal` method. Old workers therefore receive raw binary payloads and cannot deserialize them using the proto converters."
         },
         {
           "key": "C",
-          "text": "The custom `EncodingPayloadConverter` will conflict with `NilPayloadConverter` when `Optional[IPv4Address]` resolves to `None`, causing the converter chain to raise an exception instead of returning a nil payload."
+          "text": "Old workers fail because Temporal's history replay validator rejects payloads whose encoding metadata doesn't match a converter registered at worker startup, and the old binary was compiled without the `OrderResult` proto file, causing a schema registry mismatch at the cluster level before the worker even attempts deserialization."
         },
         {
           "key": "D",
-          "text": "Registering the custom converter first causes it to intercept all non-None, non-bytes values before the JSON converter, so `List[IPv4Address]` elements are each individually serialized into separate payloads rather than a single list payload, breaking the expected argument structure."
+          "text": "New workers serialize `OrderResult` with `ProtoPayloadConverter` (binary proto, encoding: `binary/protobuf`) because it appears after `ProtoJSONPayloadConverter` in the chain and takes precedence for types that satisfy `proto.Message`. Old workers, missing the proto descriptor in their registry, cannot unmarshal the binary payload and panic."
         }
       ],
-      "answer": "B",
-      "explanation": "This question probes the architectural difference between two customization strategies. The `EncodingPayloadConverter` approach works at the top-level payload boundary: each argument to a workflow/signal/query becomes one payload, and the converter chain picks the handler for that top-level value. When you pass `List[IPv4Address]`, the JSON converter handles the list as a whole — it serializes the outer list to JSON, and during that process, it encounters `IPv4Address` objects it doesn't know how to render to JSON, causing failure. By contrast, customizing the JSON converter (via `JSONEncoder` + `JSONTypeConverter`) teaches the JSON layer how to handle `IPv4Address` wherever it appears in a JSON structure — inside lists, dicts, Optionals, etc. The documentation explicitly states: 'If you need your custom type to work in lists, unions, and other collections, customize the existing JSON converter instead of adding a new encoding converter.' This is a subtle but critical design distinction: the `EncodingPayloadConverter` abstraction boundary is at the payload level, while JSON type converters operate within the JSON serialization graph. Missing this leads to workflows that work fine with bare arguments but break with any collection wrapping.",
-      "source_doc": "data-conversion (develop_python_best-practices_data-handling_data-conversion.html)",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "answer": "A",
+      "explanation": "The `CompositeDataConverter` applies converters in order, stopping at the first that returns a non-nil payload. For a `proto.Message`, `ProtoJSONPayloadConverter` appears before `ProtoPayloadConverter`, so it wins and encodes the value as JSON with protobuf field naming conventions, writing `json/protobuf` as the encoding metadata along with the full proto type URL. When an old worker replays this history, it reads the encoding metadata, correctly routes to `ProtoJSONPayloadConverter`, but then tries to unmarshal the payload into the correct concrete proto type. The Go proto runtime uses a global type registry keyed by the fully-qualified proto type name. If the old binary was compiled without the `OrderResult` proto descriptor—or with a different proto package path—the type URL cannot be resolved, causing a panic. New workers replaying old histories succeed because old histories didn't contain `OrderResult` payloads. This scenario illustrates why converter ordering AND backward-compatible proto registration matter together in rolling deployments: the encoding choice is deterministic based on converter order, but successful deserialization depends on both the encoding metadata and the proto type registry being consistent across worker versions. Teams should treat proto type registration as part of their API contract during canary rollouts, not just the wire format.",
+      "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_nightmare_003",
       "category": "Features_DataConversion",
       "difficulty": "nightmare",
-      "question": "A Python team has been using dataclasses for their workflow inputs. They decide to migrate to Pydantic models for better validation, and switch to `pydantic_data_converter` on the client. Old workflow executions are still running with dataclass-serialized history events. A new workflow worker using `pydantic_data_converter` picks up an activity task that was scheduled when the dataclass converter was active. What happens and why?",
+      "question": "A Python workflow accepts a Pydantic v2 model `ShipmentRequest` as its sole input parameter and is deployed with `pydantic_data_converter`. Six months later, the team adds a new optional field `priority: Optional[str] = None` to `ShipmentRequest`. Existing workflow executions that are mid-flight (started before the deploy) continue running. When those old executions receive a signal that re-reads the original workflow input from a side-effect, they successfully deserialize it. However, when the team adds a second new field `scheduled_date: datetime.date` (no default value) and redeploys, old mid-flight executions begin failing on the same signal handler with a `ValidationError`. Which of the following correctly explains the interaction between Pydantic data conversion, workflow history replay, and schema evolution?",
       "choices": [
         {
           "key": "A",
-          "text": "The activity task fails with a deserialization error because `pydantic_data_converter` replaces the JSON payload converter with a Pydantic-aware one. While both emit standard JSON, the Pydantic converter uses different type hint resolution logic, so it cannot reconstruct the dataclass from the old JSON payload."
+          "text": "The Pydantic data converter stores the full Pydantic schema version hash alongside each payload. When a new required field is added, the schema hash changes, and the converter raises `ValidationError` rather than attempting deserialization with the stale hash, regardless of whether a default is provided."
         },
         {
           "key": "B",
-          "text": "The activity task succeeds transparently because Pydantic models and dataclasses both serialize to plain JSON with identical structure when field names match, and the Pydantic converter can reconstruct a Pydantic model from JSON that was originally produced by a dataclass converter."
+          "text": "Adding `priority: Optional[str] = None` succeeds because Pydantic's validator tolerates missing optional fields with defaults during deserialization. Adding `scheduled_date: datetime.date` without a default makes the field required in Pydantic's model, so when the converter attempts to reconstruct `ShipmentRequest` from the JSON payload stored in history (which lacks `scheduled_date`), Pydantic raises `ValidationError` because a required field is absent."
         },
         {
           "key": "C",
-          "text": "The activity task fails non-deterministically: it succeeds when field values are primitive types but fails when fields contain `datetime`, `UUID`, or nested models because those types serialize to different JSON representations under dataclass vs. Pydantic conventions."
+          "text": "Both fields cause `ValidationError` during replay because Temporal's replay engine re-executes the workflow from the beginning and re-deserializes all inputs on every replay, including inputs from history events that predate the schema change. The `pydantic_data_converter` enforces strict mode by default, so any schema difference—even optional fields—triggers a validation error."
         },
         {
           "key": "D",
-          "text": "The activity task succeeds in replaying because Temporal stores raw Payloads in history and re-encodes them only on new writes; the old payload is passed through unchanged, so the worker reads the original dataclass JSON without invoking the Pydantic converter's `from_payload` path."
+          "text": "The failure occurs because `datetime.date` is only supported by the Pydantic data converter when wrapped in a Pydantic model field annotated with `Field(...)`. Using it as a bare type hint causes the converter to fall through to the default JSON converter, which cannot handle `datetime.date` and raises `ValidationError` instead of a serialization error."
         }
       ],
-      "answer": "C",
-      "explanation": "This question targets the intersection of Data Converter migration, workflow history replay safety, and Pydantic vs. dataclass serialization differences. The key insight is that both converters produce `json/plain` encoded payloads — the payload encoding metadata is identical — so the new Pydantic converter WILL attempt to deserialize old dataclass-encoded JSON. For simple primitive fields, the JSON structure is identical and deserialization succeeds. However, `datetime` fields are the canonical trap: Python's default `json.dumps` cannot serialize `datetime` at all (it raises a TypeError), but the Temporal Python SDK's dataclass support handles `datetime` via its own encoding. Pydantic serializes `datetime` to ISO 8601 strings. If the old history has `datetime` values stored in a format Pydantic doesn't expect, deserialization fails with a validation error. This is why the documentation strongly recommends using a single dataclass or Pydantic model for all inputs and warns that `datetime.date`, `datetime.time`, and `datetime.datetime` can ONLY be used with the Pydantic Data Converter. Migrating converters on in-flight workflows is extremely dangerous: the encoding metadata (`json/plain`) gives no indication of which sub-conventions were used to produce the JSON, so compatibility is not guaranteed and must be validated field-by-field before deploying.",
-      "source_doc": "data-conversion (develop_python_best-practices_data-handling_data-conversion.html)",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "answer": "B",
+      "explanation": "The Pydantic data converter serializes workflow inputs to JSON at the moment the workflow starts and stores that JSON in the workflow history. When a signal handler (or any code path) later deserializes the original input—whether from a query, a side effect, or an activity result—the converter reads the stored JSON and attempts to reconstruct the Pydantic model. Pydantic v2's validation requires all fields without defaults to be present in the input data. `priority: Optional[str] = None` has a default, so deserialization of old JSON (which lacks the field) succeeds—Pydantic fills in `None`. `scheduled_date: datetime.date` has no default, making it a required field; when Pydantic tries to validate the stored JSON (which predates the field's addition and therefore lacks it), it raises `ValidationError`. This is a fundamental schema evolution challenge that exists independently of Temporal: the serialized form in history is immutable, but the deserialization schema changes with your code. The Temporal documentation's advice to use a single `dataclass` or Pydantic model with fields that have defaults is precisely to avoid this: all new fields on long-running workflows must have defaults to maintain backward compatibility with payloads already stored in history. Additionally, `datetime.date` requires the Pydantic data converter (as the docs explicitly note), reinforcing that date/time types and required-field discipline are both critical when evolving schemas for long-running workflows.",
+      "source_doc": "develop_python_best-practices_data-handling_data-conversion.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_dataconversion_nightmare_004",
       "category": "Features_DataConversion",
       "difficulty": "nightmare",
-      "question": "A Go team registers a Payload Codec (for encryption) AND a custom CompositeDataConverter (for a proprietary binary format). They configure their worker with both. During a workflow execution, what is the correct order of operations when serializing an activity argument, and what breaks if the Codec and the Converter are applied in the wrong order?",
+      "question": "A Go team has a production `CompositeDataConverter` that places a custom `YourCustomPayloadConverter` just before `NewJSONPayloadConverter()` as their JSON fallthrough. They later realize some workflow inputs are large protobuf messages and add a Payload Codec for compression on top. A new engineer on the team wants to add encryption as well and proposes creating a *second* `CompositeDataConverter` that wraps the first one and adds an encryption step. What is the fundamental architectural flaw in this proposal, and what is the correct approach?",
       "choices": [
         {
           "key": "A",
-          "text": "The Payload Codec runs first, encrypting the raw Go value into ciphertext bytes, and then the CompositeDataConverter serializes the ciphertext bytes into a Payload. If reversed, the Converter produces a well-formed Payload that the Codec cannot encrypt because the Codec expects raw application objects, not already-serialized Payloads."
+          "text": "A `CompositeDataConverter` cannot be nested inside another `CompositeDataConverter` because the Go SDK enforces a singleton Data Converter per client via a global registry. Wrapping one inside another causes a registration conflict at client initialization. The correct approach is to flatten all converters into a single `NewCompositeDataConverter` call ordered from most-specific to JSON fallthrough."
         },
         {
           "key": "B",
-          "text": "The CompositeDataConverter runs first, converting the Go value into a Payload (with encoding metadata), and then the Payload Codec transforms that Payload (e.g., encrypts it) into a new Payload. If reversed, the Codec would receive the raw Go value it cannot process — Codecs operate on Payloads, not application objects — producing either an error or unencrypted data stored in history."
+          "text": "The proposal conflates the Payload Converter layer (type-specific serialization to Payload) with the Payload Codec layer (Payload-to-Payload transformations like compression and encryption). Payload Converters determine *how* a Go value becomes a Payload; Payload Codecs operate on already-serialized Payloads. Encryption should be implemented as a second `PayloadCodec` chained with the existing compression codec, not as a wrapping Data Converter."
         },
         {
           "key": "C",
-          "text": "Both run concurrently in separate goroutines: the Converter serializes the value to JSON while the Codec establishes an encryption context. If they run sequentially, a race condition causes the Codec to encrypt an incomplete Payload, resulting in corrupted history events."
+          "text": "The proposal is valid architecturally, but fails at runtime because the inner `CompositeDataConverter` serializes the value to a Payload, and then the outer `CompositeDataConverter` attempts to serialize that Payload again, producing double-encoded data. The fix is to ensure the outer converter's first-in-order converter recognizes `Payload` structs and passes them through without re-encoding."
         },
         {
           "key": "D",
-          "text": "The Payload Codec and CompositeDataConverter are functionally equivalent layers that can be applied in either order because both ultimately produce a `Payload` proto with metadata. The only consequence of reversing them is a minor performance difference due to encryption happening before or after JSON marshaling."
+          "text": "The flaw is that `CompositeDataConverter` applies converters sequentially until one succeeds, so a wrapping converter would always route to `NilPayloadConverter` on the inner converter's output (a non-nil `Payload` struct), bypassing encryption. Adding encryption requires forking the SDK and modifying the `CompositeDataConverter.FromPayload` pipeline directly."
         }
       ],
       "answer": "B",
-      "explanation": "This question targets the architectural contract between Payload Converters and Payload Codecs — two features that are explicitly designed to be 'customized independently' but have a strict operational ordering. The Payload Converter (via CompositeDataConverter) operates on the APPLICATION DOMAIN: it takes a Go value (struct, int, []byte, proto.Message, etc.) and produces a raw `Payload` proto with appropriate encoding metadata. The Payload Codec then operates on that `Payload` proto — it receives already-serialized Payloads and transforms them (encryption, compression, etc.) into new Payloads that Temporal stores in history. The codec cannot meaningfully process raw application objects because it has no type information about them. If this ordering were reversed, you'd either get a panic (codec receives a Go struct it can't handle) or, more dangerously, the encryption step silently no-ops and unencrypted data flows into history — a catastrophic security failure in production. This separation is intentional: it means encryption logic is completely decoupled from serialization logic, and you can swap one without touching the other. Understanding that 'Converter produces Payloads, Codec transforms Payloads' is the single most important mental model for reasoning about end-to-end data security in Temporal.",
-      "source_doc": "data-conversion (develop_go_best-practices_data-handling_data-conversion.html)",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "explanation": "Temporal's Data Conversion architecture has two distinct, independent layers: Payload Converters and Payload Codecs. Payload Converters (assembled into a `CompositeDataConverter`) are responsible for type-specific serialization: they take a Go value and produce a `Payload` (a binary blob with encoding metadata). Payload Codecs are Payload-to-Payload transformations applied *after* conversion; they receive an already-serialized `Payload` and return a transformed `Payload`—this is the correct layer for compression, encryption, or any other cross-cutting concern that should apply regardless of the value's type. The documentation makes this separation explicit: 'Payload Converters can be customized independently of a Payload Codec.' The engineer's proposal to nest `CompositeDataConverter` instances treats encryption as a type-serialization concern, which it isn't—encryption doesn't depend on the Go type being serialized, it applies uniformly to all payloads. The correct architecture is a `DataConverter` configured with: (1) the existing `CompositeDataConverter` for type-specific serialization, and (2) a `CodecDataConverter` wrapping two `PayloadCodec` implementations—one for compression and one for encryption—applied in the desired order. This keeps the layers separate, ensures encryption applies to all payloads regardless of type, and doesn't interfere with the converter selection logic. Conflating these two layers in production leads to subtle bugs where some value types bypass encryption or where codec-transformed payloads are re-encoded by an outer converter.",
+      "source_doc": "develop_go_best-practices_data-handling_data-conversion.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     }
   ]
 }

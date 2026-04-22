@@ -5,91 +5,91 @@
       "id": "develop_easy_001",
       "category": "Develop",
       "difficulty": "easy",
-      "question": "What is the purpose of the 'StaticSummary' field you can provide when starting a Workflow in Temporal?",
+      "question": "What is the main purpose of an Activity in a Temporal application?",
       "choices": [
         {
           "key": "A",
-          "text": "It sets a password that protects the Workflow from unauthorized access in the UI."
+          "text": "To define the overall structure and long-running logic that orchestrates the steps of your application"
         },
         {
           "key": "B",
-          "text": "It provides a short, one-line description that appears in the Workflow list view to help identify the Workflow."
+          "text": "To execute a single, well-defined action — such as calling an API, writing to a database, or sending an email — which Temporal automatically retries if it fails"
         },
         {
           "key": "C",
-          "text": "It stores the Workflow's input data in a compressed format for faster retrieval."
+          "text": "To poll a Task Queue and pick up work items that have been scheduled by the Temporal Service"
         },
         {
           "key": "D",
-          "text": "It defines the maximum number of times the Workflow can be retried if it fails."
+          "text": "To store the state of a Workflow so it can be recovered if the underlying process crashes or restarts"
         }
       ],
       "answer": "B",
-      "explanation": "StaticSummary is a brief, single-line label (up to 200 bytes) set at Workflow start time that shows up in the Workflow list view in the Temporal UI. This makes it easy to identify what a Workflow is doing at a glance without clicking into it. Think of it like a subject line for your Workflow — it stays fixed for the life of the Workflow, unlike 'CurrentDetails' which can be updated as the Workflow progresses.",
-      "source_doc": "develop_dotnet_platform_enriching-ui.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "explanation": "Activities are the individual units of work in Temporal — they handle interactions with the outside world (network calls, database writes, emails, etc.). Because these operations can fail, Temporal automatically retries them according to your retry policy. Workflows, on the other hand, orchestrate Activities and contain application logic. Workers poll Task Queues, and Temporal's event history handles state recovery — those are different concepts.",
+      "source_doc": "develop_dotnet_set-up.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_easy_002",
       "category": "Develop",
       "difficulty": "easy",
-      "question": "A Temporal Worker is running and waiting for tasks. What does it actually do when work becomes available?",
+      "question": "When would you use 'Current Details' inside a Workflow instead of 'Static Details' set at Workflow start?",
       "choices": [
         {
           "key": "A",
-          "text": "It sends an HTTP request to the Temporal Service asking for a new Workflow to be created from scratch."
+          "text": "When you want a short, single-line description to appear in the Workflow list view in the UI"
         },
         {
           "key": "B",
-          "text": "It pushes completed task results directly to the client application that started the Workflow."
+          "text": "When you need to attach context to individual Activity events so they appear in the Event History"
         },
         {
           "key": "C",
-          "text": "It polls a Task Queue for tasks, dequeues them, and then executes the corresponding Workflow or Activity logic."
+          "text": "When the description of what the Workflow is doing needs to change as the Workflow progresses through different stages"
         },
         {
           "key": "D",
-          "text": "It monitors the Temporal Web UI for new Workflow submissions and triggers execution from there."
+          "text": "When the Workflow metadata must be stored in Markdown format and shared across multiple Namespaces"
         }
       ],
       "answer": "C",
-      "explanation": "Workers continuously poll a Task Queue on the Temporal Service, looking for tasks to execute. When a Workflow or Activity task is available, the Worker dequeues it and runs the corresponding code. This polling model means Workers don't need to be directly reachable — they reach out to Temporal, which makes it easy to run Workers behind firewalls or in private networks. Without Workers, your Workflow and Activity code would never actually run.",
-      "source_doc": "develop_dotnet_set-up.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "explanation": "Static Details (and Static Summary) are set once when the Workflow starts and never change. Current Details, however, can be updated at any point during the Workflow's lifetime, making it ideal for describing the Workflow's evolving state — for example, moving from 'Awaiting payment' to 'Shipping order'. This distinction lets operators quickly understand what stage a long-running Workflow is in without digging through the full event history.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_easy_003",
       "category": "Develop",
       "difficulty": "easy",
-      "question": "In Temporal, what is an Activity designed to handle compared to a Workflow?",
+      "question": "What does a Temporal Worker do after it is started?",
       "choices": [
         {
           "key": "A",
-          "text": "Activities manage the overall business logic and long-running orchestration, while Workflows handle one-time, stateless operations."
+          "text": "It stores Workflow definitions in the Temporal Service so that clients can trigger them by name"
         },
         {
           "key": "B",
-          "text": "Activities perform single, well-defined actions that often interact with the outside world, such as calling an API or writing to a database, while Workflows orchestrate those actions."
+          "text": "It continuously polls a configured Task Queue for Workflow and Activity tasks, then executes them locally"
         },
         {
           "key": "C",
-          "text": "Activities store durable state across restarts, while Workflows are stateless and restart from the beginning on each execution."
+          "text": "It starts a local Temporal Service on your machine so that Workflows have somewhere to send their events"
         },
         {
           "key": "D",
-          "text": "Activities run directly on the Temporal Service, while Workflows run only inside the client application that starts them."
+          "text": "It connects directly to the client application and receives tasks through a shared in-memory queue"
         }
       ],
       "answer": "B",
-      "explanation": "Activities are where you put code that touches the outside world — sending emails, making HTTP calls, reading from a database — things that can fail for reasons outside your control. Workflows, on the other hand, orchestrate those Activities and contain your business logic. If an Activity fails, Temporal automatically retries it based on your retry policy. Keeping side effects in Activities and orchestration in Workflows is the key pattern that makes Temporal applications reliable and predictable.",
+      "explanation": "A Worker is the process that actually runs your code. It polls a specific Task Queue for pending tasks — either Workflow tasks or Activity tasks — and executes them. Without a running Worker, no Workflow or Activity logic will ever be executed, even if a client has successfully started a Workflow. This design lets you scale Workers independently and keeps your application logic separate from the scheduling infrastructure.",
       "source_doc": "develop_dotnet_set-up.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_med_001",
       "category": "Develop",
       "difficulty": "med",
-      "question": "In the Temporal .NET SDK, what is the key behavioral difference between `StaticSummary`/`StaticDetails` set in `WorkflowOptions` and `Workflow.CurrentDetails` set inside the Workflow?",
+      "question": "In the Temporal .NET SDK, what is the key behavioral difference between `StaticSummary`/`StaticDetails` set in `WorkflowOptions` and `Workflow.CurrentDetails` set inside a Workflow?",
       "choices": [
         {
           "key": "A",
@@ -97,273 +97,273 @@
         },
         {
           "key": "B",
-          "text": "`StaticSummary` and `StaticDetails` are fixed at Workflow start and cannot change, while `Workflow.CurrentDetails` can be updated repeatedly throughout the Workflow's execution to reflect current status."
+          "text": "`StaticSummary` and `StaticDetails` are fixed at Workflow start and cannot change, while `Workflow.CurrentDetails` can be updated at any point during Workflow execution to reflect current status."
         },
         {
           "key": "C",
-          "text": "`StaticSummary` and `StaticDetails` support full HTML formatting, while `Workflow.CurrentDetails` is limited to plain text with no Markdown support."
+          "text": "`StaticSummary` and `StaticDetails` support full HTML and image Markdown, while `Workflow.CurrentDetails` is restricted to plain text with no formatting."
         },
         {
           "key": "D",
-          "text": "`StaticSummary` and `StaticDetails` are set by the Worker process, while `Workflow.CurrentDetails` must be set by the client that started the Workflow."
+          "text": "`StaticDetails` and `Workflow.CurrentDetails` are interchangeable; the only difference is that `StaticDetails` is set by the client and `Workflow.CurrentDetails` is set by the Worker process."
         }
       ],
       "answer": "B",
-      "explanation": "`StaticSummary` and `StaticDetails` are provided in `WorkflowOptions` at the time the Workflow is started and remain fixed for the Workflow's lifetime — they can't be changed once set. `Workflow.CurrentDetails`, assigned inside the `[WorkflowRun]` method, can be updated at any point during execution, making it ideal for reflecting dynamic status like 'processing step 3 of 10'. All three fields support Markdown (excluding images, HTML, and scripts), so option C is wrong. Both are set from their respective sides of the Temporal boundary (client vs. workflow code), but the distinction in option D about the Worker is incorrect — `StaticSummary`/`StaticDetails` come from the client, not the Worker. Option A is wrong about which views these fields appear in.",
+      "explanation": "`StaticSummary` and `StaticDetails` are provided in `WorkflowOptions` when starting a Workflow — they are immutable metadata attached at launch. `Workflow.CurrentDetails`, accessed inside the Workflow class itself, is a dynamic property you can read and overwrite at any point during execution, making it ideal for surfacing real-time status (e.g., 'Processing step 3 of 10'). Both formats use standard Markdown excluding images, HTML, and scripts — so option C is wrong. They appear in different sections of the Workflow details page (static data in the overview, current details in a separate field), not the other way around as option A claims. Option D is incorrect because these are not interchangeable; `Workflow.CurrentDetails` is specifically a mutable runtime value, not merely a different origin for the same data.",
       "source_doc": "develop_dotnet_platform_enriching-ui.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_med_002",
       "category": "Develop",
       "difficulty": "med",
-      "question": "You want to attach a short contextual label to an Activity execution so it appears inline next to the Activity event in the Temporal Web UI Event History without having to expand the event. Which API do you use in the .NET SDK?",
+      "question": "You want to attach contextual metadata to a timer inside a .NET Workflow so operators can understand what the Workflow is waiting for in the Temporal UI. Which approach is correct?",
       "choices": [
         {
           "key": "A",
-          "text": "Set `StaticDetails` on `WorkflowOptions` when starting the parent Workflow, which propagates to all child Activity events automatically."
+          "text": "Set `Workflow.CurrentDetails` to a description string immediately before calling `Workflow.DelayAsync`, then reset it afterward."
         },
         {
           "key": "B",
-          "text": "Set `Workflow.CurrentDetails` inside the Workflow before calling `ExecuteActivityAsync` so the label is captured in the surrounding context."
+          "text": "Pass a `Summary` property inside a `DelayOptions` object to `Workflow.DelayWithOptionsAsync`, which attaches the label directly to the timer event."
         },
         {
           "key": "C",
-          "text": "Return a descriptive string from the Activity method itself; Temporal automatically uses the return value as the event summary in the UI."
+          "text": "Timers cannot carry metadata in Temporal; only Activities and Workflow-level fields support the `Summary` property."
         },
         {
           "key": "D",
-          "text": "Set the `Summary` property on `ActivityOptions` when calling `Workflow.ExecuteActivityAsync`, which attaches the label directly to that Activity's event."
+          "text": "Specify the timer description using `StaticDetails` in `WorkflowOptions` before starting the Workflow, since timer metadata must be declared at Workflow creation time."
         }
       ],
-      "answer": "D",
-      "explanation": "The `ActivityOptions` class in the .NET SDK has a `Summary` property (limited to 200 bytes) that attaches a label directly to the Activity's scheduled event. This summary appears in purple text in the Event History next to the Activity event, providing immediate context at a glance. `StaticDetails` on `WorkflowOptions` (option A) describes the Workflow itself and does not propagate to Activities. `Workflow.CurrentDetails` (option B) updates the dynamic Workflow-level detail panel, not individual Activity events. The Activity's return value (option C) is captured as output data, not as a UI summary. You'd reach for `ActivityOptions.Summary` any time you want operators or developers to quickly understand what a specific Activity invocation is doing without expanding the event.",
+      "answer": "B",
+      "explanation": "The .NET SDK exposes `Workflow.DelayWithOptionsAsync` which accepts a `DelayOptions` object. That object has a `Summary` string field (capped at 200 bytes) that labels the timer in the Event History, making it easy to see exactly what a long-running Workflow is waiting for without expanding the event. Option A would update the Workflow-level `CurrentDetails`, which is a different field and doesn't attach metadata to the timer event itself. Option C is incorrect — timers explicitly support `Summary` via `DelayOptions`. Option D is wrong because timer metadata cannot be pre-declared in `WorkflowOptions`; it must be set at the call site inside the Workflow.",
       "source_doc": "develop_dotnet_platform_enriching-ui.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_med_003",
       "category": "Develop",
       "difficulty": "med",
-      "question": "When setting up a Temporal .NET Worker in the Hello World example, which statement correctly describes how Activities and Workflows are registered on the `TemporalWorker`?",
+      "question": "When setting up the Temporal .NET SDK Quickstart project, the guide recommends three separate .NET projects: `Workflow`, `Worker`, and `Client`. What is the primary reason for this separation?",
       "choices": [
         {
           "key": "A",
-          "text": "Workflows are registered by passing a generic type parameter (`AddWorkflow\u003cT\u003e()`), while instance Activities are registered by passing a bound method reference (e.g., `activities.SayHello`) to `AddActivity()`."
+          "text": "Temporal requires Workflow definitions, Worker processes, and client code to be compiled into separate assemblies as a hard technical constraint enforced by the SDK at runtime."
         },
         {
           "key": "B",
-          "text": "Both Workflows and Activities are registered by passing an instance of the class to a single `Register()` method; the SDK reflects on the class to find attributed members automatically."
+          "text": "The three projects map directly to three distinct Temporal server components, and each must run on a separately addressable host to enable proper Task Queue routing."
         },
         {
           "key": "C",
-          "text": "Workflows are registered by passing a constructed instance, while Activities are registered by passing the class type using a generic parameter such as `AddActivity\u003cMyActivities\u003e()`."
+          "text": "Separating concerns allows the Workflow logic (shared library), the Worker process (long-running executable), and the client starter (short-lived executable) to each have appropriate project types, dependencies, and deployment profiles without coupling them together."
         },
         {
           "key": "D",
-          "text": "Both Workflows and Activities are registered using generic type parameters; the difference is that Activity classes must be marked `static` while Workflow classes must be `sealed`."
+          "text": "The .NET SDK NuGet package can only be installed once per solution, so each concern must be isolated in its own project to avoid package version conflicts."
         }
       ],
-      "answer": "A",
-      "explanation": "In the .NET SDK, `TemporalWorkerOptions` distinguishes between how Workflows and Activities are registered. Workflows use the generic `AddWorkflow\u003cSayHelloWorkflow\u003e()` method — Temporal manages instantiation. Activities, however, are registered as method references on an already-constructed instance (e.g., `activities.SayHello`), because the Activity class may hold state like database connections or configuration. Option B describes a single reflection-based API that doesn't exist. Option C reverses the pattern — Activities take instances, not type parameters. Option D is incorrect; Activities don't need to be static and Workflows don't need to be sealed, though static Activities are also supported as an alternative style.",
+      "answer": "C",
+      "explanation": "The separation is a best-practice architectural choice, not a hard SDK constraint. `Workflow` is a `classlib` that defines Activities and Workflow logic and is referenced by both `Worker` and `Client` — acting as the shared contract. `Worker` is a long-running console process that polls a Task Queue and executes tasks. `Client` is a short-lived console app that starts Workflow Executions. This mirrors real production layouts where client code (e.g., an API server) and Worker processes are deployed independently. Option A is wrong — the SDK does not require separate assemblies. Option B confuses application-level projects with server-side infrastructure. Option D is incorrect; the Temporalio package can be installed in multiple projects within the same solution, as the setup instructions explicitly show.",
       "source_doc": "develop_dotnet_set-up.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_med_004",
       "category": "Develop",
       "difficulty": "med",
-      "question": "What is the size limit for the `StaticSummary` field set in `WorkflowOptions`, and what Markdown restrictions apply to all summary and details fields in Temporal's .NET SDK?",
+      "question": "In the Temporal .NET SDK, what is the byte limit for the `Summary` field attached to an Activity or timer, and what Markdown constraints apply to all enrichment fields (StaticSummary, StaticDetails, CurrentDetails, and Summary)?",
       "choices": [
         {
           "key": "A",
-          "text": "`StaticSummary` is limited to 500 bytes and supports all CommonMark Markdown including embedded images provided they use HTTPS URLs."
+          "text": "`Summary` is limited to 500 bytes, and all enrichment fields support full CommonMark Markdown including images and embedded HTML for rich formatting."
         },
         {
           "key": "B",
-          "text": "`StaticSummary` is limited to 200 bytes, and all summary/details fields support Markdown but exclude images, HTML, and scripts."
+          "text": "`Summary` is limited to 200 bytes, and all enrichment fields support standard Markdown but explicitly exclude images, HTML, and scripts."
         },
         {
           "key": "C",
-          "text": "`StaticSummary` is limited to 20K bytes to match `StaticDetails`, and both fields only accept plain text with no Markdown rendering."
+          "text": "`Summary` is limited to 200 bytes for Activities but unlimited for timers, and Markdown support varies per field depending on where it is displayed in the UI."
         },
         {
           "key": "D",
-          "text": "`StaticSummary` has no enforced byte limit but is displayed truncated at 200 characters in the UI; Markdown is fully supported including inline HTML."
+          "text": "`Summary` is limited to 20K bytes (the same cap as `StaticDetails`), and all fields share identical Markdown rules with no content-type restrictions."
         }
       ],
       "answer": "B",
-      "explanation": "`StaticSummary` (and the `Summary` field on Activities/timers) is capped at 200 bytes and is intended as a single-line description. `StaticDetails` has a much larger limit of 20K bytes for richer multi-line content. All fields accept standard Markdown but explicitly exclude images, HTML, and scripts — this is a consistent security/rendering boundary across all metadata fields. Option A is wrong about both the size limit and the image allowance. Option C confuses the limits for `StaticSummary` and `StaticDetails` and incorrectly states no Markdown is supported. Option D mischaracterizes the limit as a display truncation rather than an enforced byte cap and incorrectly allows inline HTML.",
+      "explanation": "`Summary` — whether on an Activity or a timer — is capped at 200 bytes, matching the `StaticSummary` limit. `StaticDetails` and `Workflow.CurrentDetails` allow up to 20K bytes. Every enrichment field uses standard Markdown but the docs are explicit that images, HTML, and scripts are excluded across all fields. Option A overstates the byte cap and incorrectly allows HTML/images. Option C incorrectly suggests different limits for Activity vs. timer summaries — both use the same 200-byte cap. Option D conflates the `Summary` limit with the larger `StaticDetails` limit, and ignores the Markdown content restrictions.",
       "source_doc": "develop_dotnet_platform_enriching-ui.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_hard_001",
       "category": "Develop",
       "difficulty": "hard",
-      "question": "Your team deploys a new version of a long-running .NET Workflow that updates `Workflow.CurrentDetails` at several checkpoints during execution. After deploy, you notice in the Temporal Web UI that older in-flight Workflow executions still show the static summary set at start, while newly started executions show live status updates mid-run. A junior engineer asks why the older runs don't reflect the new dynamic details logic. What is the most accurate explanation?",
+      "question": "Your team deploys a new version of a .NET Workflow that updates `Workflow.CurrentDetails` at several checkpoints during execution. After deployment, you notice that long-running Workflow instances started before the deploy are now failing replay with nondeterminism errors. A junior engineer suggests fixing this by setting `StaticDetails` instead, since it's immutable after start. What is the actual root cause of the replay failures, and what does this tell you about `Workflow.CurrentDetails` vs `StaticDetails`?",
       "choices": [
         {
           "key": "A",
-          "text": "`Workflow.CurrentDetails` is a write-once field; once a Workflow execution starts, any code that attempts to update it is silently ignored until the next Workflow continuation via Continue-As-New."
+          "text": "`Workflow.CurrentDetails` writes to the Event History as a side-effectful command, so changing when or how often it is called between deploys alters the command sequence that replays must match. `StaticDetails` is set in `WorkflowOptions` at start time and is stored in the start event, not replayed as commands, so it cannot cause nondeterminism errors."
         },
         {
           "key": "B",
-          "text": "The older in-flight executions are replaying from their event history. Because `Workflow.CurrentDetails` assignments haven't been reached yet in the replay, the UI shows the last persisted value, which is the static summary until the Workflow advances past those new checkpoints."
+          "text": "`StaticDetails` and `Workflow.CurrentDetails` both write to Event History on every assignment, but `StaticDetails` is deduplicated by the server, so only `Workflow.CurrentDetails` can produce replay mismatches. The fix is to gate `CurrentDetails` writes behind a Temporal versioning check."
         },
         {
           "key": "C",
-          "text": "Static summary set at Workflow start permanently overrides any dynamic details for that execution; `Workflow.CurrentDetails` can only take effect on Workflows started after the field was first written."
+          "text": "Both `StaticDetails` and `Workflow.CurrentDetails` are stored entirely outside Event History in a separate metadata store, so neither can cause replay failures. The nondeterminism errors must be caused by an unrelated code change introduced in the same deployment."
         },
         {
           "key": "D",
-          "text": "The Temporal Web UI caches Workflow metadata for up to 5 minutes; the older executions will reflect the updated `CurrentDetails` once the cache expires and the server re-reads the latest event."
+          "text": "`Workflow.CurrentDetails` is replicated across all Worker replicas synchronously, and the deploy introduced a race between replicas holding old vs new values, which the server interprets as a nondeterminism error. Rolling back to a single-replica deployment resolves it."
         }
       ],
-      "answer": "B",
-      "explanation": "In Temporal's .NET SDK, `Workflow.CurrentDetails` is a dynamic value that can be updated throughout Workflow execution — but it only reflects the latest value that has been *committed* to the event history during actual forward progress. For older in-flight executions that haven't yet reached the new code path (because they are waiting on an Activity, timer, or signal), the UI will show whatever value was last persisted. There is no permanent override from static summary, no 5-minute cache, and no write-once restriction. The static summary/details set at `WorkflowOptions` start time are separate fields from `CurrentDetails` and don't suppress it.",
+      "answer": "A",
+      "explanation": "In Temporal, `Workflow.CurrentDetails` is a mutable property that causes a command to be recorded in the Workflow's Event History each time it is set. During replay, the SDK re-executes Workflow code and expects the same commands in the same order. If a new code version sets `CurrentDetails` at different points—or a different number of times—than the original execution, replay sees a command sequence mismatch and raises a nondeterminism error. `StaticDetails`, by contrast, is passed in `WorkflowOptions.StaticDetails` when the Workflow is started. It is stored as part of the `WorkflowExecutionStarted` event metadata and is never re-issued as a command during replay, so changing its value in a new deploy cannot affect running instances at all. The lesson: any SDK API that emits a command (timers, activity schedules, side effects, and mutable metadata writes like `CurrentDetails`) must be versioned across deploys using `Workflow.Patched`/`GetVersion`; pure startup metadata like `StaticDetails` does not require versioning.",
       "source_doc": "develop_dotnet_platform_enriching-ui.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_hard_002",
       "category": "Develop",
       "difficulty": "hard",
-      "question": "A payment processing Workflow in .NET executes five sequential Activities. An engineer adds a `Summary` of `\"Charging customer credit card\"` to the charge Activity's `ActivityOptions` and a `Summary` of `\"Waiting for bank settlement\"` to a subsequent `Workflow.DelayWithOptionsAsync` timer. After running in production, the team reviews the Temporal Web UI. Where exactly will these summaries appear, and what is the byte limit each must respect?",
+      "question": "A team attaches rich Markdown-formatted operational runbooks to their Workflows using `StaticDetails`, and they also attach per-Activity `Summary` strings that contain structured JSON status lines. During a cost review, a platform engineer flags that the Workflow List visibility queries are slower than expected. After investigation, they discover some `StaticDetails` values are 18 KB and some Activity `Summary` values are 220 bytes. Which of these is violating documented limits, and what practical problem does exceeding that limit cause?",
       "choices": [
         {
           "key": "A",
-          "text": "Both summaries appear only in the Workflow Overview section alongside static summary and details. Each summary is limited to 20K bytes, matching the `StaticDetails` limit."
+          "text": "The 220-byte Activity `Summary` values violate the 200-byte limit. Summaries over 200 bytes are silently truncated by the server before being stored, so the visibility index contains incomplete data, which can make event-level search unreliable."
         },
         {
           "key": "B",
-          "text": "Both summaries appear in the Event History next to their corresponding events in purple text, and are also visible when an event is expanded. Each summary is limited to 200 bytes."
+          "text": "Both values are within limits: `StaticDetails` allows up to 20 KB and `Summary` allows up to 200 bytes, so neither 18 KB nor 220 bytes is a violation. The visibility slowdown must be caused by an unrelated index configuration issue."
         },
         {
           "key": "C",
-          "text": "Activity summaries appear in the Event History, but timer summaries appear only in the Workflow Overview section. Both are limited to 200 bytes, but timer summaries also support full Markdown including images."
+          "text": "The 18 KB `StaticDetails` values violate the 20 KB limit because Temporal measures limits in binary kilobytes (1 KB = 1,024 bytes), making 18 KB actually 18,432 bytes, which exceeds the 20,000-byte cap for multi-byte UTF-8 Markdown."
         },
         {
           "key": "D",
-          "text": "Both summaries appear exclusively inside the expanded event detail view and are not visible in the collapsed Event History list. The limit for both is 2KB to accommodate multi-line Markdown descriptions."
+          "text": "The Activity `Summary` values at 220 bytes exceed the documented 200-byte limit for `Summary` fields. Both Activity and timer `Summary` fields share the 200-byte cap, while `StaticDetails` allows up to 20 KB, so the 18 KB `StaticDetails` is within bounds."
         }
       ],
-      "answer": "B",
-      "explanation": "According to the documentation, Activity and Timer summaries both appear in the Event History — in purple text next to their corresponding events when collapsed, and also prominently in the expanded event detail view. Neither appears in the Workflow Overview section (that section is for Workflow-level static summary, static details, and current details). The byte limit for `Summary` on both Activities and timers is 200 bytes. The 20K byte limit applies only to `StaticDetails` set at Workflow start, not to event-level summaries. Timer summaries follow the same Markdown restrictions as other metadata fields (no images, HTML, or scripts).",
+      "answer": "D",
+      "explanation": "According to the documentation, `StaticSummary` is limited to 200 bytes and `StaticDetails` is limited to 20 KB (approximately 20,000 bytes). Activity and timer `Summary` fields share the same 200-byte limit as `StaticSummary`. An 18 KB `StaticDetails` value is well within the 20 KB allowance. However, a 220-byte Activity `Summary` exceeds the 200-byte cap. Values that exceed their limits may be rejected or truncated depending on server behavior, which can cause the event-level metadata displayed in the UI to be incomplete or missing. The visibility slowdown in this scenario is a red herring—it is not caused by metadata size but is worth investigating separately. The practical lesson: `Summary` fields are designed to be concise single-line identifiers (think: one descriptive sentence), while `StaticDetails` is the right place for longer structured content like runbooks.",
       "source_doc": "develop_dotnet_platform_enriching-ui.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_hard_003",
       "category": "Develop",
       "difficulty": "hard",
-      "question": "Your operations team wants to display rich operational context in the Temporal Web UI Workflow list view — specifically, a one-sentence description identifying which customer and order type each Workflow instance represents. They also want a multi-paragraph status report visible when drilling into a specific Workflow. Which combination of `WorkflowOptions` fields satisfies both requirements, and what are their respective size constraints?",
+      "question": "You have a long-running .NET Workflow that processes a multi-stage ETL pipeline. You want operators to be able to see the current pipeline stage in the Temporal Web UI without expanding the Event History. You implement this by calling `Workflow.CurrentDetails = $\"Stage: {stageName}\"` after each stage completes. Six months later, a Workflow that has been running for four months is stuck in retry after a Worker crash. When the new Worker comes up and attempts to replay the history, it throws a nondeterminism error on the `CurrentDetails` assignment for stage 3 because a code refactor renamed that stage. What is the correct way to fix this while keeping per-stage visibility updates?",
       "choices": [
         {
           "key": "A",
-          "text": "Use `StaticSummary` (200-byte limit) for the one-sentence description in the list view, and `StaticDetails` (20K-byte limit) for the multi-paragraph report in the details view."
+          "text": "Replace `Workflow.CurrentDetails` with `Workflow.Memo` for stage names, since Memo values are stored in the start event and do not produce replay commands, making them immune to nondeterminism errors from renames."
         },
         {
           "key": "B",
-          "text": "Use `StaticSummary` (20K-byte limit) for the list view and `Workflow.CurrentDetails` (200-byte limit) for the details view; `StaticDetails` is reserved for system-generated metadata only."
+          "text": "Use `Workflow.Patched(\"stage3-rename\")` to branch the code: the old branch keeps the original stage name string, and the new branch uses the renamed string. This ensures replay of old histories follows the original command sequence while new executions use the updated name."
         },
         {
           "key": "C",
-          "text": "Use `StaticDetails` (200-byte limit) for both views; the UI automatically truncates the value for the list view and shows the full value in the details view."
+          "text": "Wrap the `Workflow.CurrentDetails` assignment in a `try/catch` block. If replay throws a nondeterminism error on that line, catch it and allow execution to continue with the new stage name, since the details update is non-critical metadata."
         },
         {
           "key": "D",
-          "text": "Use `Workflow.CurrentDetails` for the list view (200-byte limit) and `StaticSummary` for the details view (20K-byte limit); the field names are misleading relative to where they appear in the UI."
+          "text": "Move the `Workflow.CurrentDetails` assignment outside the Workflow and call it from the Client using `UpdateWorkflowAsync` with a special metadata update signal, which avoids writing any command into the Workflow's Event History."
         }
       ],
-      "answer": "A",
-      "explanation": "`StaticSummary` is explicitly designed for the Workflow list view — it is a single-line description limited to 200 bytes. `StaticDetails` is shown in the Workflow details view, supports multi-line Markdown, and has a much larger limit of 20K bytes. Both are set at Workflow start time via `WorkflowOptions` and cannot be changed after the Workflow is started (unlike `Workflow.CurrentDetails`, which is dynamic but only appears in the details view under 'Current Details'). The other options invert limits or misattribute where fields appear in the UI.",
+      "answer": "B",
+      "explanation": "Because `Workflow.CurrentDetails` emits a command into Event History, any change to what value is assigned—including renaming a stage string—will cause replay of existing histories to diverge from the new code. The correct Temporal pattern for evolving code that affects deterministic command sequences is to use `Workflow.Patched` (the .NET equivalent of `GetVersion` in other SDKs). You introduce a patch marker: histories that were recorded before the patch will take the 'old' branch (original stage name), while new executions and any history recorded after the patch is introduced will take the 'new' branch. This lets the same Worker binary safely replay both old and new histories. Option A is wrong because Memo is set at start time and cannot be updated during execution. Option C is wrong because nondeterminism errors are not catchable exceptions that can be swallowed—they indicate the history is fundamentally inconsistent with the code. Option D is wrong because there is no such `UpdateWorkflowAsync` metadata-only API that bypasses the Workflow's command stream.",
       "source_doc": "develop_dotnet_platform_enriching-ui.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_hard_004",
       "category": "Develop",
       "difficulty": "hard",
-      "question": "A .NET Worker is registered with a task queue called `\"my-task-queue\"` and has both `SayHelloWorkflow` and `MyActivities.SayHello` registered. The client starts the Workflow with the same task queue. During load testing, engineers observe that some Workflow Tasks complete but the Activity Task that invokes `SayHello` is never picked up, even though the Worker process is running. Which of the following is the most likely cause given how the .NET SDK worker registration works?",
+      "question": "A .NET Worker registers both a Workflow and its Activities in the same `TemporalWorker` instance, as shown in the Quickstart. The team is preparing for a production deployment where Activity logic changes frequently but Workflow orchestration logic is stable. An engineer proposes splitting the registration so that one Worker process handles only Activities and a second handles only the Workflow, both polling the same Task Queue. The team is debating whether this split will affect the behavior of `ActivityOptions.Summary` strings appearing in the Temporal Web UI event history. Which statement is correct?",
       "choices": [
         {
-          "key": "B",
-          "text": "The Worker was constructed with `.AddWorkflow\u003cSayHelloWorkflow\u003e()` but the Activity was registered as `activities.SayHello` (an instance method delegate) rather than the full `MyActivities` class type, and the Worker process crashed when the Activity Task arrived because the instance was garbage-collected."
+          "key": "A",
+          "text": "Activity `Summary` strings are set by the Activity Worker when it completes the Activity task, so separating Activity and Workflow Workers means the summary appears only after Activity completion, not at schedule time, changing when it is visible in the UI."
         },
         {
-          "key": "A",
-          "text": "Activity Tasks and Workflow Tasks are dispatched on the same task queue but the .NET SDK uses separate internal polling loops; if the Worker's Activity polling loop was never started because `AddActivity` was omitted, Activity Tasks queue up indefinitely while Workflow Tasks continue to be processed normally."
+          "key": "B",
+          "text": "The `Summary` in `ActivityOptions` is recorded by the Workflow Worker when it schedules the Activity via `Workflow.ExecuteActivityAsync`, not by the Activity Worker that executes it. Splitting registration does not change when or whether the summary appears in Event History."
         },
         {
           "key": "C",
-          "text": "The Temporal server routes Activity Tasks to the task queue of the Workflow that scheduled them only if the Activity's registered task queue matches the Workflow's task queue exactly; a case-sensitive mismatch between `\"my-task-queue\"` at registration and `\"My-Task-Queue\"` in `ActivityOptions` would silently drop Activity Tasks."
+          "text": "Splitting Workflow and Activity Workers onto separate processes causes the Temporal server to route Activity tasks to a different internal Task Queue partition, which prevents `ActivityOptions.Summary` metadata from being attached to the scheduled event in the UI."
         },
         {
           "key": "D",
-          "text": "The `StartToCloseTimeout` on the `ActivityOptions` was set to `TimeSpan.FromMinutes(5)`, which the server interprets as a scheduling deadline rather than an execution deadline; Activities not started within 5 minutes are dropped rather than retried."
+          "text": "Both Workers must register the `ActivityOptions.Summary` value independently in their local metadata cache. If the Activity Worker does not re-register the same summary string, the UI will display an empty summary after the split deployment."
         }
       ],
-      "answer": "A",
-      "explanation": "In the .NET SDK, Activities and Workflows are registered separately on the `TemporalWorkerOptions` via `AddActivity` and `AddWorkflow`. If `AddActivity` is omitted, the Worker will successfully poll for and execute Workflow Tasks but will never register a poller for Activity Tasks on that task queue. From the server's perspective, Activity Tasks simply accumulate on the queue with no worker to drain them. The other options describe real but distinct failure modes: garbage collection of an activity instance would cause a runtime exception rather than silent non-polling; a task queue name mismatch would route the task to a different queue rather than dropping it; and `StartToCloseTimeout` governs execution time, not scheduling — tasks not started are retried via `ScheduleToStartTimeout` (which defaults to unlimited) not silently dropped.",
-      "source_doc": "develop_dotnet_set-up.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "answer": "B",
+      "explanation": "In Temporal, when a Workflow calls `Workflow.ExecuteActivityAsync` with `ActivityOptions { Summary = \"...\" }`, the Workflow Worker issues a `ScheduleActivity` command. This command—including the `Summary` metadata—is recorded in Event History at schedule time by the Workflow Worker, before any Activity Worker picks up and executes the task. The Activity Worker that actually runs the Activity has no role in setting this metadata. Therefore, splitting Workflow and Activity Workers onto separate processes (both polling the same Task Queue) has no effect on whether or when `Summary` appears in the UI or Event History. This is an important architectural insight: metadata about orchestration decisions lives in Workflow-side commands, not in Activity execution. It also means you can safely deploy new Activity implementations (on Activity Workers) without affecting the Workflow's schedule-time metadata, as long as the Workflow code itself is unchanged.",
+      "source_doc": "develop_dotnet_platform_enriching-ui.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_nightmare_001",
       "category": "Develop",
       "difficulty": "nightmare",
-      "question": "A .NET Temporal workflow uses `Workflow.CurrentDetails` to emit rich Markdown progress updates throughout a long-running order fulfillment process. The team also attaches `Summary` strings (up to 200 bytes) to each Activity invocation and to `Workflow.DelayWithOptionsAsync` timer steps. During a post-incident review, engineers discover that after a Worker crash and replay, the UI shows stale `CurrentDetails` from before the crash, even though the Workflow eventually completed correctly. Which of the following best explains the interaction between Workflow replay, event history, and the `CurrentDetails` / `Summary` metadata fields that caused this observation?\n\n```csharp\n[WorkflowRun]\npublic async Task\u003cstring\u003e RunAsync(string orderId)\n{\n    Workflow.CurrentDetails = $\"Starting order {orderId}\";\n    var result = await Workflow.ExecuteActivityAsync(\n        (OrderActivities act) =\u003e act.ReserveInventoryAsync(orderId),\n        new ActivityOptions\n        {\n            StartToCloseTimeout = TimeSpan.FromMinutes(5),\n            Summary = \"Reserving inventory\"\n        });\n    Workflow.CurrentDetails = $\"Inventory reserved, processing payment\";\n    await Workflow.DelayWithOptionsAsync(\n        new DelayOptions(TimeSpan.FromSeconds(30)) { Summary = \"Payment gateway delay\" });\n    Workflow.CurrentDetails = $\"Order {orderId} complete\";\n    return result;\n}\n```",
+      "question": "A .NET Temporal workflow uses `Workflow.CurrentDetails` to continuously update a rich Markdown status string as it progresses through dozens of long-running activity steps. A senior engineer reviewing the code raises a concern about replay safety. Which of the following best describes the actual risk and why it exists at the intersection of workflow determinism and UI metadata?\n\n```csharp\n[Workflow]\npublic class OrderWorkflow\n{\n    [WorkflowRun]\n    public async Task RunAsync(string orderId)\n    {\n        Workflow.CurrentDetails = $\"Starting order {orderId} at {DateTime.UtcNow}\";\n        await Workflow.ExecuteActivityAsync(\n            (OrderActivities a) =\u003e a.ValidateAsync(orderId),\n            new ActivityOptions { StartToCloseTimeout = TimeSpan.FromMinutes(5) });\n        Workflow.CurrentDetails = $\"Validated at {DateTime.UtcNow}\";\n        await Workflow.ExecuteActivityAsync(\n            (OrderActivities a) =\u003e a.FulfillAsync(orderId),\n            new ActivityOptions { StartToCloseTimeout = TimeSpan.FromMinutes(10) });\n        Workflow.CurrentDetails = \"Complete\";\n    }\n}\n```",
       "choices": [
         {
           "key": "A",
-          "text": "`Workflow.CurrentDetails` mutations are durable commands written to the event history as `UpsertWorkflowSearchAttributes` events, so they survive replay identically. The stale UI state was caused by the Activity `Summary` exceeding 200 bytes, which silently truncated the field, corrupting the metadata store and rolling back `CurrentDetails` to its last valid snapshot."
+          "text": "The risk is benign because `Workflow.CurrentDetails` writes only to metadata visible in the UI and is never persisted to the event history, so it has no effect on replay determinism regardless of what values are assigned."
         },
         {
           "key": "B",
-          "text": "`Workflow.CurrentDetails` is an in-memory, mutable property that is NOT recorded as a durable history event. On replay, the Worker re-executes workflow code deterministically to rebuild state, so `CurrentDetails` is set again as each line is replayed. The stale UI value seen after the crash was a transient visibility lag — the Worker had not yet replayed past the last `CurrentDetails` assignment when the UI was checked, and the value became current once replay completed."
+          "text": "The risk is that `DateTime.UtcNow` is a non-deterministic call inside a workflow. On replay, each call produces a different timestamp than the original execution, causing the details string to diverge. Although Temporal does not fail replay solely due to mismatched metadata, the pattern normalizes non-deterministic code in workflows, making it easy for future developers to copy this pattern into branching logic where it will cause a non-determinism error and history mismatch."
         },
         {
           "key": "C",
-          "text": "Activity `Summary` values are written into the `ActivityTaskScheduled` history event and are therefore durable, but `Workflow.CurrentDetails` is stored in a separate side-channel outside the history. After a crash, Temporal rolls back the side-channel to the last server-side checkpoint, which corresponds to the most recent completed Activity, explaining the stale value until the Workflow re-emitted it."
+          "text": "The risk is that `Workflow.CurrentDetails` is written to the event history as a `WorkflowPropertiesModifiedEvent` on every assignment, causing the history to grow unboundedly with each assignment, ultimately triggering the 50,000-event history limit and forcing an unplanned Continue-As-New."
         },
         {
           "key": "D",
-          "text": "`Workflow.CurrentDetails` and Activity `Summary` fields are both flushed to the server only when the workflow task completes. If the Worker crashes mid-task before the completed task is acknowledged, the server discards all pending metadata mutations for that task. The timer `Summary` is also lost and must be re-emitted, but because timer delays block replay, `CurrentDetails` remains permanently stale unless the engineer manually resets the workflow."
+          "text": "The risk is that setting `Workflow.CurrentDetails` is an I/O-bound operation that breaks the requirement for workflows to be single-threaded and side-effect-free; the correct pattern is to set it only inside activity implementations, not in workflow code."
         }
       ],
       "answer": "B",
-      "explanation": "The critical insight here is understanding which Temporal metadata is durable (in the event history) versus which is ephemeral (in-memory, re-derived during replay). `Workflow.CurrentDetails` is an in-memory property on the workflow execution context — it is NOT written as a dedicated history event. This means the server does not independently store each assignment; rather, the current value at any moment is whatever the workflow code last set it to during the current (or most recent completed) workflow task. Activity `Summary` fields are embedded in the `ActivityTaskScheduled` event and are therefore durable, and timer `Summary` fields go into the `TimerStarted` event similarly. But `CurrentDetails` is different: it is sent to the server as part of the workflow task completion payload, meaning it reflects the state at the end of the last successfully completed workflow task. When a Worker crashes mid-task and restarts, the server schedules a new workflow task from the last committed history point. During replay, the SDK re-executes the workflow code synchronously up to the replay frontier, re-setting `CurrentDetails` at each line. The UI observing the workflow during this replay window — before the Worker reaches the in-progress line — will see the value from the last completed task, which appears 'stale'. Once replay finishes and the Worker completes the current workflow task, `CurrentDetails` is updated on the server. This is not a bug: it is the expected interaction between replay semantics and mutable workflow metadata. The practical production lesson is: never assume `CurrentDetails` reflects real-time workflow position during replay or slow task execution — it is a lagging indicator bounded by workflow task completion boundaries. This also clarifies why `StaticSummary` / `StaticDetails` (set at workflow start) are always consistent: they are embedded in the `WorkflowExecutionStarted` event and never change.",
+      "explanation": "The real danger here is the intersection of UI enrichment APIs and workflow determinism. `Workflow.CurrentDetails` itself is safe—it is a write to mutable metadata that Temporal tracks but does not cause replay to fail based on its value. However, `DateTime.UtcNow` is a non-deterministic system call. Inside a workflow, all sources of non-determinism (wall-clock time, random numbers, environment reads) must be replaced with their Temporal-sanctioned equivalents—e.g., `Workflow.UtcNow` for the current time. On the first execution, `DateTime.UtcNow` produces, say, `2024-01-15T10:00:00Z`. On replay (after a worker restart, history rebuild, or debugger replay), it produces the current wall-clock time, which differs. While Temporal's replay engine does not intrinsically fail because a metadata string changed, the deeper architectural risk is normalization: this code pattern teaches the team that `DateTime.UtcNow` is acceptable inside workflows. When someone copies this idiom into an `if` branch or a workflow ID generation statement, replay will produce different branching decisions than the original execution, causing a non-determinism panic. The correct fix is `Workflow.UtcNow` or `Workflow.Random`, which are deterministic wrappers that return the same value on every replay by reading from the workflow's internal clock. Option A is wrong because, while CurrentDetails does not cause replay failures by itself, the `DateTime.UtcNow` usage is the real hazard. Option C is wrong—CurrentDetails is not stored as a discrete history event on every assignment in the same way activity events are; it is a metadata field. Option D is wrong because setting CurrentDetails is explicitly a supported workflow-side API, not an I/O operation.",
       "source_doc": "develop_dotnet_platform_enriching-ui.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "develop_nightmare_002",
       "category": "Develop",
       "difficulty": "nightmare",
-      "question": "An engineering team starts a high-volume batch Workflow using the .NET SDK and sets both `StaticSummary` and `StaticDetails` in `WorkflowOptions`. Six months later they add per-Activity `Summary` metadata and update `Workflow.CurrentDetails` inside the Workflow. A compliance team then queries the Temporal Web UI and notices that several completed Workflows — all finished before the code change — show `StaticSummary` and `StaticDetails` correctly, but display no Activity-level summaries and show only the initial `CurrentDetails` value (set in the very first workflow task). Which combination of Temporal architectural behaviors best explains this observation?\n\n```csharp\nvar handle = await client.StartWorkflowAsync(\n    (BatchWorkflow wf) =\u003e wf.RunAsync(batchId),\n    new WorkflowOptions\n    {\n        Id = $\"batch-{batchId}\",\n        TaskQueue = \"batch-queue\",\n        StaticSummary = $\"Batch job {batchId}\",\n        StaticDetails = \"Nightly ETL pipeline — compliance tier\"\n    });\n```",
+      "question": "An engineering team is building a .NET order-processing workflow that uses `StaticSummary` and `StaticDetails` on `WorkflowOptions` to populate the Temporal Web UI. They also attach a per-activity `Summary` to each `ActivityOptions` call. During a production incident, an operator tries to search the visibility store for workflows by filtering on their summary text (e.g., `StaticSummary = 'Order processing for customer #12345'`). The search returns no results. Which of the following correctly explains why, and what the interaction is between UI enrichment metadata and the visibility store's search attribute system?\n\n```csharp\nvar handle = await client.StartWorkflowAsync(\n    (OrderWorkflow wf) =\u003e wf.RunAsync(order),\n    new WorkflowOptions\n    {\n        Id = $\"order-{order.Id}\",\n        TaskQueue = \"orders\",\n        StaticSummary = $\"Order processing for customer #{order.CustomerId}\",\n        StaticDetails = $\"Region: {order.Region}, Tier: {order.Tier}\"\n    });\n```",
       "choices": [
         {
           "key": "A",
-          "text": "`StaticSummary` and `StaticDetails` are written into the `WorkflowExecutionStarted` history event and are therefore immutable and always present for any completed workflow. Activity `Summary` fields are embedded in `ActivityTaskScheduled` events at schedule time, so they are durable — their absence for old runs simply means those runs predated the code that set `Summary`. `CurrentDetails` reflects the last workflow-task-completion payload, so old runs that never re-assigned it show only the initial value."
+          "text": "`StaticSummary` and `StaticDetails` are stored as indexed search attributes in the visibility store automatically, but the operator must first run `temporal operator search-attribute create` to register `StaticSummary` and `StaticDetails` as custom keyword attributes before they become queryable."
         },
         {
           "key": "B",
-          "text": "`StaticSummary` is stored in the visibility store as a search attribute, while `StaticDetails` is stored separately in an archival backend. Both are queryable post-completion because they are indexed at workflow start. Activity `Summary` and `CurrentDetails` are written only to the in-memory worker cache, so they are lost when the workflow completes and the worker recycles its execution context, explaining their absence for historical runs."
+          "text": "`StaticSummary` and `StaticDetails` are UI display metadata stored in the workflow's memo or header fields, not as indexed search attributes in the visibility store. They are visible in the Temporal Web UI detail view but cannot be queried via list filters. To make order metadata searchable, the team must use typed custom search attributes (e.g., `UpsertTypedSearchAttributes`) explicitly indexed by the visibility store."
         },
         {
           "key": "C",
-          "text": "All four metadata fields — `StaticSummary`, `StaticDetails`, `CurrentDetails`, and Activity `Summary` — are stored exclusively in the event history blob. When a workflow closes, Temporal compacts the history into a summary record containing only the start and close events, which preserves `StaticSummary` and `StaticDetails` but truncates mid-execution metadata like `CurrentDetails` mutations and Activity `Summary` fields, explaining the missing data for completed runs."
+          "text": "`StaticSummary` exceeds the 200-byte limit for search attribute keyword fields, so Temporal silently drops it from the visibility store index. Using shorter strings under 128 bytes would allow it to be indexed and queried normally without any additional configuration."
         },
         {
           "key": "D",
-          "text": "`StaticSummary` and `StaticDetails` are lost once a workflow closes because the visibility store entry expires. Old workflows appear to show them only because the Temporal UI fetches them from a local browser cache populated when the workflow was first viewed while running. Activity `Summary` fields are durable in the history indefinitely, but the UI rendering layer filters them out for closed workflows to reduce payload size in the list view."
+          "text": "`StaticSummary` and `StaticDetails` are indexed in the visibility store but only after the first workflow task completes, not at start time. The operator's search failed because the query ran before the first worker poll processed the workflow start event and flushed the metadata to the index."
         }
       ],
-      "answer": "A",
-      "explanation": "Understanding where each metadata field is persisted — and when — is essential for reasoning about what the UI can show for historical workflows. `StaticSummary` and `StaticDetails` are set in `WorkflowOptions` at start time and are embedded in the `WorkflowExecutionStarted` event, the very first event in every workflow's history. Because that event is immutable and retained for the namespace's retention period (and indefinitely if archival is enabled), these values are always recoverable for any workflow whose history exists. Activity `Summary` fields are embedded in `ActivityTaskScheduled` events, which are written to history at the moment the activity is scheduled during a workflow task completion. This means: for workflows that ran before the code change, no `ActivityTaskScheduled` event in their history ever contained a `Summary` field, so none is shown — not a data loss issue, but a simple code-vintage issue. `Workflow.CurrentDetails` is sent as part of the workflow task completion response; each update is carried in the corresponding `WorkflowTaskCompleted` event. For old workflows that never executed the updated code, the only `CurrentDetails` value ever sent was from the initial workflow task, so that is all the UI can display. The production lesson: metadata enrichment is only as complete as the code that was running at the time. Retrofitting metadata requires either a workflow reset (to replay with new code) or accepting that historical runs have sparse metadata. This question also illustrates why `StaticSummary`/`StaticDetails` are deliberately immutable by design — their durability guarantee comes from being anchored to the start event, making them ideal for compliance and audit tagging.",
+      "answer": "B",
+      "explanation": "This question probes the boundary between two distinct Temporal subsystems: the UI enrichment metadata system (`StaticSummary`, `StaticDetails`, `CurrentDetails`, activity/timer `Summary`) and the visibility store's search attribute indexing system. These are architecturally separate. UI enrichment metadata is designed for human-readable display in the Temporal Web UI—it appears in the workflow list summary column, the workflow detail page, and next to events in the event history. Internally, it is stored as workflow metadata (analogous to memo fields), not as indexed search attributes. The visibility store indexes only explicitly declared search attributes, which are either system-defined (e.g., `WorkflowType`, `ExecutionStatus`, `StartTime`) or custom attributes registered via `temporal operator search-attribute create` and set programmatically via `UpsertTypedSearchAttributes` (or `UpsertSearchAttributes` in older SDKs). Because `StaticSummary` is never written to the search attribute index, list filter queries like `StaticSummary = '...'` are not valid filter expressions and will return no results. The correct architectural pattern for making business metadata searchable is: (1) register a custom search attribute of the appropriate type (Keyword, Text, Int, etc.), and (2) call `Workflow.UpsertTypedSearchAttributes` inside the workflow to index the value. Option A is wrong—`StaticSummary` is not auto-indexed and there is no `StaticSummary` search attribute type to register. Option C is wrong—byte limits govern the display field, not an indexing threshold. Option D is wrong—metadata is not buffered behind workflow task completion for indexing purposes in the way search attribute upserts are.",
       "source_doc": "develop_dotnet_platform_enriching-ui.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     }
   ]
 }

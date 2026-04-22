@@ -5,645 +5,645 @@
       "id": "features_highavailability_easy_001",
       "category": "Features_HighAvailability",
       "difficulty": "easy",
-      "question": "What happens to your Namespace endpoint address after a Temporal Cloud failover to a replica region?",
+      "question": "What happens to your Namespace endpoint address after a failover in Temporal Cloud?",
       "choices": [
         {
           "key": "A",
-          "text": "It changes to reflect the new active region, so clients must update their connection strings immediately."
+          "text": "It changes to reflect the new active region, so clients must update their connection strings."
         },
         {
           "key": "B",
-          "text": "It stays the same — the endpoint does not change even though the active region switches."
+          "text": "It stays the same — the endpoint does not change even though traffic is now served from the replica region."
         },
         {
           "key": "C",
-          "text": "It is temporarily suspended until the failback to the original region is complete."
+          "text": "It becomes unavailable until the failback to the primary region is complete."
         },
         {
           "key": "D",
-          "text": "It rotates between the primary and replica addresses based on a DNS round-robin policy."
+          "text": "It is replaced by a temporary endpoint that expires after the incident is resolved."
         }
       ],
       "answer": "B",
-      "explanation": "Your Namespace endpoint (for example, my_namespace.my_account.tmprl.cloud:7233) remains unchanged after a failover. Temporal Cloud routes traffic to whichever region is currently active behind the scenes, so your application code does not need to change connection strings. This is a key part of Temporal's value: infrastructure events like regional failovers are transparent to your application.",
+      "explanation": "Your Namespace endpoint (e.g., my_namespace.my_account.tmprl.cloud:7233) remains the same before and after a failover. Temporal Cloud routes traffic to whichever region is currently active behind the scenes, so your applications do not need to update any connection strings. This is a key part of Temporal Cloud's High Availability design — seamless failover without client-side reconfiguration.",
       "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_easy_002",
       "category": "Features_HighAvailability",
       "difficulty": "easy",
-      "question": "When Temporal Cloud performs a 'graceful failover' (handover), what does it prioritize?",
+      "question": "When you enable High Availability for a Temporal Cloud Namespace by adding a replica, where must the replica region be located?",
       "choices": [
         {
           "key": "A",
-          "text": "Availability, by immediately switching to the replica so Workflows experience zero interruption."
+          "text": "In any supported Temporal Cloud region anywhere in the world, for maximum geographic redundancy."
         },
         {
           "key": "B",
-          "text": "Speed, by skipping replication lag checks to complete the switch as fast as possible."
+          "text": "In the same data center as the primary region to minimize replication latency."
         },
         {
           "key": "C",
-          "text": "Consistency, by draining replication tasks before switching, even if that causes a brief pause."
+          "text": "On the same continent as the primary region, because cross-continent replication is not supported."
         },
         {
           "key": "D",
-          "text": "Throughput, by running both regions simultaneously until all in-flight tasks are finished."
+          "text": "In a region managed by the same cloud provider as the primary, regardless of continent."
         }
       ],
       "answer": "C",
-      "explanation": "Graceful failover (handover) favors consistency over availability. Temporal Cloud fully processes and drains replication tasks before switching the active region, which may cause a brief period where Workflows pause and new requests are rejected with a retryable error. This ensures no progress is lost and avoids data conflicts. The forced failover mode does the opposite — it switches immediately and prioritizes availability.",
-      "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "explanation": "Temporal Cloud requires that the replica region be on the same continent as the primary region. This means not every region pairing is available — you need to check the Service Regions page to see which replica regions are supported for your chosen primary. This constraint is worth knowing when planning your High Availability setup.",
+      "source_doc": "cloud_high-availability_enable.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_easy_003",
       "category": "Features_HighAvailability",
       "difficulty": "easy",
-      "question": "Where can a replica region be located relative to a Namespace's primary region in Temporal Cloud?",
+      "question": "What is Temporal Cloud's DEFAULT failover behavior when a Namespace becomes unavailable?",
       "choices": [
         {
           "key": "A",
-          "text": "Anywhere in the world, as long as the round-trip latency between the two regions is under 100 ms."
+          "text": "Forced failover — the replica immediately becomes active regardless of replication lag or data consistency."
         },
         {
           "key": "B",
-          "text": "Only in a different cloud provider than the primary, to avoid a single-provider outage."
+          "text": "Manual-only failover — Temporal never switches regions automatically and waits for an operator to act."
         },
         {
           "key": "C",
-          "text": "On the same continent as the primary region, so not every region pairing is available."
+          "text": "Graceful failover only — Temporal always drains all replication tasks fully before switching, no matter how long it takes."
         },
         {
           "key": "D",
-          "text": "In the same data center as the primary region, but in a different availability zone."
+          "text": "Hybrid failover — Temporal first attempts a graceful failover for up to 10 seconds, then falls back to a forced failover if needed."
         }
       ],
-      "answer": "C",
-      "explanation": "Temporal Cloud requires that a replica region be on the same continent as the primary region. This constraint means not all region pairings are available — you should check the Service Regions page to see which replica regions are supported for your chosen primary. This geographic rule balances replication latency with regional isolation for disaster recovery.",
-      "source_doc": "cloud_high-availability_enable.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "answer": "D",
+      "explanation": "Temporal Cloud's default mode is hybrid failover. It starts by trying a graceful (handover) failover, which pauses traffic briefly to drain replication tasks and avoid data conflicts. If that doesn't resolve within about 10 seconds, it automatically switches to a forced failover to restore availability. This hybrid approach balances both consistency and availability rather than sacrificing one entirely.",
+      "source_doc": "cloud_high-availability_failovers.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_easy_004",
       "category": "Features_HighAvailability",
       "difficulty": "easy",
-      "question": "After you remove a replica from a Namespace, how long must you wait before you can add a new replica to that same region?",
+      "question": "If you remove a replica from a Temporal Cloud Namespace and want to re-add High Availability to that same region, how long must you wait?",
       "choices": [
         {
           "key": "A",
-          "text": "24 hours, after which the region is automatically re-enabled for replication."
+          "text": "There is no waiting period — you can immediately add a replica back to the same region after removal."
         },
         {
           "key": "B",
-          "text": "Seven days, during which you can still add a replica to a different region."
+          "text": "You must wait 24 hours before re-adding a replica to the same region."
         },
         {
           "key": "C",
-          "text": "30 days, to allow Temporal Cloud to fully clean up all replicated Workflow history."
+          "text": "You must wait seven days before re-enabling High Availability in that same region."
         },
         {
           "key": "D",
-          "text": "There is no waiting period — you can immediately re-add a replica to the same region."
+          "text": "You must wait 30 days and then contact Temporal support to re-enable that region."
         }
       ],
-      "answer": "B",
-      "explanation": "After removing a replica from a region, you must wait seven days before re-enabling High Availability in that same region. During this period you can still add a replica to a different region (as long as you haven't had one there within the last seven days). This cooldown period is important to understand when planning disaster-recovery changes to a live Namespace.",
+      "answer": "C",
+      "explanation": "After removing a replica from a region, Temporal Cloud enforces a seven-day waiting period before you can add a replica back to that same region. During this time, you can still add a replica to a different region (as long as you haven't had one there in the last seven days either). This is why the documentation discourages changing replica locations casually — it temporarily removes your availability guarantees and takes time to restore them.",
       "source_doc": "cloud_high-availability_enable.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_easy_005",
       "category": "Features_HighAvailability",
       "difficulty": "easy",
-      "question": "What is a 'failback' in the context of Temporal Cloud High Availability?",
+      "question": "How do Activities behave differently in a High Availability Namespace compared to a standard (non-replicated) Namespace during a failover?",
       "choices": [
         {
           "key": "A",
-          "text": "The process of rolling back a Workflow Execution to a previous checkpoint after a failed Activity."
+          "text": "Activities in HA Namespaces use at-most-once semantics, meaning they will never be retried after a failover event."
         },
         {
           "key": "B",
-          "text": "An automatic retry that Temporal performs when a Worker crashes mid-task."
+          "text": "Activities in HA Namespaces use at-least-once semantics, meaning a completed Activity may be dispatched again after a failover."
         },
         {
           "key": "C",
-          "text": "Returning control from the replica back to the original primary region after it has recovered."
+          "text": "Activities in HA Namespaces are paused indefinitely after a failover until an operator manually resumes them."
         },
         {
           "key": "D",
-          "text": "Reverting a Namespace configuration change that was made during an active incident."
+          "text": "Activities in HA Namespaces are cancelled and restarted from the beginning of the Workflow after a failover."
         }
       ],
-      "answer": "C",
-      "explanation": "A failback is the reverse of a failover: it transfers the active role back from the replica to the original primary region once that region is healthy again. By default, Temporal Cloud performs this automatically after a managed failover. Understanding the failover/failback cycle helps you reason about how Temporal keeps Workflow Executions running continuously across regional outages.",
+      "answer": "B",
+      "explanation": "High Availability Namespaces provide at-least-once semantics for Activity execution. Because replication is asynchronous, a failover may cause the new active region to re-dispatch Activities that were already completed in the previous primary but whose completion events hadn't been replicated yet. This is an important design consideration: your Activity implementations should be idempotent (safe to run more than once) when using HA Namespaces.",
       "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_easy_006",
       "category": "Features_HighAvailability",
       "difficulty": "easy",
-      "question": "In a Temporal Cloud Namespace with High Availability features, what execution guarantee applies to Activities — and why is it different from a non-replicated Namespace?",
+      "question": "Which tool does NOT support triggering a manual Namespace failover in Temporal Cloud?",
       "choices": [
         {
           "key": "A",
-          "text": "Exactly-once semantics, because the replica always deduplicates Activity results before dispatching them."
+          "text": "The Temporal Cloud Web UI, accessible through your browser at cloud.temporal.io."
         },
         {
           "key": "B",
-          "text": "At-least-once semantics, because replication lag during a failover can cause completed Activities to be re-dispatched."
+          "text": "The tcld command-line interface using the 'namespace failover' command."
         },
         {
           "key": "C",
-          "text": "At-most-once semantics, because the replica discards any Activity that was not fully confirmed by the primary."
+          "text": "The Temporal Cloud Terraform provider for infrastructure-as-code automation."
         },
         {
           "key": "D",
-          "text": "Best-effort semantics, because Temporal does not track Activity state across regional boundaries at all."
+          "text": "The Cloud Ops API, available via both HTTP and gRPC endpoints."
         }
       ],
-      "answer": "B",
-      "explanation": "High Availability Namespaces provide at-least-once semantics for Activity execution. Because replication is asynchronous, a failover may occur before all completed Activity results have been replicated. This can cause the newly active replica to re-dispatch Activities that already ran on the primary. Non-replicated Namespaces can be configured for at-most-once semantics. Knowing this helps you write idempotent Activity implementations when using HA features.",
+      "answer": "C",
+      "explanation": "The Temporal Cloud Terraform provider does not support triggering failovers. If you need to manually initiate a failover — for example during testing or in response to a custom alert — you must use the Web UI, the tcld CLI, or the Cloud Ops API. Knowing this limitation matters if your team manages infrastructure with Terraform and expects full parity with other tooling.",
       "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
-    },
-    {
-      "id": "features_highavailability_med_001",
-      "category": "Features_HighAvailability",
-      "difficulty": "med",
-      "question": "When adding a replica to a Temporal Cloud Namespace for High Availability, which geographic constraint must be satisfied?",
-      "choices": [
-        {
-          "key": "A",
-          "text": "The replica can be placed in any Temporal Cloud region globally, as long as it is in a different availability zone from the primary."
-        },
-        {
-          "key": "B",
-          "text": "The replica region must be on the same continent as the primary region, so not all replication options are available in every Temporal Cloud region."
-        },
-        {
-          "key": "C",
-          "text": "The replica must be in the same cloud provider (e.g., AWS or GCP) as the primary, but can be on a different continent if latency is acceptable."
-        },
-        {
-          "key": "D",
-          "text": "The replica region must be within 500 miles of the primary region, determined by Temporal Cloud's latency thresholds rather than continental boundaries."
-        }
-      ],
-      "answer": "B",
-      "explanation": "Temporal Cloud requires that the replica region be on the same continent as the primary. This constraint exists to manage replication latency and data sovereignty concerns, so not every region has all replication options available. Consult the Service Regions page to find supported replica regions for your chosen primary. The other options invent constraints (same AZ, same cloud provider, 500-mile rule) that are not part of Temporal Cloud's documented requirements.",
-      "source_doc": "cloud_high-availability_enable.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_med_002",
       "category": "Features_HighAvailability",
       "difficulty": "med",
-      "question": "A team removes a replica from their Temporal Cloud Namespace and immediately wants to re-enable High Availability in the same region. What happens?",
+      "question": "A team wants to move their HA replica from us-west-2 to eu-west-1 but their Namespace is already deployed in production. Which of the following accurately describes how to accomplish this with the least risk?",
       "choices": [
         {
           "key": "A",
-          "text": "They can re-add the replica immediately because the region's infrastructure is already familiar with the Namespace metadata."
+          "text": "Use tcld namespace add-region to add eu-west-1 while keeping us-west-2; Temporal automatically drops the old replica once the new one is healthy."
         },
         {
           "key": "B",
-          "text": "They must open a support ticket with Temporal; re-enabling HA in any region requires manual approval after a replica is removed."
+          "text": "Update the primary region directly to eu-west-1 using tcld namespace update; the replica automatically moves alongside it."
         },
         {
           "key": "C",
-          "text": "They must wait seven days before re-enabling HA in that same region, though they can add a replica to a different region sooner."
+          "text": "Remove the existing replica first (losing HA guarantees temporarily), then add a new replica in eu-west-1. Temporal discourages this except under exceptional circumstances."
         },
         {
           "key": "D",
-          "text": "They must wait 24 hours before re-enabling HA anywhere, because the removal process locks all replication options for that Namespace."
+          "text": "Trigger a manual failover to us-west-2, then use tcld namespace add-region to register eu-west-1 as a second replica without any downtime."
         }
       ],
       "answer": "C",
-      "explanation": "After removing a replica, Temporal Cloud enforces a seven-day waiting period before that same region can be used again for replication. This prevents rapid add/remove cycles that could cause replication instability. Importantly, you CAN add a replica to a different region during that seven-day window, as long as you haven't already had a replica there within the last seven days. Options A, B, and D all misstate the actual rule — there is no immediate re-add, no support ticket requirement, and the 24-hour all-regions lock does not exist.",
+      "explanation": "Temporal Cloud cannot change replica locations directly. The only path is to remove the current replica and add a new one, which temporarily removes HA guarantees. The documentation explicitly discourages this for deployed applications except under exceptional circumstances and notes the seven-day cooldown on the removed region. Option A is wrong because Temporal does not support multiple simultaneous replicas or automatic replacement. Option B is wrong because the primary region cannot be updated to move a replica. Option D is wrong because a failover does not let you register additional replica regions.",
       "source_doc": "cloud_high-availability_enable.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_med_003",
       "category": "Features_HighAvailability",
       "difficulty": "med",
-      "question": "What is the key behavioral difference between a graceful failover (handover) and a forced failover in Temporal Cloud?",
+      "question": "In Temporal Cloud's hybrid failover mode (the default), what happens if the graceful handover phase cannot complete within its timeout?",
       "choices": [
         {
           "key": "A",
-          "text": "A graceful failover immediately activates the replica with no pause, while a forced failover drains all replication tasks before switching, causing a longer outage."
+          "text": "The failover attempt is permanently aborted, and the Namespace stays in its original active region with no further retry."
         },
         {
           "key": "B",
-          "text": "A graceful failover fully drains replication tasks and briefly pauses traffic to favor consistency, while a forced failover immediately activates the replica and prioritizes availability over consistency."
+          "text": "Temporal Cloud automatically escalates to a forced failover, immediately activating the replica and prioritizing availability over consistency."
         },
         {
           "key": "C",
-          "text": "A graceful failover is only available via the tcld CLI, while a forced failover can be triggered from the Web UI or the Cloud Ops API."
+          "text": "The Namespace enters a degraded read-only mode until an operator manually forces the failover via tcld."
         },
         {
           "key": "D",
-          "text": "A graceful failover permanently promotes the replica to primary, while a forced failover is a temporary switch that auto-reverts after 10 minutes."
+          "text": "Temporal Cloud retries the graceful handover indefinitely until the replication lag drops below a safe threshold before attempting again."
         }
       ],
       "answer": "B",
-      "explanation": "The core trade-off is consistency vs. availability. In a graceful failover, Temporal drains replication tasks and pauses traffic (up to ~10 seconds) to ensure no progress is lost — this favors consistency. A forced failover immediately activates the replica without waiting for replication to catch up, meaning some events may not have arrived yet; conflict resolution handles divergence afterward. This mode prioritizes availability. Options A and D have the descriptions reversed or introduce non-existent behaviors. Option C invents a tooling restriction that does not exist.",
+      "explanation": "Hybrid mode first attempts a graceful handover for up to 10 seconds. If the system cannot reach a consistent state in that window, it automatically falls back to a forced failover—activating the replica immediately and accepting potential replication-lag-based conflict resolution. This design balances consistency and availability. Option A describes what happens only during a pure graceful failover if the timeout expires (the attempt is aborted), not what hybrid mode does. Option C is incorrect because there is no read-only degraded mode. Option D is incorrect because hybrid mode does not retry the graceful phase indefinitely.",
       "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_med_004",
       "category": "Features_HighAvailability",
       "difficulty": "med",
-      "question": "What is Temporal Cloud's default failover mode, and how does it behave?",
+      "question": "What happens to the Namespace endpoint (e.g., my_namespace.my_account.tmprl.cloud:7233) after an automated Temporal Cloud failover to the replica region?",
       "choices": [
         {
           "key": "A",
-          "text": "Forced failover is the default; it immediately switches to the replica to ensure maximum availability without any traffic pause."
+          "text": "The endpoint changes to reflect the new active region, so clients must update their connection strings after every failover."
         },
         {
           "key": "B",
-          "text": "Graceful failover is the default; it always waits until every replication task is drained before switching, regardless of how long that takes."
+          "text": "The endpoint stays the same; only the underlying CNAME may change for multi-region Namespaces, which is handled transparently."
         },
         {
           "key": "C",
-          "text": "Manual failover is the default; Temporal Cloud never switches regions automatically and requires an operator to trigger every failover."
+          "text": "The endpoint is temporarily unavailable for up to 30 minutes while DNS propagates to the new region."
         },
         {
           "key": "D",
-          "text": "Hybrid failover is the default; it first attempts a graceful failover for up to 10 seconds, then automatically falls back to a forced failover if consistency cannot be reached in time."
+          "text": "The endpoint changes only on manual failovers; automated failovers preserve the endpoint for SDK clients but not for CLI tools."
         }
       ],
-      "answer": "D",
-      "explanation": "Hybrid failover is Temporal Cloud's default mode. It tries the graceful (handover) approach for up to 10 seconds. If the Namespace cannot reach a consistent state within that window, it automatically escalates to a forced failover. This balances consistency and availability: you get the safety of draining replication tasks when possible, but you don't stay unavailable indefinitely. Option A describes forced-only behavior, option B describes unbounded graceful behavior (which would violate the 10-second cap), and option C describes a manual-only model that contradicts documented automatic health-check-driven failovers.",
+      "answer": "B",
+      "explanation": "The Namespace endpoint itself does not change after failover—your SDK connection strings remain valid. For multi-region Namespaces, the underlying CNAME (e.g., aws-us-west-1.region.tmprl.cloud) may change to point to the new active region, but this is handled transparently and does not require client reconfiguration. Same-region Namespaces see no CNAME change at all. Option A is wrong because the endpoint is stable by design. Option C is wrong because the documentation describes no 30-minute DNS outage. Option D is wrong because the behavior is the same for both manual and automated failovers.",
       "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_med_005",
       "category": "Features_HighAvailability",
       "difficulty": "med",
-      "question": "After a Temporal Cloud automated failover, what happens to the Namespace endpoint that clients use to connect?",
+      "question": "How does Temporal Cloud's High Availability replication model differ from traditional active/active replication?",
       "choices": [
         {
           "key": "A",
-          "text": "The Namespace endpoint changes to reflect the new active region, so clients using DNS-based connections will automatically resolve to the replica."
+          "text": "Both use synchronous replication, but Temporal Cloud limits writes to the primary to reduce network overhead."
         },
         {
           "key": "B",
-          "text": "The Namespace endpoint stays the same after failover; only the underlying CNAME for multi-region Namespaces may change, not the application-facing endpoint."
+          "text": "Traditional active/active allows simultaneous writes to all nodes, while Temporal Cloud HA only ever has one active region accepting writes; the replica receives asynchronous copies."
         },
         {
           "key": "C",
-          "text": "The Namespace endpoint changes only if the failover was manually triggered; automated failovers preserve the endpoint transparently."
+          "text": "Temporal Cloud uses active/active replication internally but exposes only one endpoint to clients, hiding the distributed nature of the writes."
         },
         {
           "key": "D",
-          "text": "Clients must re-register their connection using the new region's endpoint within five minutes of the failover, or they will be disconnected permanently."
+          "text": "Both models accept writes from multiple nodes simultaneously; Temporal Cloud simply adds conflict resolution to handle diverging histories."
         }
       ],
       "answer": "B",
-      "explanation": "The Namespace endpoint (e.g., `my_namespace.my_account.tmprl.cloud:7233`) does NOT change after a failover. Your application code and SDK clients continue connecting to the same address. What may change is the underlying CNAME for multi-region Namespaces — it could switch from one regional domain to another — but this is transparent to the application using the stable Namespace endpoint. This is by design: the stability of the endpoint is a core HA guarantee. Options A, C, and D all incorrectly suggest the endpoint changes under various conditions.",
+      "explanation": "In traditional active/active replication, all nodes can accept writes simultaneously with strong synchronous consistency. Temporal Cloud HA is fundamentally different: only the primary accepts requests and writes at any given time. Workflow History Events are written to the primary first and then asynchronously replicated to the replica. This means conflict resolution is only needed in failure/partition scenarios, not during normal operation. Options A, C, and D all incorrectly imply that Temporal uses simultaneous multi-node writes or synchronous replication.",
       "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_med_006",
       "category": "Features_HighAvailability",
       "difficulty": "med",
-      "question": "In a Temporal Cloud High Availability Namespace, which activity execution semantic applies — and what is a practical consequence during failover?",
+      "question": "After a non-graceful failover, a High Availability Namespace resumes processing. What activity execution semantics does it provide, and what is a practical consequence for activity implementations?",
       "choices": [
         {
           "key": "A",
-          "text": "HA Namespaces provide at-most-once semantics, so Activities that were in-flight during failover are guaranteed to never be retried, preventing duplicate side effects."
+          "text": "It provides at-most-once semantics, so completed Activities will never be re-dispatched, but new Activities may be skipped if the history diverges."
         },
         {
           "key": "B",
-          "text": "HA Namespaces provide exactly-once semantics because Temporal's conflict resolution algorithm deduplicates all Activity completions across regions."
+          "text": "It provides exactly-once semantics because conflict resolution reconciles all in-flight events before any Activity is dispatched to a worker."
         },
         {
           "key": "C",
-          "text": "HA Namespaces provide at-least-once semantics, so completed Activities may be re-dispatched in the newly active Namespace, meaning Activity implementations should be idempotent."
+          "text": "It provides at-least-once semantics, meaning completed Activities may be re-dispatched in the newly active Namespace, so Activity implementations should be idempotent."
         },
         {
           "key": "D",
-          "text": "HA Namespaces provide at-most-once semantics only when the maximum retry attempts is set to 1; otherwise, at-least-once applies regardless of the HA configuration."
+          "text": "It provides at-most-once semantics only when retry policies have maximum attempts set to 0; otherwise it defaults to exactly-once after conflict resolution."
         }
       ],
       "answer": "C",
-      "explanation": "HA Namespaces use at-least-once semantics for Activity execution. Because replication is asynchronous, a failover can cause a newly active replica to re-dispatch Activities that were already completed on the old primary but whose completion events hadn't yet been replicated. This is why Activity implementations in HA deployments should be idempotent. Non-HA Namespaces can be configured for at-most-once when max retry attempts is 0. Option A mistakes HA for at-most-once. Option B invents an exactly-once guarantee that doesn't exist. Option D misattributes the at-most-once behavior to a retry policy setting rather than the absence of HA.",
+      "explanation": "HA Namespaces provide at-least-once semantics for Activity execution. Due to replication lag during a non-graceful failover, the newly active replica may not have received confirmation that an Activity completed, causing it to re-dispatch the Activity to a worker. This makes idempotency a critical property for Activity implementations in HA setups. By contrast, non-replicated Namespaces can be configured for at-most-once semantics when max retry attempts is set to 0. Options A and D confuse the at-most-once guarantee, which applies only to non-replicated Namespaces. Option B is incorrect because exactly-once is not guaranteed.",
       "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_med_007",
       "category": "Features_HighAvailability",
       "difficulty": "med",
-      "question": "Which tool does NOT support triggering a manual Namespace failover in Temporal Cloud?",
+      "question": "A platform engineer wants to trigger a Temporal Cloud Namespace failover as part of an automated disaster-recovery test run by Terraform. What should they be aware of?",
       "choices": [
         {
           "key": "A",
-          "text": "The Temporal Cloud Web UI, which provides a 'Trigger a failover' option on the Namespace details page."
+          "text": "Terraform can trigger failovers but only for Namespaces with manually managed replicas, not for auto-replicated Namespaces."
         },
         {
           "key": "B",
-          "text": "The tcld CLI using the `tcld namespace failover` command with the target region specified."
+          "text": "The Temporal Cloud Terraform provider does not support triggering failovers; they must use the Web UI, tcld CLI, or Cloud Ops API instead."
         },
         {
           "key": "C",
-          "text": "The Temporal Cloud Terraform provider, which manages Namespace configuration but lacks a failover resource or action."
+          "text": "Terraform supports failover triggers via the temporalcloud_namespace_failover resource, but it requires an API key with Namespace Admin permissions."
         },
         {
           "key": "D",
-          "text": "The Cloud Ops API, which exposes a `FailoverNamespaceRegion` endpoint available via both HTTP and gRPC."
-        }
-      ],
-      "answer": "C",
-      "explanation": "The Temporal Cloud Terraform provider does not support triggering failovers. Terraform is designed for declarative infrastructure management, not imperative operational actions like failovers. Manual failovers must be initiated through the Web UI, the tcld CLI, or the Cloud Ops API. All three of those are explicitly documented as supported methods. This is worth knowing in practice: if your runbook uses Terraform for Temporal Cloud operations, you'll need a separate mechanism for failover procedures.",
-      "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
-    },
-    {
-      "id": "features_highavailability_med_008",
-      "category": "Features_HighAvailability",
-      "difficulty": "med",
-      "question": "During a graceful failover (handover), what behavior do running Workflow Executions and SDK clients experience while the handover is in progress?",
-      "choices": [
-        {
-          "key": "A",
-          "text": "Workflows continue executing normally on the replica before the handover completes, so there is no interruption to in-flight Workflow progress."
-        },
-        {
-          "key": "B",
-          "text": "Workflows stop making progress, new start/signal requests are rejected, and SDKs receive a retryable 'Service unavailable' error until the handover finishes or times out."
-        },
-        {
-          "key": "C",
-          "text": "Workflows are checkpointed and replayed from the last Activity result after the failover, causing a one-time delay but no service unavailable errors."
-        },
-        {
-          "key": "D",
-          "text": "Only new Workflow start requests are blocked; existing Workflows and signals continue to be processed during the handover window."
+          "text": "Terraform can trigger failovers only in combination with the tcld CLI as a local-exec provisioner, not through the provider's native resources."
         }
       ],
       "answer": "B",
-      "explanation": "During a graceful failover handover, traffic to the Namespace is paused to allow replication to drain. During this pause: existing Workflows stop making progress, state transitions and task dispatches are halted, and user requests like starting or signaling Workflows are rejected. The Temporal service returns a 'Service unavailable' error, which Temporal SDKs treat as retryable, so client code will automatically retry once the failover completes. This unavailability window defaults to at most 10 seconds. Options A and D incorrectly suggest some operations continue normally; option C describes a checkpoint/replay mechanism that doesn't exist at the failover level.",
+      "explanation": "The Temporal Cloud Terraform provider explicitly does not support triggering failovers. Teams building automated DR tests must use the Web UI, tcld CLI, or the Cloud Ops API (via HTTP POST or gRPC). This is an important constraint for platform engineers who rely on Terraform for all infrastructure operations. Options A, C, and D all invent partial workarounds that are not documented and do not exist in the provider.",
       "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_hard_001",
       "category": "Features_HighAvailability",
       "difficulty": "hard",
-      "question": "Your team runs a Temporal Cloud Namespace with High Availability enabled. During a production incident, Temporal automatically fails over your Namespace to the replica. Your on-call engineer notices in the audit logs that some Activities that had already completed are being dispatched again. What is the correct explanation for this behavior?",
+      "question": "Your team removes a replica from a Temporal Cloud Namespace in us-east-1 to cut costs. Three days later, a major incident strikes and you need HA back urgently. Your on-call engineer tries to re-add the replica to us-east-1 but the operation fails. What is the correct explanation for this failure?",
       "choices": [
         {
           "key": "A",
-          "text": "A bug in the SDK is causing Activities to re-execute because the workflow code is not idempotent and the worker retried after receiving a transient error."
+          "text": "Temporal Cloud requires a support ticket to re-enable HA on any Namespace that previously had it disabled, regardless of region or elapsed time."
         },
         {
           "key": "B",
-          "text": "HA Namespaces provide at-least-once semantics for Activity execution. Replication lag during a non-graceful failover can cause completed Activities to be re-dispatched in the newly active region."
+          "text": "Re-adding a replica is blocked for seven days after removal from the same region. The engineer must wait out the remaining four days or add a replica to a different region in the meantime."
         },
         {
           "key": "C",
-          "text": "HA Namespaces guarantee at-most-once semantics for Activities, so re-execution means the original Activity never actually completed and its result was lost during the incident."
+          "text": "Once a replica is removed, the Namespace is permanently single-region and a new Namespace must be created with HA enabled from the start."
         },
         {
           "key": "D",
-          "text": "Temporal Cloud replays the entire Workflow History on the replica, including already-completed Activities, to reconstruct state before resuming from the last checkpoint."
+          "text": "The seven-day cooldown applies only to the account level, not the Namespace level, so a different Namespace in the same account could have also triggered this lock."
         }
       ],
       "answer": "B",
-      "explanation": "High Availability Namespaces provide at-least-once semantics for Activity execution. Because replication is asynchronous, the replica may not have received the completion record for an Activity before the failover occurred. When the newly active region processes that Workflow, it sees the Activity as incomplete and re-dispatches it. Non-replicated Namespaces can be configured for at-most-once semantics (max attempts = 0), but HA Namespaces trade that guarantee away in exchange for continuity after a regional failure. The production implication is that Activity implementations in HA Namespaces must be idempotent.",
-      "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "explanation": "Temporal Cloud enforces a seven-day cooldown before a replica can be re-added to the same region from which it was just removed. After removing the us-east-1 replica, the team must either wait the remaining four days or pivot to a different region. This constraint exists to prevent rapid replica churn that could destabilize replication state. The cooldown is per-Namespace and per-region—it does not permanently block HA, it does not require a support ticket, and it is scoped to the specific region removed, not the entire account.",
+      "source_doc": "enable (cloud_high-availability_enable.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_hard_002",
       "category": "Features_HighAvailability",
       "difficulty": "hard",
-      "question": "An infrastructure team wants to move their Temporal Cloud HA Namespace replica from us-east-1 to eu-west-1 because their primary is in us-west-2. They remove the us-east-1 replica on Monday morning. What constraint will they encounter if they try to re-add a replica in us-east-1 the following Thursday?",
+      "question": "During a Temporal Cloud outage, the hybrid failover mode is active on your Namespace. Engineers observe that Workflows are returning 'Service unavailable' errors for roughly 8 seconds before traffic resumes normally. Why does this happen, and what does it indicate about the failover that occurred?",
       "choices": [
         {
           "key": "A",
-          "text": "They can immediately re-add us-east-1 as a replica because the seven-day restriction only applies to adding a replica in the same region as the primary, not a previously used replica region."
+          "text": "Temporal Cloud was performing DNS propagation for the new region, which always takes 5–10 seconds regardless of failover mode."
         },
         {
           "key": "B",
-          "text": "They cannot add any replica at all until seven days have passed, regardless of which region they choose, because Temporal Cloud locks the entire Namespace after a replica removal."
+          "text": "The hybrid mode first attempted a graceful handover, pausing traffic for up to 10 seconds to drain replication tasks. Because it completed within the timeout, no forced failover was needed and consistency was preserved."
         },
         {
           "key": "C",
-          "text": "They must wait the full seven days before re-enabling HA in us-east-1 specifically, but they can add a replica in eu-west-1 or another eligible region immediately if that region was not used in the last seven days."
+          "text": "Temporal SDKs were performing exponential back-off retries and the 8-second gap reflects the retry interval rather than any server-side pause."
         },
         {
           "key": "D",
-          "text": "The seven-day restriction is a soft limit that can be bypassed by opening a Temporal Cloud support ticket, making it a non-issue for teams with a support contract."
+          "text": "Hybrid mode always defaults to a forced failover first and then runs a reconciliation pass, which produces the observed 8-second lag while conflict resolution finishes."
         }
       ],
-      "answer": "C",
-      "explanation": "After removing a replica from a specific region, Temporal Cloud enforces a seven-day waiting period before that same region can be used again as a replica. This restriction is region-specific, not Namespace-wide. The team can immediately add a replica to eu-west-1 (or any other eligible region they haven't used in the last seven days) without waiting. Thursday is only four days after Monday, so attempting to re-add us-east-1 would fail. This rule exists to prevent rapid add/remove cycles that could destabilize replication state.",
-      "source_doc": "cloud_high-availability_enable.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "answer": "B",
+      "explanation": "Hybrid failover mode starts with a graceful handover attempt capped at 10 seconds. During this window, Temporal pauses new traffic and returns retryable 'Service unavailable' errors while it drains replication tasks to reach a consistent state. If the graceful pass succeeds within the timeout (8 seconds in this scenario), the failover completes with full consistency and no forced failover is required. If it had not completed in time, the system would have automatically escalated to a forced failover, accepting potential replication lag. The Namespace endpoint does not change during failover, so DNS propagation is not a factor, and the pause is server-initiated, not purely a client retry artifact.",
+      "source_doc": "failovers (cloud_high-availability_failovers.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_hard_003",
       "category": "Features_HighAvailability",
       "difficulty": "hard",
-      "question": "During a graceful failover (handover) in Temporal Cloud, your application starts receiving 'Service unavailable' errors. A junior engineer on your team wants to add retry logic in the application layer to handle this. What does the Temporal documentation say about these errors, and what is the correct operational response?",
+      "question": "After a forced failover caused by a network partition, your SRE team notices that several Activity executions that were already marked 'completed' in the original primary are being re-dispatched in the newly active replica. This surprises them because they expected completed Activities to never re-run. What is the root cause?",
       "choices": [
         {
           "key": "A",
-          "text": "The 'Service unavailable' error is a terminal error during handover and signals that Workflows in flight have been permanently lost. Application-layer retries are essential because the SDK will not retry this class of error."
+          "text": "A bug in the worker's deduplication logic caused it to re-register the Activity Tasks with the new primary after the failover event."
         },
         {
           "key": "B",
-          "text": "The 'Service unavailable' error is retryable and is automatically retried by the Temporal SDKs. The handover window defaults to 10 seconds, after which traffic resumes normally or the system falls back to a forced failover."
+          "text": "High Availability Namespaces guarantee at-least-once Activity execution semantics. Completion events that had not yet replicated before the forced failover will be re-dispatched in the new active region."
         },
         {
           "key": "C",
-          "text": "The 'Service unavailable' error means the replica has also failed. Application-layer retries against a secondary endpoint are needed to ensure continuity because the SDK cannot distinguish between a handover pause and a full outage."
+          "text": "Forced failovers always reset all in-flight and completed Activities to a pending state to guarantee exactly-once execution under network partition conditions."
         },
         {
           "key": "D",
-          "text": "Graceful failovers never surface errors to the application. The 'Service unavailable' error only appears during forced failovers, so receiving it confirms the system skipped the graceful phase entirely."
+          "text": "Non-replicated Namespaces use at-least-once semantics while HA Namespaces use at-most-once semantics, so the duplicate dispatch signals a misconfigured retry policy on your Namespace."
         }
       ],
       "answer": "B",
-      "explanation": "During a graceful failover (handover), Temporal Cloud pauses traffic to fully drain replication tasks before switching active regions. During this pause, the service returns a 'Service unavailable' error. Critically, this error is retryable and Temporal SDKs automatically retry it — no application-layer retry logic is needed. The handover window defaults to 10 seconds. If the system cannot reach a consistent state within that window, it either aborts and reverts (for a manual handover) or escalates to a forced failover (in hybrid mode). Application engineers should not add custom retry logic around this; the SDK handles it transparently.",
-      "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "explanation": "This is a critical production property of HA Namespaces: they provide at-least-once semantics for Activity execution, not exactly-once. During a forced failover, replication lag means some completion events from the old primary may not yet exist in the replica. When the replica becomes active, those Activities appear incomplete and are re-dispatched. Non-replicated Namespaces can be configured for at-most-once semantics by setting maximum retry attempts to 0, but HA Namespaces sacrifice that guarantee in exchange for availability. Teams must design Activities to be idempotent so duplicate executions do not cause data corruption.",
+      "source_doc": "failovers (cloud_high-availability_failovers.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_hard_004",
       "category": "Features_HighAvailability",
       "difficulty": "hard",
-      "question": "A network partition occurs in a Temporal Cloud HA Namespace deployment, and your SRE team promotes the replica to active status to maintain availability. After the partition resolves, an engineer asks what happens next regarding which region remains the primary. What is the correct expectation?",
+      "question": "Your platform team wants to add a replica to a Temporal Cloud Namespace currently in us-west-2 (AWS, North America). A team member proposes placing the replica in eu-central-1 to maximize geographic distance and reduce single-continent blast radius. Should this be approved?",
       "choices": [
         {
           "key": "A",
-          "text": "Both regions remain active permanently after a network partition promotion. Temporal Cloud switches to active/active mode and uses synchronous replication to merge divergent histories going forward."
+          "text": "Yes, cross-continent replication is supported and recommended for disaster recovery because greater distance reduces correlated failures between regions."
         },
         {
           "key": "B",
-          "text": "Promoting the replica during a partition makes both regions temporarily active. Once communication is restored, a conflict resolution algorithm determines which region remains active, not a manual decision."
+          "text": "No, replica regions must be on the same continent as the primary. Cross-continent placement is not supported, so the replica must be another North American region."
         },
         {
           "key": "C",
-          "text": "The original primary automatically reasserts its authority the moment the partition heals, regardless of what happened on the replica, because the primary region always takes precedence over any promoted replica."
+          "text": "Yes, but cross-continent replication requires enabling a special 'global replication' tier in Temporal Cloud and incurs higher latency SLA commitments."
         },
         {
           "key": "D",
-          "text": "Temporal Cloud requires a manual failback command to resolve the dual-active state after a partition. Without it, the Namespace stays in a split-brain condition indefinitely."
+          "text": "No, replica regions must be in the same AWS availability zone as the primary to keep replication lag below the required threshold."
         }
       ],
       "answer": "B",
-      "explanation": "Temporal Cloud's normal model is active/passive — only one region accepts writes at a time. During a network partition, promoting the replica temporarily creates a dual-active state, which is the one exception to this rule. Once the partition heals and inter-region communication is restored, Temporal's conflict resolution algorithm automatically determines which region remains active. This is not a manual process nor does the original primary automatically win. Any events written to both regions during the partition go through conflict resolution, and Workflow Histories are reconciled to remain valid and replayable.",
-      "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "explanation": "Temporal Cloud enforces a same-continent constraint for replica placement. A Namespace in us-west-2 (North America) can only replicate to other supported North American regions. Placing the replica in eu-central-1 is not an available option. This constraint exists because cross-continent replication latency would undermine the replication consistency and failover recovery time objectives Temporal Cloud is designed to meet. Teams seeking geographic resilience must choose from the supported replica regions listed for their primary on the Service Regions page.",
+      "source_doc": "enable (cloud_high-availability_enable.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_hard_005",
       "category": "Features_HighAvailability",
       "difficulty": "hard",
-      "question": "Your team uses Terraform to manage all Temporal Cloud infrastructure as code, including Namespace configuration. During a planned regional maintenance window, you want to use Terraform to trigger a manual failover to the replica region to validate your HA setup. What will happen when you add the failover trigger to your Terraform configuration?",
+      "question": "An engineer triggers a manual failover using the tcld CLI by running `tcld namespace failover --namespace my_ns.myacct --region us-east-1`. The command returns successfully, but the engineer then expects the Namespace endpoint `my_ns.myacct.tmprl.cloud:7233` to change to an us-east-1-specific URL. Monitoring shows SDK clients are still connecting without reconfiguration. What is the correct explanation?",
       "choices": [
         {
           "key": "A",
-          "text": "Terraform will successfully trigger the failover using the temporalcloud provider's failover resource block, and the Namespace will switch to the replica region as expected."
+          "text": "The failover has not actually completed yet; the tcld success response only means the async operation was submitted, and the endpoint will change once replication fully catches up."
         },
         {
           "key": "B",
-          "text": "Terraform will trigger the failover but only after a mandatory 30-minute delay imposed by the Terraform provider to prevent accidental failovers in automated pipelines."
+          "text": "SDK clients maintain a cached connection to the old endpoint for up to five minutes after a failover, so reconfiguration is needed but takes time to take effect."
         },
         {
           "key": "C",
-          "text": "Terraform will apply the configuration change but route it through the Cloud Ops API automatically, acting as a passthrough for the failover RPC call."
+          "text": "The Namespace endpoint does not change during a failover. The same `my_ns.myacct.tmprl.cloud:7233` endpoint continues to route correctly to whichever region is currently active, so no client reconfiguration is needed."
         },
         {
           "key": "D",
-          "text": "The Temporal Cloud Terraform provider does not support triggering failovers. You must use the Web UI, tcld CLI, or Cloud Ops API to initiate a manual failover."
+          "text": "The CNAME changes for same-region Namespaces during failover, which is why multi-region Namespaces route correctly while same-region ones require client updates."
         }
       ],
-      "answer": "D",
-      "explanation": "The Temporal Cloud Terraform provider explicitly does not support triggering failovers. This is an important operational constraint for teams that manage infrastructure entirely through IaC — failover triggering must be done out-of-band using the Web UI, the tcld CLI, or the Cloud Ops API. This limitation is worth encoding in runbooks so that during an actual incident, engineers don't waste time trying to apply a Terraform plan and wondering why the failover isn't happening.",
-      "source_doc": "cloud_high-availability_failovers.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "answer": "C",
+      "explanation": "Temporal Cloud guarantees that the Namespace endpoint does not change during a failover. The endpoint `my_ns.myacct.tmprl.cloud:7233` remains constant before and after the failover event. Internally, Temporal routes traffic to the currently active region (now us-east-1), so SDK clients connecting to the same endpoint automatically reach the new active region without any reconfiguration. The CNAME may change for multi-region Namespaces (e.g., switching from aws-us-west-1.region.tmprl.cloud to aws-us-east-1.region.tmprl.cloud), but that is at the infrastructure layer and does not affect SDK connectivity through the stable Namespace endpoint.",
+      "source_doc": "failovers (cloud_high-availability_failovers.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_hard_006",
       "category": "Features_HighAvailability",
       "difficulty": "hard",
-      "question": "An architect is designing a Temporal Cloud HA deployment for a US-based company whose primary region is aws-us-west-2. They want to choose a replica region that maximizes geographic separation to protect against large-scale regional failures. Which replica region constraint must they work within?",
+      "question": "Your organization uses Terraform to manage all Temporal Cloud infrastructure including Namespaces, workers, and schedules. During a chaos-engineering exercise you need to trigger a failover on an HA Namespace to test your runbooks. Your Terraform-first policy means the team reaches for the Temporal Terraform provider. What will happen, and what is the correct remediation?",
       "choices": [
         {
           "key": "A",
-          "text": "The replica must be in a different cloud provider (e.g., GCP or Azure) than the primary to ensure infrastructure-level isolation, but geographic separation within the same continent is unrestricted."
+          "text": "The Terraform provider supports failovers via a `temporal_namespace_failover` resource. Apply the plan and confirm the state change in `terraform.tfstate`."
         },
         {
           "key": "B",
-          "text": "The replica region must be on the same continent as the primary region, so a US primary cannot replicate to a European or Asia-Pacific region regardless of desired geographic separation."
+          "text": "Terraform can trigger a failover by modifying the `active_region` attribute on the `temporal_namespace` resource and running `terraform apply`."
         },
         {
           "key": "C",
-          "text": "There are no geographic constraints on replica placement. Temporal Cloud supports cross-continental replication, and the architect can freely choose any available Temporal Cloud region worldwide."
+          "text": "The Temporal Cloud Terraform provider does not support triggering failovers. The team must use the Web UI, tcld CLI, or Cloud Ops API to initiate the failover, even in a Terraform-managed environment."
         },
         {
           "key": "D",
-          "text": "The replica must be in the exact same AWS availability zone as the primary to meet Temporal's internal latency requirements for asynchronous replication to function correctly."
+          "text": "Failovers can only be triggered by Temporal's automated health checks; manual failovers are not supported by any tooling including the CLI and Cloud Ops API."
         }
       ],
-      "answer": "B",
-      "explanation": "Temporal Cloud enforces a same-continent requirement for replica regions. A Namespace with a primary in aws-us-west-2 can only have a replica in another North American region, not in Europe or Asia-Pacific. This constraint exists because of latency and infrastructure requirements for asynchronous replication. Architects who need cross-continental disaster recovery must consider alternative strategies, as Temporal Cloud's HA feature will not provide that. The supported replica regions for each active primary region are listed on the Temporal Cloud Service Regions page.",
-      "source_doc": "cloud_high-availability_enable.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "answer": "C",
+      "explanation": "The Temporal Cloud Terraform provider explicitly does not support triggering failovers. This is a deliberate design boundary: Terraform manages declarative infrastructure state, while a failover is an imperative operational action. Teams that manage Temporal Cloud infrastructure via Terraform still need to reach for the Web UI, tcld CLI, or Cloud Ops API to execute or test failovers. This distinction matters in runbooks—an on-call engineer who assumes Terraform can handle the failover will be blocked at the worst time. The Cloud Ops API is particularly useful for automation pipelines that need programmatic failover without the Terraform provider.",
+      "source_doc": "failovers (cloud_high-availability_failovers.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_hard_008",
       "category": "Features_HighAvailability",
       "difficulty": "hard",
-      "question": "A team is evaluating whether to use a Temporal Cloud HA Namespace with private network connectivity (e.g., AWS PrivateLink). After reading the documentation, they realize there are additional steps beyond simply enabling HA. What does the documentation indicate about using private connectivity with an HA Namespace, and why does it matter operationally?",
+      "question": "Your company runs a Temporal Cloud Namespace with a replica in a second region and uses private network connectivity (AWS PrivateLink) for all worker connections. After enabling HA, workers in both regions are reporting connection errors to the Temporal Cloud endpoint. Standard HA Namespaces without private networking work correctly in the same account. What is the most likely cause?",
       "choices": [
         {
           "key": "A",
-          "text": "Private network connectivity is incompatible with HA Namespaces. Teams must use public endpoints for HA to function, and private connectivity can only be re-enabled after disabling High Availability features."
+          "text": "Private network connectivity is incompatible with HA Namespaces. You must switch workers to public internet connectivity to use replication features."
         },
         {
           "key": "B",
-          "text": "Private connectivity works automatically with HA Namespaces because the Namespace endpoint does not change during failover, so no additional network configuration is required on the customer side."
+          "text": "The replica region does not support PrivateLink, so all HA Namespaces in that account are automatically downgraded to public connectivity, causing the TLS mismatch errors."
         },
         {
           "key": "C",
-          "text": "Using private network connectivity with an HA Namespace requires extra setup beyond enabling HA. Failing to complete this setup could leave the Namespace unreachable from private networks after a failover to the replica region."
+          "text": "Using private network connectivity with an HA Namespace requires additional setup beyond standard HA enablement. The connectivity configuration for the HA-specific private endpoints has not been completed for the replica region."
         },
         {
           "key": "D",
-          "text": "Private connectivity with an HA Namespace only requires updating DNS CNAME records after failover. The Temporal Cloud team performs this update automatically and notifies Namespace Admins via email."
+          "text": "Worker connection errors after HA enablement are always transient and resolve within 15 minutes once Temporal Cloud finishes provisioning the replica's internal routing tables."
         }
       ],
       "answer": "C",
-      "explanation": "The Temporal Cloud documentation explicitly states that using private network connectivity with an HA Namespace requires extra setup, referencing a dedicated 'Connectivity for HA' page. This is a critical operational concern because private connectivity (e.g., AWS PrivateLink, VPC peering) is configured per region. When a failover moves the active Namespace to the replica region, workers and clients that connect via private networking need a corresponding private connection in the replica region. Without this additional setup, a failover could render the Namespace unreachable from private networks — defeating the purpose of HA. Teams using private connectivity must configure and test this setup before relying on HA for production resilience.",
-      "source_doc": "cloud_high-availability_enable.html",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "explanation": "Temporal Cloud explicitly documents that using private network connectivity with an HA Namespace requires extra setup beyond the standard HA enablement flow. When a replica is added, the private networking configuration (e.g., PrivateLink endpoints, IP allowlists) must be extended to cover the new replica region's connectivity path. Workers using standard public endpoints are unaffected because failover simply redirects traffic through the stable Namespace endpoint. But workers connected via private networking need the HA-specific connectivity setup completed—covered in the 'Connectivity for HA' documentation—before the private endpoints route correctly to both the primary and replica regions. Ignoring this step is a common production mistake when teams enable HA on Namespaces that already use private networking.",
+      "source_doc": "enable (cloud_high-availability_enable.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_highavailability_nightmare_001",
+      "category": "Features_HighAvailability",
+      "difficulty": "nightmare",
+      "question": "Your team operates a Temporal Cloud Namespace with High Availability enabled. During a regional incident, Temporal Cloud's hybrid failover mode activates. Your workflows use activities with a retry policy where `maximum_attempts` is set to 1 (effectively at-most-once intent). A senior engineer claims that after failover, completed activities will never re-execute because the retry policy prevents it. What actually happens, and why does this matter for your application design?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The engineer is correct. When `maximum_attempts` is set to 1 on a replicated Namespace, conflict resolution honors the retry policy and will never re-dispatch a completed activity, preserving at-most-once semantics identically to a non-replicated Namespace."
+        },
+        {
+          "key": "B",
+          "text": "High Availability Namespaces provide at-least-once semantics for activity execution regardless of retry policy settings. After a non-graceful failover, replication lag may cause the newly active replica to re-dispatch completed activities even if `maximum_attempts` is 1, because the completion event may not have replicated before the fork."
+        },
+        {
+          "key": "C",
+          "text": "The hybrid failover mode always performs a graceful handover before switching, so all activity completion events are guaranteed to replicate before the replica becomes active. This means at-most-once semantics are preserved for any retry policy, including `maximum_attempts` equal to 1."
+        },
+        {
+          "key": "D",
+          "text": "Temporal Cloud automatically detects retry policies with `maximum_attempts` set to 1 and applies special deduplication logic during conflict resolution, ensuring those activities are never re-executed even when a forced failover occurs and replication lag exists."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is one of the most important semantic shifts when enabling High Availability on a Temporal Cloud Namespace. Non-replicated Namespaces can be configured for at-most-once activity semantics when `maximum_attempts` is set to 0 (unlimited retries disabled), but HA Namespaces fundamentally provide at-least-once semantics for activity execution. Here's why: replication is asynchronous. When the primary processes an activity completion, that event is written to the primary's history first, then asynchronously copied to the replica. During a non-graceful failover (which hybrid mode falls back to if the 10-second graceful window expires), the replica may not yet have received the completion event. After the fork, the newly active replica sees the activity as still scheduled and will re-dispatch it. The retry policy's `maximum_attempts` applies to retries-due-to-failure, not to re-dispatch after conflict resolution following a failover fork. The practical production implication is critical: any activity in an HA Namespace that performs non-idempotent side effects (charging a credit card, sending an email, writing a non-idempotent record) must be made idempotent at the activity implementation level using external deduplication keys. You cannot rely on `maximum_attempts=1` to protect you from double-execution in HA Namespaces. This is a deliberate architectural tradeoff: HA prioritizes availability and forward progress over strict at-most-once guarantees.",
+      "source_doc": "cloud_high-availability_failovers.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_nightmare_002",
       "category": "Features_HighAvailability",
       "difficulty": "nightmare",
-      "question": "A Temporal Cloud Namespace with HA (primary: us-east-1, replica: us-west-2) is using private network connectivity via AWS PrivateLink. During a regional incident, Temporal Cloud automatically initiates a hybrid failover. The failover begins with a graceful handover attempt but the system cannot reach a consistent state within the 10-second window and escalates to a forced failover. Your application uses the Namespace endpoint `myapp.acct123.tmprl.cloud:7233` and has NOT configured any DNS refresh logic. Which of the following statements most accurately describes the post-failover connectivity behavior?\n\n```go\n// Client initialization in application\nclient, err := temporalclient.Dial(temporalclient.Options{\n    HostPort: \"myapp.acct123.tmprl.cloud:7233\",\n    ConnectionOptions: temporalclient.ConnectionOptions{\n        TLS: tlsConfig,\n    },\n})\n```",
+      "question": "An operator removes a replica from a production Temporal Cloud Namespace in `aws-us-west-2` on Monday because they want to move it to `aws-us-east-1` for latency reasons. They immediately run `tcld namespace add-region --namespace prod.acct --region aws-us-east-1` and it succeeds. On Thursday, a different operator wants to move the replica back to `aws-us-west-2`. They remove the `aws-us-east-1` replica on Thursday evening and attempt to add `aws-us-west-2` again. What constraint will they hit, and what is the earliest they can successfully add `aws-us-west-2` as a replica again?",
       "choices": [
         {
           "key": "A",
-          "text": "The application loses connectivity until DNS is manually refreshed, because the Namespace endpoint CNAME changes from aws-us-east-1.region.tmprl.cloud to aws-us-west-2.region.tmprl.cloud during a forced failover, requiring a new DNS lookup."
+          "text": "Removing the `aws-us-east-1` replica on Thursday starts a fresh seven-day cooldown only for `aws-us-east-1`. The `aws-us-west-2` region's cooldown from Monday has already expired by Thursday, so the operator can immediately add `aws-us-west-2` as a replica with no waiting period."
         },
         {
           "key": "B",
-          "text": "The application loses connectivity permanently because forced failovers invalidate existing mTLS certificates tied to the primary region endpoint, requiring the operator to rotate client certificates before reconnecting."
+          "text": "Both regions enter a shared seven-day cooldown whenever any replica is removed, so neither `aws-us-west-2` nor `aws-us-east-1` can be used as a replica until seven days after the Thursday removal, which is the following Thursday at the earliest."
         },
         {
           "key": "C",
-          "text": "The application continues connecting to `myapp.acct123.tmprl.cloud:7233` without any DNS or certificate changes because the Namespace endpoint itself does not change on failover; only the underlying infrastructure routing changes transparently."
+          "text": "After removing the `aws-us-east-1` replica on Thursday, the operator must wait seven days before re-enabling HA in `aws-us-east-1`. The `aws-us-west-2` cooldown from Monday's removal expires after seven days (the following Monday), so `aws-us-west-2` can be added as a replica starting the following Monday, not immediately on Thursday."
         },
         {
           "key": "D",
-          "text": "The application continues to send requests but all workflow operations fail with non-retryable errors for approximately 30 seconds because the forced failover applies a mandatory quiescence period before the new region accepts client traffic."
+          "text": "Temporal Cloud prevents adding any replica region within seven days of removing the most recently active replica, regardless of which specific region is targeted. Since the `aws-us-east-1` replica was removed Thursday, no replica can be added to any region until the following Thursday."
         }
       ],
       "answer": "C",
-      "explanation": "Temporal Cloud guarantees that the Namespace endpoint does not change on failover. If your endpoint is `myapp.acct123.tmprl.cloud:7233` before failover, it remains exactly that after failover — whether the failover was graceful, forced, or hybrid. The CNAME that changes (e.g., from `aws-us-east-1.region.tmprl.cloud` to `aws-us-west-2.region.tmprl.cloud`) is relevant only for Multi-region Namespaces using region-specific CNAMEs, not for the standard Namespace endpoint. This is a critical design property: Temporal Cloud abstracts the regional routing behind the stable Namespace endpoint so application clients don't need to be reconfigured during failovers. The interaction between private network connectivity and HA adds complexity — PrivateLink endpoints ARE region-specific and require separate configuration per region, which is why 'extra setup' is required for private connectivity HA namespaces. But the application-layer endpoint abstraction still holds. The forced failover's conflict resolution and replication lag effects are on the data plane (workflow history), not on the connectivity plane. Engineers often conflate the CNAME change with the Namespace endpoint change — this question exposes that distinction.",
-      "source_doc": "failovers (cloud_high-availability_failovers.html)",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "explanation": "The seven-day cooldown in Temporal Cloud HA is per-region, not global. When you remove a replica from a specific region, that specific region enters a seven-day cooldown window during which you cannot re-enable HA in that same region. However, you can add a replica to a *different* region that is not itself in a cooldown period. In this scenario: Monday — `aws-us-west-2` replica removed, starting a seven-day cooldown for that region (expires the following Monday). Monday — `aws-us-east-1` replica added successfully (it had no cooldown). Thursday — `aws-us-east-1` replica removed, starting a seven-day cooldown for `aws-us-east-1` (expires the following Thursday). At this point the operator wants `aws-us-west-2` again. The `aws-us-west-2` cooldown started Monday and expires the following Monday — which is three days away from Thursday. So the operator cannot immediately add `aws-us-west-2`; they must wait until Monday. The practical lesson: cooldowns are scoped to the region that was removed, they run concurrently from their individual removal times, and they do not block each other. This design prevents rapid failover-thrashing while still allowing operators to pivot to alternate regions. Engineers planning replica migrations should account for these cooldown windows to avoid surprise availability gaps.",
+      "source_doc": "cloud_high-availability_enable.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     },
     {
       "id": "features_highavailability_nightmare_003",
       "category": "Features_HighAvailability",
       "difficulty": "nightmare",
-      "question": "You are reviewing a Temporal Cloud HA Namespace's conflict resolution behavior after a forced failover. Your payment processing workflow uses an Activity with `maximum_attempts = 0` (unlimited retries) to charge a customer's credit card. The workflow was mid-execution when the forced failover occurred with significant replication lag — several Activity completion events had not yet been replicated to the replica before it became active. Which statement correctly describes the execution semantics and what your Activity implementation must handle?\n\n```python\n@activity.defn\nasync def charge_credit_card(payment_id: str, amount: int) -\u003e ChargeResult:\n    # Calls external payment processor\n    result = await payment_client.charge(payment_id, amount)\n    return ChargeResult(transaction_id=result.transaction_id)\n```",
+      "question": "A Temporal Cloud Namespace is operating in hybrid failover mode (the default). During a degraded event, the graceful handover window (10 seconds) expires before the primary fully drains its replication tasks. Temporal Cloud automatically switches to a forced failover. Which of the following accurately describes the combined effect on workflow history and activity execution semantics during and after this sequence?",
       "choices": [
         {
           "key": "A",
-          "text": "The Activity will not re-execute because Temporal's conflict resolution algorithm detects duplicate Activity completions via the payment_id and suppresses re-dispatch, providing exactly-once execution semantics post-failover regardless of replication lag."
+          "text": "After the forced failover, Temporal Cloud discards history events that were not yet replicated to keep histories consistent, meaning those workflow executions must be manually restarted from scratch by operators using the Web UI or tcld CLI."
         },
         {
           "key": "B",
-          "text": "The Activity may re-execute because HA Namespaces provide at-least-once Activity execution semantics. Completed Activities can be re-dispatched in the newly active region, so `charge_credit_card` must be idempotent — typically by using the payment_id as an idempotency key with the payment processor."
+          "text": "During the graceful window, workflows stop progressing and new starts are rejected with retryable 'Service unavailable' errors. After the forced failover, the newly active replica forks workflow histories for any executions with unreplicated events, applies conflict resolution to keep histories SDK-replayable, and provides at-least-once (not at-most-once) activity execution semantics going forward."
         },
         {
           "key": "C",
-          "text": "The Activity will not re-execute because `maximum_attempts = 0` disables retry-based re-dispatch, and forced failovers only trigger re-execution for Activities configured with finite retry limits, which are treated as at-most-once in non-replicated Namespaces."
+          "text": "The transition from graceful to forced failover is transparent to workflows: all history events queued during the graceful window are buffered in the primary and are forwarded to the replica immediately after forced failover completes, so no fork or conflict resolution is needed and at-most-once activity semantics are preserved."
         },
         {
           "key": "D",
-          "text": "The Activity may re-execute, but only if the original Activity execution was scheduled within the replication lag window. Activities that had already started execution (received by a worker) before the lag window are guaranteed not to re-dispatch after conflict resolution completes."
+          "text": "During the graceful window, Temporal Cloud continues dispatching tasks normally but marks them as speculative. After the forced failover, speculative tasks in-flight are committed, and conflict resolution merges the two histories without any branching, preserving exactly-once activity semantics."
         }
       ],
       "answer": "B",
-      "explanation": "This question probes the interaction between HA conflict resolution semantics and Activity retry configuration. The documentation is explicit: HA Namespaces provide at-least-once semantics for Activity execution, whereas non-replicated Namespaces configured with `maximum_attempts = 0` (unlimited retries disabled in the sense of at-most-once) provide at-most-once semantics. This is a fundamental semantic shift that occurs the moment you enable HA. When a forced failover happens with replication lag, Activity completion events that hadn't been replicated are lost from the new primary's perspective. The newly active region sees those Activities as incomplete and re-dispatches them to workers. The `maximum_attempts` setting controls retry behavior for failures, but it does not protect against re-dispatch due to conflict resolution after a failover — these are different code paths. This means any Activity that performs non-idempotent side effects (like charging a credit card) MUST use an external idempotency key with the downstream service. This is a production-critical insight: teams that migrate a non-HA namespace to HA without auditing their Activities for idempotency can inadvertently introduce duplicate charges, duplicate emails, or double-provisioning of resources. The answer A is tempting but wrong — Temporal does not perform semantic deduplication of Activity completions based on arguments.",
-      "source_doc": "failovers (cloud_high-availability_failovers.html)",
-      "generated_at": "2026-04-22T15:16:40Z"
+      "explanation": "The hybrid failover mode is a two-phase mechanism that tries to get the best of both worlds. Phase 1 is a bounded graceful handover: Temporal Cloud pauses traffic (workflows stop progressing, task dispatch halts, new start/signal requests get retryable 'Service unavailable' errors) while attempting to drain replication tasks. This phase has a hard 10-second ceiling. If the primary cannot reach a consistent replication state within that window, the graceful attempt is aborted. Phase 2 is an automatic escalation to forced failover: the replica activates immediately without waiting for full replication drain. Events that were written to the primary but not yet replicated at the moment of forced failover create a divergence point — Temporal Cloud 'forks' the workflow history. The conflict resolution algorithm then processes late-arriving events from the previously active primary. Critically, this conflict resolution does not roll back or discard histories; it ensures the resulting history remains valid and replayable by the SDK. However, because the replica did not see completed activity events before forking, it may re-schedule those activities — which is the source of at-least-once (not at-most-once) activity execution semantics in HA Namespaces. Answer C is wrong because there is no such buffering/forwarding mechanism — that would require the primary to be healthy enough to forward, which contradicts the failover scenario. Answer D is wrong; there are no 'speculative' tasks in this context, and merging without branching is not how Temporal's conflict resolution works. The key insight: hybrid failover's graceful window protects consistency under brief degradation, but falls back to availability-first under extended outages, with conflict resolution as the safety net.",
+      "source_doc": "cloud_high-availability_failovers.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_highavailability_nightmare_004",
+      "category": "Features_HighAvailability",
+      "difficulty": "nightmare",
+      "question": "An engineering team uses private network connectivity (AWS PrivateLink) to connect their workers to a Temporal Cloud Namespace. They enable High Availability and add a replica in a second region. After a Temporal-managed automatic failover, their workers lose connectivity to the Namespace entirely, even though the Namespace endpoint string (e.g., `myns.acct.tmprl.cloud:7233`) has not changed. What is the most likely root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Namespace endpoint DNS record is cached in the workers' local resolver. After failover the IP behind the DNS name changes to point to the replica region, but because the workers use private DNS zones configured for PrivateLink, they resolve the old IP until the TTL expires, causing a temporary connectivity gap of up to 300 seconds."
+        },
+        {
+          "key": "B",
+          "text": "Private network connectivity for HA Namespaces requires extra setup beyond what a single-region PrivateLink configuration provides. Without configuring connectivity for both the primary and replica regions, workers routed through PrivateLink can only reach the primary region's VPC endpoint; after failover to the replica they have no private path and connection attempts fail."
+        },
+        {
+          "key": "C",
+          "text": "After a Temporal-managed automatic failover, the Namespace endpoint hostname does change to reflect the new active region (e.g., from aws-us-west-1 to aws-us-east-1 in the subdomain). Workers using PrivateLink that are hardcoded to the old hostname will fail to connect until their configuration is manually updated."
+        },
+        {
+          "key": "D",
+          "text": "Temporal Cloud suspends all worker connections for 60 seconds after a managed failover to allow replication lag to drain. Workers using PrivateLink experience this as a hard connection reset and must be restarted manually to re-establish their long-lived gRPC streams to the new active region."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is a classic operator-side HA gotcha. The documentation explicitly states: 'Using private network connectivity with a HA namespace requires extra setup. See Connectivity for HA.' This warning exists precisely because private network connectivity (AWS PrivateLink, GCP Private Service Connect, Azure Private Link, etc.) establishes a VPC endpoint that is region-specific. A typical single-region PrivateLink setup creates an endpoint in the primary region's VPC only. After failover, the Namespace endpoint hostname itself does NOT change (the docs confirm: 'Your Namespace endpoint will not change') — so workers that rely on public DNS routing would transparently reconnect to the now-active replica. However, workers configured to use private connectivity have their traffic routed through a VPC endpoint that only exists in the primary region. After failover, the replica is now active, but the workers' private path only leads to the primary region's endpoint which is now passive. The result is total connectivity loss until the private network configuration is extended to the replica region. Answer C is a plausible-sounding distractor but is explicitly wrong per the documentation — only the CNAME in Multi-region Namespaces may change, not the Namespace endpoint. Answer A describes a real DNS TTL concern but is not the root cause here. Answer D describes a non-existent behavior. The production lesson: before enabling HA with private connectivity, proactively configure private endpoints in ALL regions where a replica might become active, and verify failover connectivity in a staging environment.",
+      "source_doc": "cloud_high-availability_enable.html",
+      "generated_at": "2026-04-22T17:00:55Z"
     }
   ]
 }
