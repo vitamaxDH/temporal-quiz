@@ -165,6 +165,19 @@ func (a *Activities) ReadLocalDocs(ctx context.Context, docsDir string) (string,
 		return "", fmt.Errorf("creating output dir: %w", err)
 	}
 
+	// Wipe stale bucket files from previous runs. Without this, retired
+	// bucket names (e.g. Evaluate_and_Concepts, Temporal_Cloud) linger on
+	// disk and the quiz generator's ListBuckets glob picks them up,
+	// producing quizzes for buckets that don't exist in the current
+	// taxonomy and polluting the UI category list.
+	if stale, _ := filepath.Glob(filepath.Join(outputTxtDir, "temporal_docs_*.txt")); len(stale) > 0 {
+		for _, f := range stale {
+			if err := os.Remove(f); err != nil {
+				logger.Warn("Could not remove stale bucket file", "path", f, "error", err)
+			}
+		}
+	}
+
 	bucketContents := make(map[string][]string)
 	count := 0
 

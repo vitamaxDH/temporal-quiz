@@ -329,6 +329,18 @@ func (a *QuizActivities) WriteQuizFiles(ctx context.Context, questions []QuizQue
 		return fmt.Errorf("create run dir: %w", err)
 	}
 
+	// Same-day re-runs: wipe prior JSON files in this date folder so
+	// retired bucket names don't linger alongside the new ones. Without
+	// this, renaming a bucket (or cleaning the scraper-side cache) leaves
+	// orphan <OldCategory>.json files that the UI still surfaces.
+	if stale, _ := filepath.Glob(filepath.Join(runDir, "*.json")); len(stale) > 0 {
+		for _, f := range stale {
+			if err := os.Remove(f); err != nil {
+				fmt.Printf("Warning: could not remove stale quiz file %s: %v\n", f, err)
+			}
+		}
+	}
+
 	var entries []ManifestEntry
 
 	for cat, qs := range grouped {
