@@ -10,18 +10,18 @@ here.
 .
 ├── worker/    Go worker. Scrapes temporalio/documentation, generates quizzes
 │              via Claude, runs the full pipeline as a Temporal workflow.
-└── ui/        Static HTML/CSS/JS quiz frontend. GitHub Pages serves ui/docs/.
+└── docs/      Static HTML/CSS/JS quiz frontend. GitHub Pages serves this.
 ```
 
 ## Common commands
 
 ```sh
-cd worker
-make pipeline     # scrape + generate + publish into ui/docs/quizzes
+make pipeline     # scrape + generate + publish into docs/quizzes
 make worker       # run the Temporal worker locally
 make test         # Go test suite
+make serve        # preview docs/ at http://localhost:8080
 ```
 
-GitHub Pages source: this repo's `main` branch, `/ui/docs` folder.
+Top-level `Makefile` delegates to `worker/Makefile` for the pipeline targets.
 
-See `worker/README.md` and `worker/Makefile` for the full worker command list.
+GitHub Pages source: `main` branch, `/docs` folder.

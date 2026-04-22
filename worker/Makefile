@@ -7,11 +7,11 @@ HARD ?= 4
 NIGHTMARE ?= 2
 DOCS_DIR ?=
 
-# Publish targets. The worker and the UI now live side-by-side in the
-# same repo — worker/ and ui/ — so the default UI_REPO is the parent
-# directory and quiz files land under ui/docs/quizzes.
+# Publish targets. Worker lives in worker/ under the combined repo; the
+# Pages-published site lives at the repo root in docs/. UI_REPO points to
+# that root.
 UI_REPO ?= ..
-UI_QUIZZES = $(UI_REPO)/ui/docs/quizzes
+UI_QUIZZES = $(UI_REPO)/docs/quizzes
 # SRC_QUIZZES follows the worker's output dir. When TEMPORAL_QUIZ_OUTPUT_DIR
 # is set (common when pointing the worker straight at the UI repo), publish
 # will detect that source == destination and skip the copy step.
@@ -103,7 +103,7 @@ publish:
 	  cp "$(SRC_QUIZZES)/runs/$(TODAY)"/*.json* "$(UI_QUIZZES)/runs/$(TODAY)/"; \
 	fi
 	@python3 scripts/build_runs_index.py "$(UI_QUIZZES)"
-	@cd "$(UI_REPO)" && git add ui/docs/quizzes && \
+	@cd "$(UI_REPO)" && git add docs/quizzes && \
 	  if git diff --cached --quiet; then \
 	    echo "No changes to commit."; \
 	  else \
