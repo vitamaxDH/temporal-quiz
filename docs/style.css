@@ -166,6 +166,19 @@ body::after {
   pointer-events: auto;
 }
 
+/* Confetti canvas for the recap celebration. Sits above everything but
+   never catches clicks so the underlying recap UI stays fully usable. */
+#confettiCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 300;
+  pointer-events: none;
+  display: none;
+}
+#confettiCanvas.firing { display: block; }
+
 /* Pull-to-refresh indicator (mobile touch devices).
    Sits hidden above the viewport; the JS handler slides it down as the
    user pulls, then adds .refreshing to spin the icon and trigger a reload. */
@@ -1495,28 +1508,56 @@ code {
   margin-bottom: 10px;
   overflow: hidden;
 }
-.session-block[open] {
+.session-block.open {
   border-color: var(--accent);
 }
 .session-summary {
   cursor: pointer;
   padding: 10px 12px;
-  list-style: none;
   user-select: none;
+  outline: none;
 }
-.session-summary::-webkit-details-marker {
-  display: none;
+.session-summary:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+  border-radius: var(--radius-sm);
 }
-.session-summary::before {
-  content: '▸';
+/* Chevron rotates from right-pointing (collapsed) to down-pointing
+   (expanded). Using a dedicated <span class="session-chevron"> instead
+   of ::before because ::before can't live inside flex-aligned siblings. */
+.session-chevron {
   display: inline-block;
   font-size: 10px;
-  margin-right: 6px;
   opacity: 0.5;
-  transition: transform 0.15s ease;
+  transform: rotate(-90deg);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.session-block[open] .session-summary::before {
-  transform: rotate(90deg);
+.session-block.open .session-chevron {
+  transform: rotate(0deg);
+}
+
+/* Grid-template-rows 0fr -> 1fr animates the auto-height content smoothly
+   in both directions. The inner child needs overflow:hidden + min-height:0
+   so it respects the grid row sizing instead of spilling. */
+.session-history-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.session-block.open .session-history-wrap {
+  grid-template-rows: 1fr;
+}
+.session-history-wrap > .session-history {
+  overflow: hidden;
+  min-height: 0;
+  transition: opacity 0.2s ease, padding 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.session-block.open .session-history-wrap > .session-history {
+  opacity: 1;
+  padding-top: 8px;
+  padding-bottom: 12px;
 }
 .session-summary-top {
   display: inline-flex;
@@ -1553,6 +1594,23 @@ code {
 .session-continue:hover {
   background: var(--accent);
   color: var(--text-primary);
+}
+/* Recap is the read-only counterpart of Continue, so it borrows the same
+   shape but uses the neutral surface palette to stay lower-key. */
+.session-recap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+}
+.session-recap:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
 }
 .session-time {
   font-family: var(--font-mono);

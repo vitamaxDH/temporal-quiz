@@ -372,6 +372,22 @@ async function setRun(dateStr) {
 /* ---- Load questions ---- */
 
 async function fetchCategoryQuestions(category) {
+  // Category payloads are the bulky part of a run, so the worker writes
+  // them gzip-compressed. Decode client-side via the native
+  // DecompressionStream API and fall back to the plain .json file for
+  // older runs that pre-date the compression switch.
+  try {
+    const gzRes = await fetch(quizPath(`${category}.json.gz`), { cache: 'no-store' });
+    if (gzRes.ok) {
+      const stream = gzRes.body.pipeThrough(new DecompressionStream('gzip'));
+      const data = await new Response(stream).json();
+      return data.questions || [];
+    }
+  } catch (e) {
+    // Network error or no DecompressionStream support — try the plain
+    // file before giving up.
+    console.warn('Compressed category fetch failed, trying .json fallback', category, e);
+  }
   const res = await fetch(quizPath(`${category}.json`), { cache: 'no-store' });
   const data = await res.json();
   return data.questions || [];
@@ -758,9 +774,12 @@ const CUSTOM_CATEGORY_GROUPS = [
   {
     label: 'Operations',
     categories: [
-      { id: 'Features_Namespaces',      label: 'Namespaces' },
-      { id: 'Operations_TemporalCloud', label: 'Temporal Cloud' },
-      { id: 'Operations_SelfHosted',    label: 'Self Hosted' },
+      { id: 'Features_Namespaces',       label: 'Namespaces' },
+      { id: 'Features_Observability',    label: 'Metrics & Monitoring' },
+      { id: 'Features_HighAvailability', label: 'HA & Disaster Recovery' },
+      { id: 'Features_AuditLogging',     label: 'Audit Logging' },
+      { id: 'Operations_TemporalCloud',  label: 'Temporal Cloud' },
+      { id: 'Operations_SelfHosted',     label: 'Self Hosted' },
     ],
   },
   {
@@ -1059,6 +1078,13 @@ function startSession(qs, length, meta = {}) {
 
 /* ---- Display question ---- */
 
+// isLastQuestion reports whether the current question is the final one in a
+// finite session. Infinite sessions reshuffle on overflow so there's no
+// "last" to label. Used to swap Submit/Next -> Finish at the right moment.
+function isLastQuestion() {
+  return Number.isFinite(sessionLength) && currentIndex === questions.length - 1;
+}
+
 function showQuestion() {
   if (!questions.length) return;
   if (mode !== 'quiz') mode = 'quiz';
@@ -1122,9 +1148,10 @@ function showQuestion() {
   explanation.style.display = 'none';
   explanation.innerHTML = '';
 
-  // Reset submit button
+  // Reset submit button. On the last question of a finite session, use
+  // "Finish" so the user sees that submitting this one wraps up the run.
   const btn = document.getElementById('submitBtn');
-  btn.textContent = 'Submit';
+  btn.textContent = isLastQuestion() ? 'Finish' : 'Submit';
   btn.disabled = true;
 
   // Show Skip for a fresh question
@@ -1168,9 +1195,10 @@ function replayAnsweredQuestion(q, h) {
     <div class="explanation-text">${formatQuestion(q.explanation)}</div>
   `;
 
-  // Submit becomes Next so the user can move forward again.
+  // Submit becomes Next (or Finish on the last question) so the user
+  // can move forward again.
   const btn = document.getElementById('submitBtn');
-  btn.textContent = 'Next';
+  btn.textContent = isLastQuestion() ? 'Finish' : 'Next';
   btn.disabled = false;
 
   // No Skip on an already-answered question.
@@ -1353,9 +1381,9 @@ function submitAnswer() {
     qnEditor.style.display = 'none';
   });
 
-  // Switch button to Next
+  // Switch button to Next (or Finish on the last question).
   const btn = document.getElementById('submitBtn');
-  btn.textContent = 'Next';
+  btn.textContent = isLastQuestion() ? 'Finish' : 'Next';
   btn.disabled = false;
 }
 
@@ -1385,20 +1413,34 @@ function nextQuestion() {
   showQuestion();
 }
 
-function renderRecap() {
+// renderRecap can render the live session (no arg — reads the active
+// session at state.sessions[0] and the module-level counters) or a
+// specific session replayed from history. In the latter case we skip
+// the end-time stamping and confetti so the history viewer doesn't
+// mutate completed records or celebrate past runs on every open.
+function renderRecap(sess) {
+  const fromHistory = !!sess;
   mode = 'recap';
   timerState.qStart = null;
   stopMainTimer();
   hideQuizControls();
-  // Stamp the session's end time if not already stamped
-  const activeSess = state.sessions && state.sessions[0];
-  if (activeSess && activeSess.ended_at === null) {
+  const activeSess = sess || (state.sessions && state.sessions[0]);
+  // Stamp end time only for a LIVE in-progress session finishing up.
+  if (!fromHistory && activeSess && activeSess.ended_at === null) {
     activeSess.ended_at = Date.now();
     saveState();
   }
   const card = document.querySelector('.question-card');
-  const total = sessionAnswered;
-  const correct = sessionCorrect;
+  // When replaying from history, pull totals from the stored session so
+  // the recap reflects that session, not whatever module-level state the
+  // live quiz left behind.
+  const total = fromHistory
+    ? (Number.isFinite(activeSess?.total) ? activeSess.total : (activeSess?.history?.length ?? 0))
+    : sessionAnswered;
+  const correct = fromHistory ? (activeSess?.correct ?? 0) : sessionCorrect;
+  const wrongItems = fromHistory
+    ? (Array.isArray(activeSess?.wrongItems) ? activeSess.wrongItems : [])
+    : sessionWrongItems;
   const wrong = Math.max(0, total - correct);
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
   const durationMs = (activeSess && activeSess.started_at && activeSess.ended_at)
@@ -1406,17 +1448,42 @@ function renderRecap() {
     : 0;
   const durationStr = durationMs > 0 ? fmtSessionDuration(durationMs) : '';
 
-  // Donut chart: two arcs along a circle of radius 60 in a 160-wide SVG.
+  // Donut chart built from explicit SVG arc paths. This replaces the
+  // old stroke-dasharray approach which silently produced empty arcs on
+  // some WebKit builds (CSS-declared stroke URLs collapsed to stroke:none
+  // when the SVG was inserted via innerHTML). Arc paths are pure geometry
+  // and cannot fail at render time.
   const R = 60;
-  const CIRC = 2 * Math.PI * R;
-  const correctLen = total > 0 ? (correct / total) * CIRC : 0;
-  const wrongLen = total > 0 ? (wrong / total) * CIRC : 0;
+  const CX = 90;
+  const CY = 90;
   const pctTone = pct >= 80 ? 'good' : pct >= 50 ? 'ok' : 'poor';
 
-  const wrongListHtml = sessionWrongItems.length === 0 ? '' : `
+  const polar = (angleDeg) => {
+    const a = (angleDeg - 90) * Math.PI / 180; // rotate so 0deg is 12 o'clock
+    return [CX + R * Math.cos(a), CY + R * Math.sin(a)];
+  };
+  const arcPath = (startDeg, endDeg) => {
+    // Near-full-circle: close on itself to avoid the A-command edge case
+    // where start == end draws nothing.
+    if (endDeg - startDeg >= 359.99) {
+      const [sx, sy] = polar(0);
+      const [ex, ey] = polar(180);
+      return `M ${sx} ${sy} A ${R} ${R} 0 1 1 ${ex} ${ey} A ${R} ${R} 0 1 1 ${sx} ${sy}`;
+    }
+    const [sx, sy] = polar(startDeg);
+    const [ex, ey] = polar(endDeg);
+    const largeArc = (endDeg - startDeg) > 180 ? 1 : 0;
+    return `M ${sx} ${sy} A ${R} ${R} 0 ${largeArc} 1 ${ex} ${ey}`;
+  };
+
+  const correctDeg = total > 0 ? (correct / total) * 360 : 0;
+  const correctArc = correct > 0 ? `<path d="${arcPath(0, correctDeg)}" stroke="#22c55e" fill="none" stroke-width="14" stroke-linecap="round"/>` : '';
+  const wrongArc   = wrong   > 0 ? `<path d="${arcPath(correctDeg, 360)}" stroke="#ef4444" fill="none" stroke-width="14" stroke-linecap="round"/>` : '';
+
+  const wrongListHtml = wrongItems.length === 0 ? '' : `
     <div class="recap-wrong-list">
-      <div class="recap-wrong-label">Wrong answers (${sessionWrongItems.length})</div>
-      ${sessionWrongItems.map(w => {
+      <div class="recap-wrong-label">Wrong answers (${wrongItems.length})</div>
+      ${wrongItems.map(w => {
         const userChoice = (w.choices.find(c => c.key === w.selectedKey) || {}).text || '';
         const correctChoice = (w.choices.find(c => c.key === w.answer) || {}).text || '';
         return `
@@ -1451,19 +1518,11 @@ function renderRecap() {
 
       <div class="recap-chart">
         <svg class="recap-donut" width="180" height="180" viewBox="0 0 180 180">
-          <circle cx="90" cy="90" r="${R}" class="recap-donut-bg"></circle>
-          <circle cx="90" cy="90" r="${R}" class="recap-donut-correct"
-                  stroke="#22c55e" fill="none" stroke-width="14" stroke-linecap="round"
-                  stroke-dasharray="${correctLen} ${CIRC - correctLen}"
-                  stroke-dashoffset="0"
-                  transform="rotate(-90 90 90)"></circle>
-          <circle cx="90" cy="90" r="${R}" class="recap-donut-wrong"
-                  stroke="#ef4444" fill="none" stroke-width="14" stroke-linecap="round"
-                  stroke-dasharray="${wrongLen} ${CIRC - wrongLen}"
-                  stroke-dashoffset="-${correctLen}"
-                  transform="rotate(-90 90 90)"></circle>
-          <text x="90" y="92" class="recap-donut-pct recap-pct-${pctTone}" text-anchor="middle" dominant-baseline="middle">${pct}%</text>
-          <text x="90" y="118" class="recap-donut-sub" text-anchor="middle">${correct} / ${total}</text>
+          <circle cx="${CX}" cy="${CY}" r="${R}" class="recap-donut-bg"></circle>
+          ${correctArc}
+          ${wrongArc}
+          <text x="${CX}" y="${CY + 2}" class="recap-donut-pct recap-pct-${pctTone}" text-anchor="middle" dominant-baseline="middle">${pct}%</text>
+          <text x="${CX}" y="${CY + 28}" class="recap-donut-sub" text-anchor="middle">${correct} / ${total}</text>
         </svg>
         <div class="recap-legend">
           <div class="recap-legend-chip correct">
@@ -1494,6 +1553,105 @@ function renderRecap() {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submit';
   document.getElementById('recapAgainBtn').addEventListener('click', renderLanding);
+
+  // Celebrate finishing, period. Confetti fires regardless of score
+  // because completing a session is worth acknowledging; we just dial
+  // the burst size up for higher accuracy. Skipped when replaying a
+  // past session from history — re-opening an old result shouldn't
+  // re-fire the celebration every time.
+  if (!fromHistory) fireConfetti(pct);
+}
+
+/* ---- Confetti ---- */
+
+// Minimal canvas-based confetti burst. Spawns N particles from two
+// origin points along the top edge, applies gravity + drag + rotation,
+// and bows out within a few seconds. No deps. Respects prefers-reduced-
+// motion so accessibility toggles actually turn it off.
+function fireConfetti(pct) {
+  const canvas = document.getElementById('confettiCanvas');
+  if (!canvas) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.classList.add('firing');
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const colors = ['#7c3aed', '#a855f7', '#22c55e', '#f59e0b', '#ef4444', '#38bdf8', '#ec4899'];
+  // Scale the burst with accuracy but keep a floor so any completion
+  // gets a real celebration.
+  const count = Math.round(160 + (pct / 100) * 140);
+  const particles = [];
+  // Two cannons at the bottom corners, firing up and inward so the
+  // confetti arcs toward the middle before gravity pulls it back down.
+  const origins = [
+    { x: w * 0.2, y: h + 20, dir:  1 }, // bottom-left -> up-right
+    { x: w * 0.8, y: h + 20, dir: -1 }, // bottom-right -> up-left
+  ];
+  for (let i = 0; i < count; i++) {
+    const o = origins[i % origins.length];
+    // Launch angle measured from horizontal, 45-90 deg, toward center.
+    const launchDeg = 45 + Math.random() * 45;
+    const rad = launchDeg * Math.PI / 180;
+    const speed = 18 + Math.random() * 14; // 18-32, enough to clear most viewports
+    particles.push({
+      x: o.x + (Math.random() - 0.5) * 60,
+      y: o.y,
+      vx: Math.cos(rad) * speed * o.dir,
+      vy: -Math.sin(rad) * speed, // negative = upward
+      size: 6 + Math.random() * 6,
+      rot: Math.random() * Math.PI * 2,
+      vr: (Math.random() - 0.5) * 0.35,
+      color: colors[(Math.random() * colors.length) | 0],
+      life: 1,
+      // Slower decay so the burst lasts ~4-5s instead of ~2s.
+      decay: 0.003 + Math.random() * 0.003,
+    });
+  }
+
+  let raf = 0;
+  const tick = () => {
+    ctx.clearRect(0, 0, w, h);
+    let alive = 0;
+    for (const p of particles) {
+      if (p.life <= 0) continue;
+      p.vy += 0.18;        // gravity (slightly softer for longer hang time)
+      p.vx *= 0.993;       // air drag
+      p.vy *= 0.997;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      p.life -= p.decay;
+      // Kill once the flake has clearly fallen past the bottom edge on
+      // its way back down.
+      if (p.vy > 0 && p.y > h + 40) { p.life = 0; continue; }
+      alive++;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      // Simple rectangular flake — cheap and reads well on all backgrounds.
+      ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size / 1.6);
+      ctx.restore();
+    }
+
+    if (alive > 0) {
+      raf = requestAnimationFrame(tick);
+    } else {
+      canvas.classList.remove('firing');
+      ctx.clearRect(0, 0, w, h);
+    }
+  };
+  raf = requestAnimationFrame(tick);
 }
 
 function skipQuestion() {
@@ -1890,25 +2048,63 @@ function renderHistory() {
     const continueBtn = canContinue
       ? `<button class="session-continue" data-session-id="${escapeHtml(s.id)}" title="Resume this session">Continue</button>`
       : '';
+    // Only sessions that actually ran (answered >=1 question) have a
+    // useful recap to view. We also skip recap on a session that can
+    // still be resumed, since Continue is the right action there.
+    const canViewRecap = !canContinue && (s.total || 0) > 0;
+    const recapBtn = canViewRecap
+      ? `<button class="session-recap" data-session-id="${escapeHtml(s.id)}" title="View the final recap for this session">Recap</button>`
+      : '';
 
+    // Dropped <details>/<summary> for a plain div pair so we can animate
+    // both expand AND collapse. <details> hides its non-summary children
+    // outright when closed, which kills CSS transitions; this custom
+    // toggle wraps the inner body in a grid container that animates
+    // grid-template-rows 0fr <-> 1fr for a smooth open/close.
+    const isOpen = idx === 0;
     return `
-      <details class="session-block" ${idx === 0 ? 'open' : ''}>
-        <summary class="session-summary">
+      <div class="session-block ${isOpen ? 'open' : ''}">
+        <div class="session-summary" role="button" tabindex="0" aria-expanded="${isOpen}">
           <div class="session-summary-top">
+            <span class="session-chevron" aria-hidden="true">&#9662;</span>
             <span class="session-time">${escapeHtml(started)}</span>
             <span class="session-score">${s.correct}/${s.total} &middot; ${pct}%</span>
             ${continueBtn}
+            ${recapBtn}
             <button class="session-delete" data-session-id="${escapeHtml(s.id)}" title="Delete this session">&times;</button>
           </div>
           <div class="session-summary-sub">
             <span class="session-mode">${escapeHtml(summary)}</span>
             <span class="session-dur">${escapeHtml(dur)}</span>
           </div>
-        </summary>
-        <div class="session-history">${inner}</div>
-      </details>
+        </div>
+        <div class="session-history-wrap">
+          <div class="session-history">${inner}</div>
+        </div>
+      </div>
     `;
   }).join('');
+
+  // Wire the custom toggle. Clicks on the inner buttons are excluded so
+  // Continue / Recap / Delete don't accidentally fold the card open/closed.
+  list.querySelectorAll('.session-block > .session-summary').forEach(summary => {
+    const toggle = () => {
+      const block = summary.parentElement;
+      const nowOpen = !block.classList.contains('open');
+      block.classList.toggle('open', nowOpen);
+      summary.setAttribute('aria-expanded', String(nowOpen));
+    };
+    summary.addEventListener('click', (e) => {
+      if (e.target.closest('.session-continue, .session-recap, .session-delete')) return;
+      toggle();
+    });
+    summary.addEventListener('keydown', (e) => {
+      if (e.key !== ' ' && e.key !== 'Enter') return;
+      if (e.target.closest('.session-continue, .session-recap, .session-delete')) return;
+      e.preventDefault();
+      toggle();
+    });
+  });
 
   list.querySelectorAll('.session-delete').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -1933,6 +2129,20 @@ function renderHistory() {
         toggleSidebar();
       }
       resumeSession(target);
+    });
+  });
+
+  list.querySelectorAll('.session-recap').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const id = btn.dataset.sessionId;
+      const target = (state.sessions || []).find(s => s.id === id);
+      if (!target) return;
+      if (document.getElementById('sidebar').classList.contains('open')) {
+        toggleSidebar();
+      }
+      renderRecap(target);
     });
   });
 }
