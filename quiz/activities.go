@@ -2,6 +2,7 @@ package quiz
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -329,12 +330,15 @@ func (a *QuizActivities) WriteQuizFiles(ctx context.Context, questions []QuizQue
 		return fmt.Errorf("create run dir: %w", err)
 	}
 
-	// Same-day re-runs: wipe prior JSON files in this date folder so
-	// retired bucket names don't linger alongside the new ones. Without
-	// this, renaming a bucket (or cleaning the scraper-side cache) leaves
-	// orphan <OldCategory>.json files that the UI still surfaces.
-	if stale, _ := filepath.Glob(filepath.Join(runDir, "*.json")); len(stale) > 0 {
+	// Same-day re-runs: wipe prior category files (both .json and the
+	// compressed .json.gz form) in this date folder so retired bucket
+	// names don't linger alongside the new ones. manifest.json is kept
+	// plain because the UI consumes it on first page load to know what
+	// categories exist.
+	for _, pat := range []string{"*.json.gz", "*.json"} {
+		stale, _ := filepath.Glob(filepath.Join(runDir, pat))
 		for _, f := range stale {
+			// manifest.json is rewritten further down; safe to remove first.
 			if err := os.Remove(f); err != nil {
 				fmt.Printf("Warning: could not remove stale quiz file %s: %v\n", f, err)
 			}
@@ -349,13 +353,26 @@ func (a *QuizActivities) WriteQuizFiles(ctx context.Context, questions []QuizQue
 			Questions: qs,
 		}
 
-		data, err := json.MarshalIndent(cq, "", "  ")
+		// Per-category files are gzip-compressed — these are the bulky
+		// payloads in the run and the UI decodes them on fetch via
+		// DecompressionStream. Marshal without indentation since the
+		// output is binary anyway; no human reads it directly.
+		data, err := json.Marshal(cq)
 		if err != nil {
 			return fmt.Errorf("marshal category %s: %w", cat, err)
 		}
+		var gzBuf bytes.Buffer
+		gw, _ := gzip.NewWriterLevel(&gzBuf, gzip.BestCompression)
+		if _, err := gw.Write(data); err != nil {
+			gw.Close()
+			return fmt.Errorf("gzip category %s: %w", cat, err)
+		}
+		if err := gw.Close(); err != nil {
+			return fmt.Errorf("flush gzip category %s: %w", cat, err)
+		}
 
-		catPath := filepath.Join(runDir, cat+".json")
-		if err := os.WriteFile(catPath, data, 0o644); err != nil {
+		catPath := filepath.Join(runDir, cat+".json.gz")
+		if err := os.WriteFile(catPath, gzBuf.Bytes(), 0o644); err != nil {
 			return fmt.Errorf("write category file %s: %w", catPath, err)
 		}
 

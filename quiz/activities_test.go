@@ -1,7 +1,9 @@
 package quiz
 
 import (
+	"compress/gzip"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,6 +13,21 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// readGzippedJSON decodes a gzipped category file — the on-disk format
+// WriteQuizFiles produces for per-category payloads.
+func readGzippedJSON(t *testing.T, path string, out interface{}) {
+	t.Helper()
+	f, err := os.Open(path)
+	require.NoError(t, err)
+	defer f.Close()
+	gz, err := gzip.NewReader(f)
+	require.NoError(t, err)
+	defer gz.Close()
+	data, err := io.ReadAll(gz)
+	require.NoError(t, err)
+	require.NoError(t, json.Unmarshal(data, out))
+}
 
 func TestListBuckets_Success(t *testing.T) {
 	tmpDir := t.TempDir()
@@ -221,26 +238,23 @@ func TestWriteQuizFiles_Success(t *testing.T) {
 	assert.Equal(t, 1, manifest.Categories[1].HardCount)
 	assert.Equal(t, 1, manifest.Categories[1].NightmareCount)
 
-	// Verify per-category JSON files under the run dir.
-	devData, err := os.ReadFile(filepath.Join(runDir, "develop.json"))
-	require.NoError(t, err)
+	// Verify per-category JSON files under the run dir. They're written
+	// as .json.gz; readGzippedJSON decompresses and unmarshals.
 	var devQuiz CategoryQuiz
-	require.NoError(t, json.Unmarshal(devData, &devQuiz))
+	readGzippedJSON(t, filepath.Join(runDir, "develop.json.gz"), &devQuiz)
 	assert.Equal(t, "develop", devQuiz.Category)
 	assert.Len(t, devQuiz.Questions, 4)
 
-	cliData, err := os.ReadFile(filepath.Join(runDir, "cli.json"))
-	require.NoError(t, err)
 	var cliQuiz CategoryQuiz
-	require.NoError(t, json.Unmarshal(cliData, &cliQuiz))
+	readGzippedJSON(t, filepath.Join(runDir, "cli.json.gz"), &cliQuiz)
 	assert.Equal(t, "cli", cliQuiz.Category)
 	assert.Len(t, cliQuiz.Questions, 1)
 
 	// No flat-file mirror should exist at the top of the output dir.
 	_, err = os.Stat(filepath.Join(outputDir, "manifest.json"))
 	assert.True(t, os.IsNotExist(err), "manifest.json should NOT exist at outputDir root")
-	_, err = os.Stat(filepath.Join(outputDir, "develop.json"))
-	assert.True(t, os.IsNotExist(err), "develop.json should NOT exist at outputDir root")
+	_, err = os.Stat(filepath.Join(outputDir, "develop.json.gz"))
+	assert.True(t, os.IsNotExist(err), "develop.json.gz should NOT exist at outputDir root")
 }
 
 func TestEvaluateQuiz_Success(t *testing.T) {
