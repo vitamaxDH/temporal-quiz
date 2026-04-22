@@ -7,9 +7,11 @@ HARD ?= 4
 NIGHTMARE ?= 2
 DOCS_DIR ?=
 
-# Publish targets
-UI_REPO ?= ../temporal-quiz-ui
-UI_QUIZZES = $(UI_REPO)/docs/quizzes
+# Publish targets. The worker and the UI now live side-by-side in the
+# same repo — worker/ and ui/ — so the default UI_REPO is the parent
+# directory and quiz files land under ui/docs/quizzes.
+UI_REPO ?= ..
+UI_QUIZZES = $(UI_REPO)/ui/docs/quizzes
 # SRC_QUIZZES follows the worker's output dir. When TEMPORAL_QUIZ_OUTPUT_DIR
 # is set (common when pointing the worker straight at the UI repo), publish
 # will detect that source == destination and skip the copy step.
@@ -29,7 +31,7 @@ help:
 	@echo "End-to-end:"
 	@echo "  make pipeline     : scrape + generate quizzes + publish to UI repo"
 	@echo "  make publish      : Publish today's run to UI repo (standalone)"
-	@echo "                       (override UI_REPO=path/to/temporal-quiz-ui)"
+	@echo "                       (override UI_REPO=path/to/repo if running outside the combined tree)"
 	@echo ""
 	@echo "Infrastructure:"
 	@echo "  make start-server : Start local Temporal Docker Cluster"
@@ -88,7 +90,7 @@ publish:
 	  exit 1; \
 	fi
 	@if [ ! -d "$(UI_REPO)/.git" ]; then \
-	  echo "error: $(UI_REPO) is not a git repo. Set UI_REPO=path/to/temporal-quiz-ui."; \
+	  echo "error: $(UI_REPO) is not a git repo. Set UI_REPO=path/to/repo."; \
 	  exit 1; \
 	fi
 	@mkdir -p "$(UI_QUIZZES)/runs/$(TODAY)"
@@ -98,10 +100,10 @@ publish:
 	  echo "Worker already wrote to $(UI_QUIZZES); skipping copy."; \
 	else \
 	  echo "Copying $(SRC_QUIZZES)/runs/$(TODAY)/ -> $(UI_QUIZZES)/runs/$(TODAY)/ ..."; \
-	  cp "$(SRC_QUIZZES)/runs/$(TODAY)"/*.json "$(UI_QUIZZES)/runs/$(TODAY)/"; \
+	  cp "$(SRC_QUIZZES)/runs/$(TODAY)"/*.json* "$(UI_QUIZZES)/runs/$(TODAY)/"; \
 	fi
 	@python3 scripts/build_runs_index.py "$(UI_QUIZZES)"
-	@cd "$(UI_REPO)" && git add docs/quizzes && \
+	@cd "$(UI_REPO)" && git add ui/docs/quizzes && \
 	  if git diff --cached --quiet; then \
 	    echo "No changes to commit."; \
 	  else \
