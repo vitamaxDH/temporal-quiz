@@ -1,0 +1,593 @@
+{
+  "category": "Features_Export",
+  "questions": [
+    {
+      "id": "features_export_easy_001",
+      "category": "Features_Export",
+      "difficulty": "easy",
+      "question": "What types of closed Workflow data does Temporal Cloud's Workflow History Export feature send to object storage?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Only Workflow inputs and outputs, stored as JSON for easy querying"
+        },
+        {
+          "key": "B",
+          "text": "Complete Workflow History data in proto format, useful for compliance, audits, and analytics"
+        },
+        {
+          "key": "C",
+          "text": "A summary of each Workflow run, including status codes and duration metrics"
+        },
+        {
+          "key": "D",
+          "text": "Only failed Workflow runs, so teams can investigate errors after the fact"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Workflow History Export sends complete Workflow History data in proto (protocol buffer) format to cloud object storage like AWS S3 or GCP GCS. This is useful for compliance, audit trails, and feeding data into analytics platforms. It exports ALL closed Workflows, not just failed ones, and it is the full history rather than a summary or just inputs/outputs.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_easy_002",
+      "category": "Features_Export",
+      "difficulty": "easy",
+      "question": "How often does Temporal Cloud run Workflow History Export jobs, and when should you expect a closed Workflow to appear in your object storage?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Exports run every minute, and closed Workflows appear within a few seconds of completing"
+        },
+        {
+          "key": "B",
+          "text": "Exports run once per day at midnight, and closed Workflows appear within 48 hours"
+        },
+        {
+          "key": "C",
+          "text": "Exports run hourly (starting 10 minutes after the hour), and a closed Workflow may take up to 24 hours to appear"
+        },
+        {
+          "key": "D",
+          "text": "Exports run weekly, and closed Workflows appear within 7 days of the export window closing"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Export jobs run on an hourly schedule, beginning 10 minutes after each hour. Even so, you should allow up to 24 hours for a closed Workflow to show up in the exported files. This cadence balances freshness with the practical overhead of batching and writing large history datasets to object storage.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_easy_003",
+      "category": "Features_Export",
+      "difficulty": "easy",
+      "question": "What does the timestamp in the exported file's directory path represent?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The time the Workflow was first created and added to the Task Queue"
+        },
+        {
+          "key": "B",
+          "text": "The time the Workflow completed and moved to a closed state"
+        },
+        {
+          "key": "C",
+          "text": "The time the export job uploaded the file to object storage"
+        },
+        {
+          "key": "D",
+          "text": "The time the Workflow's last Activity finished executing"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The date and time recorded in the directory structure (Year/Month/Day/Hour/Minute) reflects when the export job uploaded the file to object storage — NOT when the Workflow finished running. This distinction matters when you are searching for a specific Workflow's history, since the export upload time may be significantly later than the Workflow's completion time.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_easy_004",
+      "category": "Features_Export",
+      "difficulty": "easy",
+      "question": "What happens to Workflow History Export if a High Availability Namespace fails over to a secondary region while the primary region stays healthy?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Export automatically switches to read data from the secondary region to stay current"
+        },
+        {
+          "key": "B",
+          "text": "Export pauses permanently until an administrator manually reconfigures it in the new region"
+        },
+        {
+          "key": "C",
+          "text": "Export continues running from the primary region where it was originally configured, without switching to the secondary region"
+        },
+        {
+          "key": "D",
+          "text": "Export stops entirely and resumes only after the Namespace fails back to the primary region"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Export is tied to the region where it was initially set up and does NOT automatically follow a Namespace failover. If the primary region is still healthy, the export job keeps reading and writing there even though the Namespace is now active in the secondary region. Temporal made this design choice deliberately to prioritize data completeness and consistency, since replication latency during a failover could produce incomplete or inconsistent export files.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_easy_005",
+      "category": "Features_Export",
+      "difficulty": "easy",
+      "question": "Which roles receive an email notification when a Workflow History Export job fails due to a user-related error, such as a permissions problem with the object store?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Developer and Read-Only roles, since they are most likely to act on data pipeline issues"
+        },
+        {
+          "key": "B",
+          "text": "Namespace Administrator, Account Owner, and Global Administrator roles"
+        },
+        {
+          "key": "C",
+          "text": "Only the Account Owner, because billing and storage costs are their responsibility"
+        },
+        {
+          "key": "D",
+          "text": "Any user who has previously accessed the Export configuration page in the Web UI"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When an export job fails because of a user-related error (like incorrect S3/GCS permissions), Temporal Cloud sends alert emails to three administrative roles: Namespace Administrator, Account Owner, and Global Administrator. These roles have the authority and context to investigate and fix configuration issues, so they are the right people to be notified automatically.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_easy_006",
+      "category": "Features_Export",
+      "difficulty": "easy",
+      "question": "What is the recommended first step to confirm that your Workflow History Export is correctly configured before waiting for real data?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Manually upload a test Workflow History file to your bucket and check that Temporal can read it back"
+        },
+        {
+          "key": "B",
+          "text": "Wait 24 hours after setup and then inspect the object storage directory for exported files"
+        },
+        {
+          "key": "C",
+          "text": "Use the Verify button on the Export configuration page, which causes Temporal to write a test file to your bucket"
+        },
+        {
+          "key": "D",
+          "text": "Check the temporal_cloud_v1_total_action_count metric immediately after saving the export settings"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Export configuration page includes a Verify button that triggers Temporal to write a test file to your configured object storage. If permissions and connectivity are correct, you will see a Success status — giving you immediate confidence that the integration works before any real Workflows are exported. This saves you from waiting up to 24 hours only to discover a misconfiguration.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_med_003",
+      "category": "Features_Export",
+      "difficulty": "med",
+      "question": "Which metric should an operator monitor to track actions generated by the Workflow History Export job in Temporal Cloud?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`temporal_cloud_v1_export_job_status` filtered by the Namespace label."
+        },
+        {
+          "key": "B",
+          "text": "`temporal_cloud_v1_total_action_count` filtered with the label `is_background=\"true\"`."
+        },
+        {
+          "key": "C",
+          "text": "`temporal_cloud_v1_workflow_closed_count` filtered by the export task queue label."
+        },
+        {
+          "key": "D",
+          "text": "`temporal_cloud_v1_export_bytes_written` available from the usage dashboard endpoint."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation specifically calls out `temporal_cloud_v1_total_action_count` with the label `is_background=\"true\"` as the metric for tracking export-related activity from the Cloud metrics endpoint. Options A, C, and D all describe plausible-sounding metric names but none of them are mentioned in the documentation. When setting up dashboards or alerts for export health, `is_background=\"true\"` is the correct label to isolate export actions from user-generated workflow actions.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_med_004",
+      "category": "Features_Export",
+      "difficulty": "med",
+      "question": "What is the delivery guarantee for Workflow History Export in Temporal Cloud?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Exactly-once delivery — each closed Workflow History is written to object storage precisely one time."
+        },
+        {
+          "key": "B",
+          "text": "Best-effort delivery — exports may be skipped if the storage bucket is temporarily unavailable."
+        },
+        {
+          "key": "C",
+          "text": "At-least-once delivery — a closed Workflow History may appear in exported files more than once."
+        },
+        {
+          "key": "D",
+          "text": "At-most-once delivery — if a delivery attempt fails, the export is not retried to avoid duplicates."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation explicitly states that delivery is guaranteed at-least-once. This means you should design any downstream consumers of exported history data to handle potential duplicate records — for example, by deduplicating on Workflow ID and Run ID. Exactly-once (Option A) is a stronger guarantee not provided. Best-effort (Option B) implies no retry and is weaker than what's provided. At-most-once (Option D) would skip retries to avoid duplicates, the opposite of the actual guarantee.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_med_005",
+      "category": "Features_Export",
+      "difficulty": "med",
+      "question": "What format are exported Workflow History files in, and what must you use to deserialize them?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Files are exported in JSON format; use any standard JSON parser to read them directly."
+        },
+        {
+          "key": "B",
+          "text": "Files are exported in Avro format; use the Avro schema published in the Temporal API repository."
+        },
+        {
+          "key": "C",
+          "text": "Files are exported in Protocol Buffer (proto) format; use the schema defined in the Temporal API repository to deserialize them."
+        },
+        {
+          "key": "D",
+          "text": "Files are exported in Parquet format; use Apache Arrow or a compatible Parquet reader to deserialize them."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Exported Workflow Histories are in proto (Protocol Buffer) format. You must use the proto schema defined in the Temporal API repository (`temporal/api/export/v1/message.proto`) to deserialize them. While the documentation does mention converting protos to Parquet for analytics (using a sample Python Workflow), Parquet is a derived format, not the raw export format. JSON and Avro are not mentioned. This distinction is important when building pipelines that ingest exported history data.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_med_007",
+      "category": "Features_Export",
+      "difficulty": "med",
+      "question": "What happens to Workflow History Export if the primary region where it was configured experiences a complete outage, and what occurs when it recovers?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Exports automatically failover to the secondary region, maintaining continuity, but may have duplicate records when the primary recovers."
+        },
+        {
+          "key": "B",
+          "text": "Exports are permanently lost for the outage window; only Workflows that close after recovery will be exported."
+        },
+        {
+          "key": "C",
+          "text": "Exports are unavailable during the outage, but once the primary region recovers, the export resumes and includes Workflow histories that occurred during the outage."
+        },
+        {
+          "key": "D",
+          "text": "Exports pause during the outage and resume from the secondary region; after primary recovery they switch back automatically."
+        }
+      ],
+      "answer": "C",
+      "explanation": "If the primary region experiences a complete outage (including its S3/GCS storage), exports will be unavailable until that region recovers. Once it does, the export resumes and will include any Workflow histories from during the outage — there may be delays in processing, but the complete dataset eventually becomes available. Temporal does not automatically failover exports to the secondary region (ruling out A and D) because of the risk of incomplete or inconsistent data due to HA replication latency. Option B incorrectly implies data is permanently lost, which contradicts the at-least-once and completeness guarantees.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_med_008",
+      "category": "Features_Export",
+      "difficulty": "med",
+      "question": "When Workflow History Export converts proto data to Parquet for analytics using the sample Python Workflow, why is the payload field excluded from the output?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The payload field is too large and would exceed Parquet column size limits, causing import failures."
+        },
+        {
+          "key": "B",
+          "text": "The payload field is excluded because Temporal's export system redacts it for compliance reasons before writing to object storage."
+        },
+        {
+          "key": "C",
+          "text": "If a codec server is enabled, the payload is encrypted and may contain characters unrecognized by databases, so it is excluded to avoid loading issues."
+        },
+        {
+          "key": "D",
+          "text": "The payload field is excluded because Parquet does not support binary column types required to store proto payloads."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation notes that if you have enabled a codec server, the payload field is encrypted and may contain characters that are not recognized when loaded into a database, so the payload field is excluded in the sample Parquet conversion workflow. This is a practical data-pipeline concern: encrypted binary blobs can cause character encoding errors in columnar stores. Option A invents a Parquet size constraint. Option B is wrong — Temporal does not redact the payload before writing to object storage; it arrives encrypted if a codec server is in use. Option D is incorrect because Parquet does support binary columns; the issue is database ingestion, not Parquet itself.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_hard_001",
+      "category": "Features_Export",
+      "difficulty": "hard",
+      "question": "Your team configured Workflow History Export for a Temporal Cloud Namespace and noticed that a Workflow that closed at 11:47 AM has not appeared in your S3 bucket by noon. Your on-call engineer is alarmed. What is the correct expectation for export delivery latency?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Exports run every 5 minutes, so a Workflow closed at 11:47 AM should appear by 11:52 AM; something is broken."
+        },
+        {
+          "key": "B",
+          "text": "Exports run hourly starting 10 minutes after the hour, and closed Workflows can take up to 24 hours to appear; the noon observation is within normal bounds."
+        },
+        {
+          "key": "C",
+          "text": "Exports are triggered by Workflow completion events and typically land within seconds; a noon observation definitely indicates a misconfiguration."
+        },
+        {
+          "key": "D",
+          "text": "Export latency is bounded by S3 replication lag, which averages 2–4 hours; no action is needed until after 4 hours."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud exports run hourly, beginning 10 minutes after the hour, and delivery is guaranteed at least once — but a closed Workflow can take up to 24 hours to appear in the exported file. The export schedule and propagation window mean that a Workflow closing at 11:47 AM may not surface until the next hourly job completes and all internal processing finishes, potentially hours later. Engineers who expect near-real-time delivery will file false-alarm incidents. The key production takeaway is to build any downstream pipelines with a 24-hour SLA tolerance for export completeness.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_hard_002",
+      "category": "Features_Export",
+      "difficulty": "hard",
+      "question": "You are parsing the S3 path of a Temporal Cloud export file: `s3://my-bucket/temporal-workflow-history/export/prod-ns/2024/06/15/14/00/`. A Workflow that completed on June 14 appears in this path. What does the timestamp in the directory structure represent?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The time the Workflow execution completed, truncated to the nearest hour."
+        },
+        {
+          "key": "B",
+          "text": "The time the Workflow's first event was recorded in the history, representing the start of the run."
+        },
+        {
+          "key": "C",
+          "text": "The time Temporal uploaded the export file to object storage, which is independent of when the Workflow completed."
+        },
+        {
+          "key": "D",
+          "text": "The time the export configuration was last verified, used to group files by configuration version."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The directory timestamp reflects when Temporal wrote the export file to object storage, not when the Workflow closed. This distinction matters for analytics pipelines: if you partition your data lake by the S3 path timestamp expecting it to align with Workflow completion time, you will misattribute events to the wrong time windows. You must use the Workflow completion timestamp embedded in the proto payload itself for any time-series analysis tied to business logic. This also explains why a Workflow completing on June 14 can appear under a June 15 path.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_hard_003",
+      "category": "Features_Export",
+      "difficulty": "hard",
+      "question": "Your team uses Temporal Cloud with a High Availability Namespace configured in us-east-1 (primary) and us-west-2 (secondary). Export was originally configured to write to an S3 bucket in us-east-1. After a planned failover moves active traffic to us-west-2, your data engineering team reports that no new export files are appearing in the us-west-2 bucket they expected the export to switch to. What is the correct explanation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Export automatically fails over with the Namespace, so it should be writing to us-west-2; the secondary bucket permissions are likely misconfigured."
+        },
+        {
+          "key": "B",
+          "text": "Export is pinned to the region where it was originally configured and does not automatically failover with the Namespace; it continues writing to the us-east-1 bucket as long as that region is healthy."
+        },
+        {
+          "key": "C",
+          "text": "Export pauses during any failover event and resumes only after you manually reconfigure it in the new primary region via the Temporal Cloud UI."
+        },
+        {
+          "key": "D",
+          "text": "Export follows Namespace failover automatically only for GCS buckets; S3 exports remain pinned to the original region regardless of failover."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud deliberately does not automatically failover export configurations. When export is set up in a region, it reads from and writes to that same region permanently until you change it. The design rationale is data completeness and consistency: HA replication has inherent latency, and automatically switching sources during a failover could produce incomplete or inconsistent export batches. When the primary region (us-east-1) remains healthy after a Namespace failover, export continues operating there. Teams should monitor the original bucket and understand that export region ≠ active Namespace region.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_hard_004",
+      "category": "Features_Export",
+      "difficulty": "hard",
+      "question": "A us-east-1 outage takes down both Temporal's primary region for your Namespace and the S3 bucket where your export is configured. After the region recovers 6 hours later, what should you expect regarding the Workflow histories generated during the outage window?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Those Workflow histories are permanently lost because the export job cannot retroactively capture Workflows that closed while exports were unavailable."
+        },
+        {
+          "key": "B",
+          "text": "The export job automatically replayed all missed histories from the secondary region's replication log immediately upon primary recovery."
+        },
+        {
+          "key": "C",
+          "text": "Export will resume after recovery and will eventually include Workflow histories from the outage window, though with processing delays; the complete dataset will be available."
+        },
+        {
+          "key": "D",
+          "text": "You must manually trigger a backfill export job via the Temporal Cloud CLI to recover histories from the outage window."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal Cloud guarantees at-least-once delivery for exports. When a primary region outage affects both the Temporal infrastructure and the object storage, exports are unavailable during that window. However, once the primary region recovers, the export process resumes and processes the backlog — including Workflow histories that occurred during the outage. There may be noticeable delays as the backlog is processed, but no data is permanently lost from this scenario. This is why export prioritizes consistency over real-time availability: switching to a secondary source mid-outage risks incomplete batches.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_hard_005",
+      "category": "Features_Export",
+      "difficulty": "hard",
+      "question": "Your security team reports that when they load exported Workflow History files into BigQuery for auditing, the payload field contains binary or unrecognized characters that break their pipeline. They ask you to fix the export. What is the most accurate explanation and recommended approach?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The proto serialization is corrupted during export; you should re-export using the JSON codec option in the Export configuration UI."
+        },
+        {
+          "key": "B",
+          "text": "If a codec server with encryption is enabled, payload fields are encrypted and may contain non-printable characters; the recommended approach is to exclude the payload field when loading into a database, as shown in the sample proto-to-parquet converter."
+        },
+        {
+          "key": "C",
+          "text": "BigQuery does not support proto binary format natively; you must switch to GCS and use BigQuery's native proto import feature to decode payloads automatically."
+        },
+        {
+          "key": "D",
+          "text": "The payload field is always base64-encoded in exports regardless of codec server configuration; you need to add a decoding step before loading into BigQuery."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When a codec server is enabled, payload fields in exported Workflow Histories are encrypted, which produces binary content that databases like BigQuery cannot cleanly interpret as text. Temporal's own sample proto-to-parquet converter explicitly excludes the payload field for this reason. The correct operational response is to exclude the payload field in your transformation pipeline rather than attempting to decode it inline — unless you integrate your codec server's decoding step into the pipeline. This is also a reminder that export fidelity includes encrypted payloads: you get compliance-grade completeness, but decryption is your responsibility.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_hard_006",
+      "category": "Features_Export",
+      "difficulty": "hard",
+      "question": "You want to monitor whether your Temporal Cloud Workflow History Export is functioning without logging into the UI every day. You decide to use Cloud metrics. Which metric and label combination correctly identifies export-related action counts?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`temporal_cloud_v1_export_job_success_count` with no additional label filtering, available on the standard metrics endpoint."
+        },
+        {
+          "key": "B",
+          "text": "`temporal_cloud_v1_workflow_closed_count` filtered by `export_status=\"success\"` on the Cloud metrics endpoint."
+        },
+        {
+          "key": "C",
+          "text": "`temporal_cloud_v1_total_action_count` filtered by the label `is_background=\"true\"` on the Cloud metrics endpoint."
+        },
+        {
+          "key": "D",
+          "text": "`temporal_cloud_v1_total_action_count` filtered by `action_type=\"export\"` on the standard SDK metrics endpoint."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Export-related metrics in Temporal Cloud are surfaced via `temporal_cloud_v1_total_action_count` with the label `is_background=\"true\"`. Export jobs generate background Actions (counted toward your usage), and this label distinguishes them from foreground user-driven workflow actions. This matters for cost monitoring too — export actions appear on the Usage Dashboard and are billed. Alerting on a drop or spike in `is_background=\"true\"` action counts is a practical way to detect export job failures or runaway export configurations without polling the UI.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_hard_007",
+      "category": "Features_Export",
+      "difficulty": "hard",
+      "question": "Your company's compliance team wants a complete audit trail of all closed Workflow executions in Temporal Cloud and asks whether they should use Workflow History Export or Archival. What is the correct guidance?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Archival is the preferred option for Temporal Cloud because it integrates directly with Temporal's visibility store and enables faster compliance queries."
+        },
+        {
+          "key": "B",
+          "text": "Both Archival and Workflow History Export are supported in Temporal Cloud; choose based on whether you prefer S3 or the internal archival store."
+        },
+        {
+          "key": "C",
+          "text": "Workflow History Export is the correct choice for Temporal Cloud because Archival is not supported there; Archival is only available on self-hosted Temporal Server."
+        },
+        {
+          "key": "D",
+          "text": "Neither is suitable for compliance; you should use Temporal's built-in retention policy extended to 90 days and query the visibility store directly."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Archival is explicitly not supported in Temporal Cloud. Workflow History Export is the Temporal Cloud equivalent of Archival from self-hosted deployments — it exports closed Workflow Histories to AWS S3 or GCP GCS in proto format for compliance, audit, and analytics use cases. Engineers who have self-hosted Temporal experience may assume Archival is available everywhere and spend time looking for configuration options that don't exist in the Cloud UI. The two features serve the same purpose but exist in different deployment contexts.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_hard_008",
+      "category": "Features_Export",
+      "difficulty": "hard",
+      "question": "Your Namespace Administrator configured Workflow History Export to S3. Three days later, the S3 bucket's IAM policy was tightened by another team, removing Temporal's write permissions. Which stakeholders will be notified, and through what mechanism?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Only the Account Owner receives an automated page via PagerDuty integration if configured; no email is sent by default."
+        },
+        {
+          "key": "B",
+          "text": "All Temporal Cloud users in the Namespace receive an in-app banner notification the next time they log into the Temporal Web UI."
+        },
+        {
+          "key": "C",
+          "text": "Email notifications are sent to users with Namespace Administrator, Account Owner, and Global Administrator roles when an export job fails due to a user-related error such as an object store permissions issue."
+        },
+        {
+          "key": "D",
+          "text": "No automated notification is sent; you must poll the Last Successful Export timestamp in the Export UI or set up a custom metric alert to detect failures."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal Cloud sends email alerts to Namespace Administrators, Account Owners, and Global Administrators when an export job fails due to user-related errors, with permissions issues on the object store being a primary example. This role-based notification model means you need at least one person in each relevant role to have a valid email on file. The practical implication: if your bucket policy changes and breaks export, the right people get notified directly without requiring you to set up custom alerting. This is distinct from infrastructure outages on Temporal's side, which are handled separately.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_nightmare_002",
+      "category": "Features_Export",
+      "difficulty": "nightmare",
+      "question": "An engineering team is building a compliance audit pipeline that reads from their Temporal Cloud Workflow History Export bucket. They notice that the S3 directory path timestamp (e.g., `/2024/06/15/14/00/`) does not match the `closeTime` field inside the exported proto for many Workflows. A security auditor asks: 'For a Workflow that closed at 13:47 UTC, can I use the directory path to determine exactly when it closed?' Which answer correctly characterizes the relationship between the path timestamp and Workflow close time?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The directory path timestamp matches the Workflow close time rounded to the nearest hour, so a Workflow closing at 13:47 UTC will always appear under the `/13/00/` prefix, making it safe to use the path as a close-time index."
+        },
+        {
+          "key": "B",
+          "text": "The directory path timestamp reflects when the export job uploaded the file to object storage, not when the Workflow closed. A Workflow closing at 13:47 UTC could appear under any hourly prefix up to 24 hours later, so the path cannot be used to determine close time."
+        },
+        {
+          "key": "C",
+          "text": "The directory path timestamp is derived from the Workflow start time rather than close time, so both the start and close time must be read from the proto payload; the path is only useful for partitioning, not for ordering events."
+        },
+        {
+          "key": "D",
+          "text": "The directory path timestamp is guaranteed to be within one hour of the Workflow close time because exports run hourly starting 10 minutes after the hour, so a Workflow closing at 13:47 UTC will appear under either `/13/00/` or `/14/00/`."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly states: 'The time recorded in the directory structure is the time the export uploads to object storage, not the Workflow completion time.' Combined with 'Allow up to 24 hours for a closed Workflow to appear in the exported file,' this means the path timestamp can lag the actual close time by up to 24 hours. This distinction is critical for compliance pipelines: if your audit system partitions data by the S3 path date/hour and assumes it correlates to Workflow close time, you will misclassify the temporal ordering of your audit trail. The correct approach is to always parse the `closeTime` field from the proto payload for any time-based compliance query, and treat the directory structure purely as a delivery artifact for efficient object enumeration. Pipelines that get this wrong may appear to pass audits on synthetic data but fail on production exports during high-throughput periods when export lag is maximal.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_export_nightmare_003",
+      "category": "Features_Export",
+      "difficulty": "nightmare",
+      "question": "A data engineering team ingests Temporal Cloud Workflow History Export files into their data warehouse. They enable a codec server for payload encryption. When they run the Python sample Workflow that converts proto exports to Parquet, they notice the `payload` column is absent from the output schema. Their data scientist complains that event payloads are needed for ML feature extraction. Which of the following best explains the behavior and the correct remediation path?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The sample Workflow drops the payload column because Parquet cannot represent binary proto fields; the remediation is to use Avro instead of Parquet, which natively supports arbitrary binary columns including encrypted payloads."
+        },
+        {
+          "key": "B",
+          "text": "The sample Workflow excludes the payload field when a codec server is enabled because encrypted payloads contain characters that break database ingestion. To include payloads, the team must run them through the codec server's decode endpoint before the proto-to-Parquet conversion step."
+        },
+        {
+          "key": "C",
+          "text": "The payload column is dropped because the export proto schema version used by the sample predates payload support; upgrading to the latest `message.proto` schema and regenerating the proto bindings will expose the payload field in the output."
+        },
+        {
+          "key": "D",
+          "text": "The payload column is omitted by default to reduce Parquet file size; it can be re-enabled by setting the `include_payload=True` flag in the sample Workflow's configuration, which also triggers automatic decryption if a codec server is reachable."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation notes that when a codec server is enabled, the payload field is encrypted, and because encrypted binary data 'may contain characters that are not recognized when loaded into a database,' the sample Workflow explicitly excludes the payload field. This is a deliberate safety decision in the sample, not a schema limitation. The correct remediation is to introduce a decryption step — calling the codec server's decode endpoint — before or during the proto-to-Parquet conversion, so that plaintext payloads (which are well-formed JSON or proto bytes) are written to Parquet instead of raw ciphertext. This highlights a broader Temporal architecture principle: the Data Converter / codec server pipeline encrypts payloads at the SDK layer before they ever reach the server, which means even exported histories are opaque to anyone without codec access. Export pipelines that need payload content must be treated as trusted, codec-aware consumers and must manage key access accordingly — a significant operational concern when export files land in a shared data lake.",
+      "source_doc": "cloud_export.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    }
+  ]
+}

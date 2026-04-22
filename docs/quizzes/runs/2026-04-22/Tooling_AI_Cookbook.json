@@ -1,0 +1,285 @@
+{
+  "category": "Tooling_AI_Cookbook",
+  "questions": [
+    {
+      "id": "tooling_ai_cookbook_easy_001",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "easy",
+      "question": "What is the main purpose of the Temporal Developer Skill for AI coding agents?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It translates Temporal workflow code into multiple programming languages automatically."
+        },
+        {
+          "key": "B",
+          "text": "It gives the AI agent expert knowledge of Temporal's programming model, including workflow rules, retry policies, and common pitfalls."
+        },
+        {
+          "key": "C",
+          "text": "It replaces the need for a Temporal SDK by letting the AI generate all workflow execution logic at runtime."
+        },
+        {
+          "key": "D",
+          "text": "It monitors running Temporal workflows and alerts the AI agent when an activity fails or times out."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal Developer Skill adds domain-specific Temporal expertise to an AI coding agent — covering workflow determinism, activity patterns, retry policies, error handling, testing, and more. Think of it as pre-loading the AI with the knowledge of an experienced Temporal developer, so you get better, more accurate assistance when writing Temporal code.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_easy_002",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "easy",
+      "question": "Why does the Temporal Docs MCP Server give your AI assistant real-time access to Temporal documentation, rather than relying solely on the AI's training data?",
+      "choices": [
+        {
+          "key": "B",
+          "text": "Training data is always encrypted, so AI tools cannot read it without a live connection to the source."
+        },
+        {
+          "key": "C",
+          "text": "Real-time access ensures the AI draws from current, up-to-date docs instead of potentially outdated information baked into its training."
+        },
+        {
+          "key": "D",
+          "text": "The MCP server speeds up the AI's response time by caching answers locally on the developer's machine."
+        },
+        {
+          "key": "A",
+          "text": "It limits the AI to only answering questions about Temporal, preventing it from giving advice about unrelated topics."
+        }
+      ],
+      "answer": "C",
+      "explanation": "AI models are trained on data up to a certain cutoff date, which means their knowledge of fast-moving tools like Temporal can become stale. The Temporal Docs MCP Server gives the AI a live connection to the latest official documentation, so answers reflect current APIs, best practices, and features rather than what the model learned months or years ago.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_easy_003",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "easy",
+      "question": "What are the two distinct Temporal AI Skills described in the documentation, and what is each one focused on?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Workflow Skill (for building new workflows) and the Activity Skill (for writing and debugging activities)."
+        },
+        {
+          "key": "B",
+          "text": "The Developer Skill (for Temporal's programming model and code patterns) and the Cloud Skill (for connectivity, authentication, and configuration issues in Temporal Cloud)."
+        },
+        {
+          "key": "C",
+          "text": "The Testing Skill (for unit and integration testing workflows) and the Deployment Skill (for deploying Workers to production environments)."
+        },
+        {
+          "key": "D",
+          "text": "The SDK Skill (for language-specific SDK usage) and the Cluster Skill (for managing self-hosted Temporal clusters)."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal offers two Skills: the Temporal Developer Skill, which focuses on core programming concepts like workflow determinism, activity patterns, retry policies, and versioning; and the Temporal Cloud Skill, which helps troubleshoot connectivity, authentication, and configuration specific to Temporal Cloud. Each Skill targets a different concern, so developers can install whichever is relevant to their needs.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_med_001",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "med",
+      "question": "A developer wants their AI coding agent to have expert knowledge of Temporal's workflow determinism rules, retry policies, and versioning gotchas. Which tool is designed specifically for this purpose?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Temporal Docs MCP Server, which streams live documentation pages to the agent at query time so it can answer questions about determinism and versioning."
+        },
+        {
+          "key": "B",
+          "text": "The Temporal Cloud Skill, which bundles Temporal programming model expertise including workflow determinism, retry policies, and versioning into the agent's context."
+        },
+        {
+          "key": "C",
+          "text": "A custom system prompt pointing the agent to the Temporal GitHub repository, which contains source code examples the agent can reference for determinism rules."
+        },
+        {
+          "key": "D",
+          "text": "The Temporal Developer Skill, which gives the AI coding agent expert-level knowledge of Temporal's programming model including determinism rules, retry policies, testing strategies, and versioning gotchas."
+        }
+      ],
+      "answer": "D",
+      "explanation": "The Temporal Developer Skill (github.com/temporalio/skill-temporal-developer) is the tool purpose-built to give AI coding agents domain-specific Temporal programming model expertise — including workflow determinism, activity patterns, retry policies, error handling, testing, worker configuration, and versioning. The Temporal Cloud Skill (option B) is a different skill focused on troubleshooting Cloud connectivity, authentication, and configuration — not the programming model. The Docs MCP Server (option A) provides real-time documentation access but is a separate tool; Skills and the MCP server serve complementary, not identical, purposes. Option C describes a manual workaround that is not a supported Temporal tooling pattern.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_med_002",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "med",
+      "question": "You want the Temporal Docs MCP Server to be available across all your projects in Claude Code, not just one. Which command achieves this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`claude mcp add --transport http temporal-docs https://temporal.mcp.kapa.ai` — omitting any scope flag stores the server in the global Claude config by default."
+        },
+        {
+          "key": "B",
+          "text": "`claude mcp add --scope global --transport http temporal-docs https://temporal.mcp.kapa.ai` — the `--scope global` flag registers the server for all projects."
+        },
+        {
+          "key": "C",
+          "text": "`claude mcp add --scope user --transport http temporal-docs https://temporal.mcp.kapa.ai` — the `--scope user` flag registers the server globally so it is available in all projects."
+        },
+        {
+          "key": "D",
+          "text": "`claude mcp add --project all --transport http temporal-docs https://temporal.mcp.kapa.ai` — the `--project all` wildcard makes the server accessible across every project directory."
+        }
+      ],
+      "answer": "C",
+      "explanation": "According to the documentation, `--scope user` is the flag that registers the MCP server globally so it is available across all your Claude Code projects. Omitting the flag (option A) actually does the opposite — it stores the configuration in the current project's `.mcp.json` file, limiting it to that project. Options B and D use flags (`--scope global`, `--project all`) that are not described in the documentation and do not exist in the Claude Code CLI. This distinction matters in practice: use `--scope user` when you want Temporal docs available everywhere, omit it when you want to keep MCP configuration scoped to a single repository.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_med_004",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "med",
+      "question": "Your team uses a non-Claude MCP-compatible AI tool and wants to connect it to the Temporal Docs MCP Server. What is the correct server URL and transport type to configure?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "URL: `wss://temporal.mcp.kapa.ai`, transport: `websocket` — the MCP server uses a persistent WebSocket connection for streaming documentation results."
+        },
+        {
+          "key": "B",
+          "text": "URL: `https://temporal.mcp.kapa.ai`, transport: `http` — this is the generic configuration documented for any MCP-compatible tool."
+        },
+        {
+          "key": "C",
+          "text": "URL: `https://api.temporal.io/mcp`, transport: `grpc` — Temporal routes MCP requests through its standard gRPC API endpoint for authentication."
+        },
+        {
+          "key": "D",
+          "text": "URL: `https://temporal.mcp.kapa.ai/v1`, transport: `http` — the `/v1` path prefix is required when using tools other than Claude Code or Claude Desktop."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation provides a generic JSON configuration block showing `\"transport\": \"http\"` and `\"url\": \"https://temporal.mcp.kapa.ai\"` for any MCP-compatible tool. No version prefix, WebSocket transport, or alternate domain is mentioned. Option A is wrong because the documented transport is HTTP, not WebSocket. Option C invents a gRPC endpoint at `api.temporal.io` that does not exist in the documentation. Option D adds a `/v1` path suffix that is not part of the documented URL. In practice, the Docs MCP server uses anonymous Google account authentication for rate limiting, and the HTTP transport is used consistently across Claude Code, Claude Desktop, and generic MCP tools.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_hard_001",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "hard",
+      "question": "Your team uses an AI coding agent (Claude Code) to help write Temporal workflows. A junior engineer reports that the agent confidently generated workflow code with non-deterministic patterns — using `time.Now()` directly and spawning goroutines outside Temporal's APIs — because the agent's training data predates Temporal's current determinism requirements. Which approach most directly addresses the root cause of this problem?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Switch to a different AI coding agent that has a more recent training cutoff, since the problem is fundamentally one of stale training data that only a newer model can resolve."
+        },
+        {
+          "key": "B",
+          "text": "Install the Temporal Developer Skill into the agent so it receives expert-level knowledge of workflow determinism rules, activity patterns, and common gotchas on top of its base training data."
+        },
+        {
+          "key": "C",
+          "text": "Add a post-generation linting step that scans generated code for banned APIs like `time.Now()` and rejects the output, compensating for the agent's lack of Temporal context."
+        },
+        {
+          "key": "D",
+          "text": "Connect the Temporal Docs MCP Server to the agent so it can query live documentation at generation time, ensuring responses draw from current docs rather than stale training snapshots."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal Developer Skill is specifically designed to give AI coding agents 'expert-level knowledge of Temporal's programming model — workflow determinism rules, activity patterns, retry policies, error handling, testing strategies, worker configuration, versioning, and common gotchas.' This directly addresses the root cause: the agent lacks domain-specific Temporal expertise. The MCP Server (D) provides real-time documentation access and is complementary, but it helps the agent look up facts rather than deeply understand determinism constraints during code generation. Switching models (A) doesn't solve the problem since even current models lack deep Temporal specialization without augmentation. Post-generation linting (C) is a compensating control, not a fix for the root cause — the agent will keep making the same mistakes and require constant filtering.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_hard_002",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "hard",
+      "question": "An SRE team maintains a Temporal Cloud deployment and wants their AI assistant to help debug connectivity failures — things like mTLS certificate misconfigurations, namespace authentication errors, and network routing problems. They already have the Temporal Developer Skill installed. What gap does this setup leave, and how should they address it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Developer Skill lacks cloud-operations knowledge. They should additionally install the Temporal Cloud Skill, which is scoped specifically to troubleshoot Temporal Cloud connectivity, authentication, and configuration issues."
+        },
+        {
+          "key": "B",
+          "text": "No gap exists; the Developer Skill covers worker configuration and retry policies, which subsumes all cloud connectivity and authentication troubleshooting scenarios an SRE would encounter."
+        },
+        {
+          "key": "C",
+          "text": "The gap is documentation freshness. Adding the Temporal Docs MCP Server will give the agent real-time access to Cloud networking and mTLS docs, making the Cloud Skill redundant."
+        },
+        {
+          "key": "D",
+          "text": "Skills are only useful for code generation, not operational troubleshooting. The SRE team should rely on the MCP Server exclusively for all Temporal Cloud operational questions."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The documentation explicitly distinguishes two skills with different scopes: the Temporal Developer Skill covers the programming model (determinism, activities, retry policies, testing, versioning), while the Temporal Cloud Skill is purpose-built to 'help your AI coding agent troubleshoot Temporal Cloud connectivity, authentication, and configuration issues.' An agent equipped with only the Developer Skill would lack domain expertise for cloud-ops scenarios like mTLS misconfigurations and namespace authentication. The MCP Server (C) provides documentation access but is not a substitute for the structured troubleshooting knowledge embedded in the Cloud Skill. Skills work for both code generation and operational troubleshooting (invalidating D). The two skills are complementary — a team doing both development and cloud operations should install both.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_hard_003",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "hard",
+      "question": "A developer adds the Temporal Docs MCP Server to their Claude Desktop setup by navigating to Settings \u003e Connectors and entering the server URL. During the first use, Claude prompts them to authenticate with a Google account even though Temporal's docs are publicly available. The developer suspects this is a bug. What is the actual purpose of this authentication requirement, and what data does Temporal collect from it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Authentication is required because the MCP server proxies private Temporal Cloud APIs; without a verified identity, the server cannot scope responses to the developer's specific namespace and account."
+        },
+        {
+          "key": "B",
+          "text": "The Google sign-in ties the MCP server session to a Temporal Cloud account so that documentation responses can be personalized based on the developer's actual cluster configuration and SDK version."
+        },
+        {
+          "key": "C",
+          "text": "Authentication is anonymous and uses any Google account solely to enforce rate limits and prevent abuse. Temporal explicitly states it cannot see nor collects any contact information from this flow."
+        },
+        {
+          "key": "D",
+          "text": "The Google OAuth flow collects an email address that Temporal uses to send product updates. Developers can opt out of marketing communications after the initial sign-in completes."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation is explicit: 'The server requires anonymous authentication using any Google account to enforce rate limits and prevent abuse. We cannot see nor do we collect any contact information from this.' The authentication is not tied to Temporal Cloud accounts, does not personalize responses, and does not collect email for marketing. It is purely an anti-abuse mechanism using Google as an anonymous identity provider. This is an important operational detail — teams with strict data governance policies can deploy the MCP Server with confidence that no PII is being harvested, and the requirement is not a bug or a sign that private APIs are being accessed.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "tooling_ai_cookbook_hard_004",
+      "category": "Tooling_AI_Cookbook",
+      "difficulty": "hard",
+      "question": "A platform team wants to configure the Temporal Docs MCP Server for Claude Code such that it is available across all engineers' projects on their machines without requiring each project repository to carry an MCP configuration file. Which command achieves this, and what is the key flag that determines the configuration scope?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Run `claude mcp add --transport http temporal-docs https://temporal.mcp.kapa.ai` without any scope flag; omitting `--scope` defaults to global user-level registration automatically."
+        },
+        {
+          "key": "B",
+          "text": "Run `claude mcp add --scope user --transport http temporal-docs https://temporal.mcp.kapa.ai`; the `--scope user` flag registers the server globally for the user, making it available across all projects without a per-project `.mcp.json` file."
+        },
+        {
+          "key": "C",
+          "text": "Commit a `.mcp.json` file to a shared dotfiles repository that each engineer symlinks into every project; Claude Code discovers MCP servers by scanning for `.mcp.json` in the working directory."
+        },
+        {
+          "key": "D",
+          "text": "Run `claude mcp add --scope global --transport http temporal-docs https://temporal.mcp.kapa.ai`; the `--scope global` flag is the correct cross-project registration mode, while `--scope user` is reserved for single-project use."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly documents two scopes: adding `--scope user` 'registers the MCP server globally so it's available in all your projects,' while omitting `--scope user` 'stores the configuration in the project's `.mcp.json` file' (project-scoped only). Choice A is wrong because omitting the flag defaults to project scope, not global. Choice C describes the `.mcp.json` per-project mechanism but is a workaround, not the intended global registration path. Choice D invents a `--scope global` flag that doesn't exist in the documentation — `--scope user` is the correct flag for cross-project availability. This distinction matters operationally: platform teams enforcing org-wide tooling standards should use `--scope user` so engineers don't have to repeat configuration in every repo.",
+      "source_doc": "with-ai.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    }
+  ]
+}

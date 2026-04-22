@@ -1,0 +1,229 @@
+{
+  "category": "Features_Data_and_Security",
+  "questions": [
+    {
+      "id": "features_data_and_security_easy_001",
+      "category": "Features_Data_and_Security",
+      "difficulty": "easy",
+      "question": "Which of the following best describes how Temporal Cloud handles your sensitive data during workflow orchestration?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal Cloud stores and reads your workflow data to optimize performance"
+        },
+        {
+          "key": "B",
+          "text": "Temporal Cloud orchestrates encrypted workflows without ever accessing your sensitive data"
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud decrypts your data temporarily to ensure workflows run correctly"
+        },
+        {
+          "key": "D",
+          "text": "Temporal Cloud shares your data with third-party compliance auditors"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud is designed with a 'provable security by design' approach, meaning it orchestrates your workflows while keeping your data encrypted end-to-end. Temporal never needs to access or read your sensitive data to do its job. Think of it like a postal service that delivers sealed envelopes — it routes and delivers without ever opening what's inside.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:45:18Z"
+    },
+    {
+      "id": "features_data_and_security_easy_003",
+      "category": "Features_Data_and_Security",
+      "difficulty": "easy",
+      "question": "What is mTLS, mentioned as a security feature of Temporal Cloud?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A type of database encryption used to store workflow history"
+        },
+        {
+          "key": "B",
+          "text": "A mutual authentication method that verifies the identity of both parties in a connection"
+        },
+        {
+          "key": "C",
+          "text": "A compliance certification required for enterprise customers"
+        },
+        {
+          "key": "D",
+          "text": "A monitoring tool that tracks security events in real time"
+        }
+      ],
+      "answer": "B",
+      "explanation": "mTLS stands for 'mutual Transport Layer Security.' Unlike regular TLS (which only verifies the server's identity, like when your browser confirms a website is legitimate), mTLS goes a step further by requiring BOTH sides of a connection to prove who they are. This means both the client and the server authenticate each other before any data is exchanged, making it much harder for unauthorized parties to intercept or join the communication. Temporal Cloud uses mTLS to help ensure that only trusted services can connect to your workflows.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:45:18Z"
+    },
+    {
+      "id": "features_data_and_security_med_001",
+      "category": "Features_Data_and_Security",
+      "difficulty": "med",
+      "question": "What transport security mechanism does Temporal Cloud use to secure connections between clients and the Temporal service?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "TLS with server-side certificates only, where clients authenticate via API keys in request headers"
+        },
+        {
+          "key": "B",
+          "text": "Mutual TLS (mTLS), where both the client and server present certificates to authenticate each other"
+        },
+        {
+          "key": "C",
+          "text": "OAuth 2.0 token-based authentication over standard HTTPS connections"
+        },
+        {
+          "key": "D",
+          "text": "SSH tunneling with pre-shared keys configured at the namespace level"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud uses mutual TLS (mTLS) for securing connections. Unlike standard TLS where only the server presents a certificate, mTLS requires both the client and the server to authenticate using certificates. This means your Worker processes and client applications must present valid certificates when connecting to Temporal Cloud, ensuring that only authorized clients can communicate with your namespace. You configure this by providing the certificate and private key when creating your Temporal client connection.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:45:18Z"
+    },
+    {
+      "id": "features_data_and_security_med_002",
+      "category": "Features_Data_and_Security",
+      "difficulty": "med",
+      "question": "According to Temporal's security model, what data does Temporal Cloud have access to within your workflow payloads?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Full access to all workflow inputs, outputs, and activity parameters for debugging and support purposes"
+        },
+        {
+          "key": "B",
+          "text": "Access to workflow metadata like workflow IDs and types, but payloads are encrypted at rest using Temporal-managed keys"
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud orchestrates encrypted workflows without accessing your sensitive payload data, providing security by design"
+        },
+        {
+          "key": "D",
+          "text": "Access is limited to activity results but not workflow inputs, since inputs are encrypted client-side before transmission"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal Cloud is designed so that it orchestrates your workflows without accessing the sensitive data within your payloads. This is a 'security by design' approach — Temporal sees the workflow structure and metadata needed for orchestration, but your actual business data in payloads can remain encrypted end-to-end using a Data Converter with a custom codec. This means even if you use Temporal Cloud as a SaaS platform, your sensitive data (PII, financial records, etc.) never needs to be readable by Temporal Technologies. This is why implementing a custom encryption codec is a common production pattern.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:45:18Z"
+    },
+    {
+      "id": "features_data_and_security_med_003",
+      "category": "Features_Data_and_Security",
+      "difficulty": "med",
+      "question": "When self-hosting the Temporal Platform, which security concern becomes your team's direct responsibility that Temporal Cloud handles for you?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Implementing workflow versioning to ensure safe deployments"
+        },
+        {
+          "key": "B",
+          "text": "Securing and managing the infrastructure, including network configuration, certificate management, and database security"
+        },
+        {
+          "key": "C",
+          "text": "Writing custom Data Converters to serialize workflow payloads"
+        },
+        {
+          "key": "D",
+          "text": "Configuring namespace-level rate limiting to prevent runaway workflows"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When self-hosting Temporal, your team takes on the operational security responsibilities that Temporal Cloud manages on your behalf. This includes securing your Temporal Server infrastructure, managing TLS certificates for inter-service communication, hardening the database (Cassandra or PostgreSQL/MySQL) that stores workflow state, configuring network policies, and following production security best practices. Temporal Cloud abstracts all of this away. Self-hosting gives you more control but requires dedicated infrastructure expertise. For most teams, this is the key tradeoff when choosing between Temporal Cloud and self-hosted deployments.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:45:18Z"
+    },
+    {
+      "id": "features_data_and_security_med_004",
+      "category": "Features_Data_and_Security",
+      "difficulty": "med",
+      "question": "A security-conscious engineering team wants to ensure their workflow payloads containing PII are never visible to the Temporal service itself. Which Temporal feature enables this pattern?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Namespace isolation, which creates separate encryption boundaries between tenants"
+        },
+        {
+          "key": "B",
+          "text": "Workflow search attributes, which allow sensitive fields to be marked as private and excluded from storage"
+        },
+        {
+          "key": "C",
+          "text": "A custom Data Converter with an encryption codec that encrypts payloads before they leave the client"
+        },
+        {
+          "key": "D",
+          "text": "mTLS certificate pinning, which prevents Temporal servers from inspecting payload contents during transit"
+        }
+      ],
+      "answer": "C",
+      "explanation": "To prevent Temporal from ever seeing your sensitive payload data, you implement a custom Data Converter with an encryption codec. This codec encrypts your workflow inputs, outputs, activity parameters, and results on the client side before they are sent to the Temporal service. The Temporal service stores and forwards the encrypted blobs without being able to read them. Your Workers also use the same codec to decrypt payloads when they receive them. This end-to-end encryption pattern is what enables the 'provable security by design' described in the Temporal Cloud Security Whitepaper. mTLS secures the transport layer but does not prevent Temporal from reading payload contents — only payload encryption achieves true data privacy from the orchestrator.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:45:18Z"
+    },
+    {
+      "id": "features_data_and_security_nightmare_001",
+      "category": "Features_Data_and_Security",
+      "difficulty": "nightmare",
+      "question": "Your team is deploying Temporal self-hosted and the security lead asks: 'Does Temporal Cloud ever have access to the actual payload data flowing through our workflows - the inputs, outputs, and activity arguments?' A junior engineer responds: 'Yes, Temporal Cloud must be able to read payload data to orchestrate workflows correctly - it needs to deserialize arguments to route activities to the right workers and track state.' What is fundamentally wrong with this understanding, and what does this reveal about Temporal's core architectural security guarantee?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The junior engineer is partially correct - Temporal Cloud reads payload data only for system activities like timers and signals, but not for user-defined activities."
+        },
+        {
+          "key": "B",
+          "text": "The junior engineer is wrong. Temporal's orchestration layer operates entirely on workflow metadata, event sequencing, and task queue routing - never on payload contents. Payloads are opaque blobs to the server; workers deserialize them client-side, meaning end-to-end encryption via a custom DataConverter can make payloads cryptographically inaccessible to Temporal Cloud while orchestration continues correctly."
+        },
+        {
+          "key": "C",
+          "text": "The junior engineer is wrong, but only for Temporal Cloud. Self-hosted Temporal does require the server to deserialize payloads to route activities correctly."
+        },
+        {
+          "key": "D",
+          "text": "The junior engineer is correct for unencrypted deployments, but incorrect when mTLS is configured - mTLS prevents Temporal Cloud from reading payloads."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question targets one of the most important and counterintuitive architectural properties of Temporal: the server is a pure orchestrator that never needs to understand payload contents to do its job. Temporal's orchestration model is built on event sequencing and task queue dispatch. The server knows things like 'WorkflowTask scheduled', 'ActivityTask dispatched to queue X', 'ActivityCompleted with opaque result blob' - but it never deserializes what's inside those blobs. Payloads travel through the server as raw bytes, and deserialization only happens at the worker via the SDK's DataConverter. This separation is not incidental - it is a deliberate architectural decision that enables provable security by design. Because the server treats payloads as opaque, you can implement a custom DataConverter that encrypts all payloads using keys that only your workers hold. The Temporal Cloud server then becomes a secure orchestrator of encrypted workflows - it routes tasks, maintains event history, and enforces timeouts without ever being able to read your sensitive business data. mTLS (which Temporal Cloud uses) secures the transport channel - it prevents eavesdropping on data in transit between your workers and the Temporal service. But mTLS says nothing about what the server itself can read once data arrives. A DataConverter with AES-256 encryption means the server receives ciphertext it cannot decrypt even if it wanted to. These are two complementary but distinct security layers: mTLS = transport security, DataConverter encryption = data-at-rest and data-in-use security. The practical production insight: if your workflows process PII, payment data, or PHI, you should implement a custom DataConverter with client-side encryption. This gives you cryptographic proof that Temporal - whether Cloud or self-hosted - cannot access sensitive workflow payloads, which is often required to satisfy HIPAA, PCI-DSS, or SOC 2 Type II compliance requirements.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:45:18Z"
+    },
+    {
+      "id": "features_data_and_security_nightmare_002",
+      "category": "Features_Data_and_Security",
+      "difficulty": "nightmare",
+      "question": "An engineering team is designing a high-security Temporal deployment and debates two approaches: Approach A uses mTLS between all workers and the Temporal frontend, relying on Temporal Cloud's infrastructure security. Approach B adds a custom DataConverter implementing AES-256-GCM encryption on all payloads, with keys managed in AWS KMS, in addition to mTLS. The team's architect argues: 'Approach B is redundant - if mTLS is configured correctly, no unauthorized party can intercept the payloads in transit, so adding payload encryption just adds latency and operational complexity for no additional security benefit in production.' Under what specific threat model does the architect's reasoning break down, and what does this reveal about defense-in-depth in Temporal deployments?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The architect is correct. mTLS provides sufficient security for all production threat models when properly configured with certificate rotation. Payload encryption only matters for compliance theater, not actual security."
+        },
+        {
+          "key": "B",
+          "text": "The architect's reasoning breaks down only if mTLS certificates are compromised. In that case, payload encryption adds a second layer. Otherwise the architect is correct that both layers protect against identical threat vectors."
+        },
+        {
+          "key": "C",
+          "text": "The architect's reasoning breaks down against multiple distinct threat vectors that mTLS does not address: insider threats at Temporal Cloud infrastructure level, server-side data breaches exposing event history storage, subpoenas or legal access to Temporal's infrastructure, and compromised Temporal server processes. mTLS secures the channel but leaves payloads readable to the server itself - DataConverter encryption makes payloads opaque to the server, addressing a fundamentally different threat model."
+        },
+        {
+          "key": "D",
+          "text": "The architect is wrong because mTLS only encrypts workflow inputs and outputs, not activity heartbeat data. A DataConverter is needed specifically to encrypt heartbeat payloads, which are transmitted in plaintext even with mTLS configured."
+        }
+      ],
+      "answer": "C",
+      "explanation": "This is a classic defense-in-depth reasoning failure: assuming two security measures are redundant because they share the word 'encryption' without analyzing their distinct threat models. mTLS and DataConverter payload encryption protect against completely different adversaries. mTLS protects against: network-level attackers who might intercept traffic between your worker and the Temporal frontend (man-in-the-middle attacks), unauthenticated clients attempting to connect to your Temporal namespace, and traffic eavesdropping. What mTLS explicitly does NOT protect against: the Temporal server itself reading your payloads (the server terminates the TLS connection and sees plaintext), a breach of Temporal's event history storage (which persists workflow state durably - if that storage is compromised, unencrypted payloads are exposed), legal discovery or government subpoenas served to Temporal Technologies for workflow data, a malicious or compromised Temporal Cloud employee or infrastructure component, and cross-namespace data leakage bugs in the Temporal server. DataConverter payload encryption with client-side key management (e.g., AWS KMS keys your workers hold) protects against ALL of the above because the Temporal server never possesses the decryption keys. The event history in Temporal's storage contains ciphertext. A storage breach exposes nothing readable. A subpoena to Temporal yields nothing useful. This is what the Temporal Cloud Security Whitepaper means by 'provable security by design' - orchestrating encrypted workflows without ever accessing your sensitive data. The production insight is architectural: when evaluating security layers, ask 'who is the adversary for each layer?' mTLS adversary = network attacker. DataConverter encryption adversary = the infrastructure operator itself. These are orthogonal threat models requiring orthogonal solutions. For any workflow processing regulated data (PII, PHI, PCI), you need both layers because you face both threat classes. The latency argument is also worth addressing: AWS KMS calls can be batched and cached per-workflow, making the practical overhead minimal compared to the compliance and security value delivered.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-20T05:45:18Z"
+    }
+  ]
+}

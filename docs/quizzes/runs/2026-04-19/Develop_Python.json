@@ -1,0 +1,369 @@
+{
+  "category": "Develop_Python",
+  "questions": [
+    {
+      "id": "develop_python_easy_001",
+      "category": "Develop_Python",
+      "difficulty": "easy",
+      "question": "What is the main purpose of an Activity in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To define the overall business logic and control flow of a long-running process"
+        },
+        {
+          "key": "B",
+          "text": "To execute a single, well-defined action such as calling an API or querying a database"
+        },
+        {
+          "key": "C",
+          "text": "To manage and schedule other Workflows"
+        },
+        {
+          "key": "D",
+          "text": "To store and retrieve data from the Temporal Service"
+        }
+      ],
+      "answer": "B",
+      "explanation": "In Temporal, an Activity is designed to perform a single, well-defined action — things like calling a third-party API, querying a database, or processing a file. Activities are the building blocks that do the actual 'work' in the outside world. Workflows, on the other hand, are responsible for orchestrating (coordinating) when and how those Activities run. Think of Workflows as the director and Activities as the actors carrying out specific tasks.",
+      "source_doc": "develop_python_activities_basics.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_easy_002",
+      "category": "Develop_Python",
+      "difficulty": "easy",
+      "question": "When you start an Activity from within a Workflow, where does that Activity call go?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Directly to the database where results are stored"
+        },
+        {
+          "key": "B",
+          "text": "To another Workflow that manages Activity scheduling"
+        },
+        {
+          "key": "C",
+          "text": "It is written inside the Workflow Definition and spawns an Activity Execution"
+        },
+        {
+          "key": "D",
+          "text": "To an external API that Temporal monitors for completion"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Activity Executions are always started from within a Workflow Definition. The Workflow contains the instructions for when to run an Activity and with what inputs. When the Workflow reaches that point, it spawns an Activity Execution, which gets picked up by a Worker and executed. This is what makes Temporal powerful — the Workflow orchestrates the order of operations, while Activities do the actual work.",
+      "source_doc": "develop_python_activities_execution.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_easy_003",
+      "category": "Develop_Python",
+      "difficulty": "easy",
+      "question": "What is a 'Standalone Activity' in Temporal, and how is it different from a regular Activity?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A Standalone Activity is a special type that can only run once and cannot be retried"
+        },
+        {
+          "key": "B",
+          "text": "A Standalone Activity runs without being orchestrated by a Workflow and is started directly from a Temporal Client"
+        },
+        {
+          "key": "C",
+          "text": "A Standalone Activity is an Activity that runs on a separate server from the rest of the application"
+        },
+        {
+          "key": "D",
+          "text": "A Standalone Activity is one that does not require a Worker to execute"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Normally, Activities are started from inside a Workflow, which acts as the orchestrator. A Standalone Activity skips the Workflow entirely — you kick it off directly from your application using the Temporal Client. The Activity itself is written the same way; the difference is just in how it gets started. This can be useful when you want the durability benefits of Temporal for a single task without needing a full Workflow to manage it.",
+      "source_doc": "develop_python_activities_standalone-activities.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_med_001",
+      "category": "Develop_Python",
+      "difficulty": "med",
+      "question": "When defining an Activity in Python, what happens if you use `@activity.defn` without specifying a `name` parameter, like `@activity.defn` instead of `@activity.defn(name='my_activity')`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal raises a registration error because the name parameter is always required"
+        },
+        {
+          "key": "B",
+          "text": "The Activity name defaults to the function name"
+        },
+        {
+          "key": "C",
+          "text": "The Activity is registered as an anonymous Activity and cannot be referenced by name"
+        },
+        {
+          "key": "D",
+          "text": "The Activity name defaults to the module path plus the function name"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When `@activity.defn` is used without a `name` parameter, Temporal defaults the Activity Type name to the Python function name. You would use the explicit `name` parameter (e.g., `@activity.defn(name='your-activity')`) when you want to decouple the Activity's registered name from the function name, which is useful for versioning or naming consistency across SDKs.",
+      "source_doc": "develop_python_activities_basics.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_med_002",
+      "category": "Develop_Python",
+      "difficulty": "med",
+      "question": "Which of the following is TRUE about calling `workflow.execute_activity()` versus `workflow.start_activity()` in the Temporal Python SDK?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`execute_activity()` runs the Activity on a separate Worker, while `start_activity()` runs it on the same Worker"
+        },
+        {
+          "key": "B",
+          "text": "`execute_activity()` is a shortcut for `start_activity()` that automatically awaits the result, while `start_activity()` returns a handle for more advanced control"
+        },
+        {
+          "key": "C",
+          "text": "`execute_activity()` supports multiple positional arguments, while `start_activity()` only supports a single argument"
+        },
+        {
+          "key": "D",
+          "text": "`start_activity()` schedules the Activity and blocks immediately, while `execute_activity()` allows the Workflow to continue until the result is needed"
+        }
+      ],
+      "answer": "B",
+      "explanation": "`execute_activity()` is a convenience shortcut equivalent to `await start_activity()` — it starts the Activity and immediately awaits its result. Use `start_activity()` when you need the `ActivityHandle` for more advanced scenarios like canceling the Activity independently or waiting on multiple Activities concurrently. In most typical cases, `execute_activity()` is the right choice.",
+      "source_doc": "develop_python_activities_execution.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_med_003",
+      "category": "Develop_Python",
+      "difficulty": "med",
+      "question": "You have an Activity that polls an external queue and frequently raises an exception when no messages are available. This behavior is expected and happens during normal operations. What is the best approach to prevent this from polluting your logs and metrics?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Catch the exception inside the Activity and return `None` instead of raising it"
+        },
+        {
+          "key": "B",
+          "text": "Set the Activity retry policy's `non_retryable_error_types` to include this exception type"
+        },
+        {
+          "key": "C",
+          "text": "Raise an `ApplicationError` with `category=ApplicationErrorCategory.BENIGN` to downgrade log level and suppress failure metrics"
+        },
+        {
+          "key": "D",
+          "text": "Use a `schedule_to_start_timeout` to suppress the error before it propagates to the Workflow"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Raising an `ApplicationError` with `category=ApplicationErrorCategory.BENIGN` marks the error as non-severe. This downgrades Activity failure logs to DEBUG level, suppresses Activity failure metrics, and avoids setting the OpenTelemetry failure status to ERROR. This is ideal for expected transient failures like polling an empty queue, where the noise would obscure real issues in observability tooling.",
+      "source_doc": "develop_python_activities_benign-exceptions.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_med_004",
+      "category": "Develop_Python",
+      "difficulty": "med",
+      "question": "When using Asynchronous Activity Completion in the Temporal Python SDK, what must the Activity do before calling `activity.raise_complete_async()`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It must set the Activity's heartbeat timeout to zero to prevent the Activity from timing out before completion"
+        },
+        {
+          "key": "B",
+          "text": "It must capture the task token or identifying information so the external system can later complete the Activity"
+        },
+        {
+          "key": "C",
+          "text": "It must send the result back to the Workflow before raising the exception"
+        },
+        {
+          "key": "D",
+          "text": "It must call `activity.heartbeat()` at least once to register itself with the Temporal Server"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Before calling `activity.raise_complete_async()`, the Activity must capture the task token via `activity.info().task_token` (or a combination of Namespace, Workflow Id, and Activity Id). This identifying information is passed to the external system so it can later use `client.get_async_activity_handle(task_token=captured_token)` to retrieve the handle and call `.complete()`, `.fail()`, or `.heartbeat()`. Without capturing this token first, the external system has no way to reference and complete the Activity.",
+      "source_doc": "develop_python_activities_asynchronous-activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_hard_001",
+      "category": "Develop_Python",
+      "difficulty": "hard",
+      "question": "Your team has an Activity that polls an external payment processor. It returns a 'payment_pending' status frequently during normal operation — sometimes dozens of times per hour. After deploying, your on-call engineer gets paged because Activity failure metrics are spiking and OpenTelemetry traces are flooded with ERROR statuses, even though the Workflow is handling retries correctly. What is the best fix?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Increase the Activity's retry interval so failures occur less frequently and reduce metric noise"
+        },
+        {
+          "key": "B",
+          "text": "Raise an ApplicationError with category=ApplicationErrorCategory.BENIGN so these expected failures are downgraded to DEBUG logs, suppressed from failure metrics, and excluded from OpenTelemetry ERROR status"
+        },
+        {
+          "key": "C",
+          "text": "Catch the exception inside the Activity and return a sentinel value like None instead of raising, so Temporal never sees a failure"
+        },
+        {
+          "key": "D",
+          "text": "Set the Activity's Schedule-To-Close Timeout to a very short value so failed attempts expire quickly without being recorded"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's benign exception category exists precisely for this pattern: expected, non-severe failures that are part of normal operation. By raising ApplicationError with category=ApplicationErrorCategory.BENIGN, Temporal downgrades the Activity failure log to DEBUG level, suppresses failure metrics emission, and does not set the OpenTelemetry failure status to ERROR. This lets your observability stack focus on real problems. Option C is dangerous — returning None instead of raising means the Workflow sees a successful result and cannot distinguish success from 'still pending', breaking your business logic. Option A just delays failures, it doesn't change how they are classified. Option D causes the Activity to time out, which is a different (and worse) failure mode entirely.",
+      "source_doc": "develop_python_activities_benign-exceptions.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_hard_002",
+      "category": "Develop_Python",
+      "difficulty": "hard",
+      "question": "A senior engineer on your team writes an async Activity that calls a third-party HTTP client library. During load testing you notice the Worker becomes unresponsive: other Activities stop executing, heartbeats miss their deadlines, and eventually the Worker process appears to hang. No exceptions are thrown. What is the most likely root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity is returning too much data, exceeding the 2MB payload limit and causing the event loop to block while serializing"
+        },
+        {
+          "key": "B",
+          "text": "The third-party HTTP library is making synchronous (blocking) calls inside the async Activity, blocking the asyncio event loop and preventing all other coroutines from running"
+        },
+        {
+          "key": "C",
+          "text": "The Activity is not decorated with @activity.defn, so Temporal cannot schedule it on a separate thread"
+        },
+        {
+          "key": "D",
+          "text": "The execute_activity() call in the Workflow is missing a start_to_close_timeout, causing the scheduler to spin indefinitely"
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is one of the most common and painful issues with async Python and Temporal. When an async Activity makes a blocking call (e.g., a synchronous HTTP library like the requests package used directly in an async context), that call blocks the single asyncio event loop thread. Since all async coroutines on a Worker share this event loop, none of them can make progress — including heartbeat tasks and other Activity executions. The Worker appears hung. The Temporal Python SDK docs explicitly warn: 'Blocking the async event loop in Python would turn your asynchronous program into a synchronous program that executes serially, defeating the entire purpose of using asyncio. This can also lead to potential deadlock.' The fix is to use an async-safe HTTP library (like httpx or aiohttp), or switch to a synchronous Activity using ThreadPoolExecutor so the blocking work runs on a separate thread and doesn't starve the event loop.",
+      "source_doc": "develop_python_activities_basics.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_hard_003",
+      "category": "Develop_Python",
+      "difficulty": "hard",
+      "question": "You are building an integration with a document signing service. The flow is: (1) your Activity sends a document to the signing service, (2) the signing service calls your webhook hours or days later when the document is signed, (3) your Workflow proceeds. You implement this with a standard Activity that sleeps in a loop waiting for a webhook flag. During code review, a colleague suggests using Asynchronous Activity Completion instead. What is the concrete technical difference that makes async completion the correct approach here?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Asynchronous completion allows the Activity to bypass Temporal's retry policy, which prevents duplicate document sends if the Worker restarts"
+        },
+        {
+          "key": "B",
+          "text": "With async completion, the Activity function returns immediately after calling activity.raise_complete_async(), freeing the Worker thread/coroutine for other work, while the Workflow Execution remains durably suspended until your webhook handler calls handle.complete() — potentially hours later — with no polling loop needed"
+        },
+        {
+          "key": "C",
+          "text": "Asynchronous completion is required when Activity results exceed the 2MB payload limit, since the result is delivered out-of-band rather than through the event history"
+        },
+        {
+          "key": "D",
+          "text": "Async completion prevents the Activity from appearing in the Workflow's Event History, keeping the history small for long-running Workflows"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Asynchronous Activity Completion is designed exactly for human-in-the-loop or external system handoff patterns. The Activity captures its task token via activity.info().task_token, then calls activity.raise_complete_async() and returns. This signals to Temporal that the Activity is not yet complete — it's waiting for an external event. The Worker thread/coroutine is immediately freed. The Workflow Execution durably waits (it's just a state in Temporal, consuming no resources). When your webhook fires hours later, your handler uses client.get_async_activity_handle(task_token=captured_token) and calls handle.complete() with the result. A sleep loop is fragile (Worker restarts lose state, it wastes resources, heartbeat management is tricky) and doesn't scale to multi-day waits. Option A is wrong — async completion doesn't bypass retries. Option C is wrong — payload limits apply regardless. Option D is wrong — the completion is still recorded in Event History.",
+      "source_doc": "develop_python_activities_asynchronous-activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_hard_004",
+      "category": "Develop_Python",
+      "difficulty": "hard",
+      "question": "Your team is migrating a data pipeline. Some pipeline stages should be orchestrated by Workflows (with complex branching and retries), while others need to be triggered directly from a REST API without any Workflow orchestration. A junior engineer proposes writing two separate Activity implementations: one decorated for Workflow use and one for direct invocation. What does the Temporal Python SDK's Standalone Activities feature reveal about this approach?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The junior engineer is correct — Standalone Activities require a different decorator (@standalone_activity.defn) and different registration with the Worker, so separate implementations are necessary"
+        },
+        {
+          "key": "B",
+          "text": "The same @activity.defn decorated function and the same Worker registration work for both Workflow Activities and Standalone Activities; the only difference is whether you invoke it via workflow.execute_activity() inside a Workflow or via client.execute_activity() from application code"
+        },
+        {
+          "key": "C",
+          "text": "Standalone Activities bypass the Worker entirely and execute directly in the client process, so the Activity code must not use activity.info() or other Worker-context APIs"
+        },
+        {
+          "key": "D",
+          "text": "Standalone Activities are a Temporal Cloud-only feature and cannot be used with the local development server"
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is a key design insight of Standalone Activities: the Activity implementation is completely identical whether it runs inside a Workflow or standalone. The same @activity.defn decorator, the same function body, the same Worker registration (Worker doesn't need to know how the Activity will be invoked). The only difference is the call site: inside a Workflow Definition you use workflow.execute_activity(), while from application code (like a REST API handler) you use client.execute_activity(). The docs state explicitly: 'The way you write the Activity and register it with a Worker is identical to Workflow Activities. The only difference is that you execute a Standalone Activity directly from your Temporal Client.' and 'an Activity can be executed both as a Standalone Activity and as a Workflow Activity.' This means you get durability, retries, observability, and heartbeating for free on your directly-triggered pipeline stages without duplicating code.",
+      "source_doc": "develop_python_activities_standalone-activities.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_nightmare_001",
+      "category": "Develop_Python",
+      "difficulty": "nightmare",
+      "question": "A team builds a long-running data pipeline using asynchronous Activity completion. The Activity captures its task token, calls `activity.raise_complete_async()`, and returns. An external system later calls `handle.complete(result)`. The team notices that when they switch from `async def` Activities to synchronous multithreaded Activities (using `ThreadPoolExecutor`), the pipeline occasionally deadlocks during high load. The Worker has 5 threads in its executor. What is the most likely root cause?\n\n```python\n@activity.defn\ndef process_batch(input: BatchInput) -\u003e str:\n    token = activity.info().task_token\n    activity.raise_complete_async()\n    # Accidentally left blocking call here\n    external_queue.put(token)  # This blocks if queue is full\n    return \"\"\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `ThreadPoolExecutor` does not support asynchronous Activity completion; only `async def` Activities can use `raise_complete_async()`."
+        },
+        {
+          "key": "B",
+          "text": "After `raise_complete_async()` is called, the Activity function must return immediately without performing any additional blocking operations. If a blocking call (like `external_queue.put()`) stalls after `raise_complete_async()`, it holds a thread in the `ThreadPoolExecutor`. Under high load, all 5 threads can become permanently occupied waiting on blocking calls, starving the Worker of capacity to pick up new Activity Tasks—resulting in a deadlock."
+        },
+        {
+          "key": "C",
+          "text": "The external system is completing the Activity too quickly before the Worker has deregistered the task token, causing a race condition in the Temporal Server's task queue."
+        },
+        {
+          "key": "D",
+          "text": "Synchronous Activities using `ThreadPoolExecutor` share a single GIL-held execution context, so concurrent calls to `activity.info().task_token` return the same token, causing multiple Activities to complete each other's handles."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The core insight here is that `raise_complete_async()` signals to the Temporal SDK that the Activity's *logical completion* will happen externally—but it does NOT terminate the Python function's execution thread. The function keeps running until it returns or raises. In a `ThreadPoolExecutor`, each thread is a finite resource. If any code after `raise_complete_async()` blocks (e.g., a full queue, a slow network call, a lock contention), that thread is held hostage. With only 5 threads available and high throughput, all threads can be simultaneously stuck in post-`raise_complete_async()` blocking code. The Worker can no longer dequeue new Activity Tasks because there are no free threads—a classic thread starvation deadlock.\n\nThis is architecturally different from `async def` Activities, where the event loop can context-switch away from a coroutine that is `await`-ing, so other coroutines remain unblocked. With synchronous threading, there is no cooperative yielding—a blocked thread is truly blocked.\n\nThe production pattern to internalize: `raise_complete_async()` should be the *last meaningful operation* before returning in a sync Activity. Treat it as a boundary—capture the token, hand it off with a non-blocking mechanism (like a non-blocking put to a pre-drained channel, or an async dispatch), then return immediately. The Temporal docs explicitly warn that blocking the async event loop (in async Activities) causes serial execution; the analogous danger in threaded Activities is blocking the thread pool. Both share the same underlying principle: execution resources (threads or event loop ticks) are finite and shared across concurrent Activity executions on the same Worker.",
+      "source_doc": "develop_python_activities_asynchronous-activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_python_nightmare_002",
+      "category": "Develop_Python",
+      "difficulty": "nightmare",
+      "question": "An engineer is building a high-throughput order processing system. They use an `async def` Activity that calls a legacy synchronous database client library (not async-safe). During load testing, they observe that all orders process serially even though they launch 50 concurrent Activity executions from different Workflow instances. The Worker is configured with no `activity_executor`. What is happening, and what is the correct fix?\n\n```python\n@activity.defn\nasync def process_order(order: Order) -\u003e str:\n    # legacy_db is a synchronous, blocking database client\n    result = legacy_db.execute_query(f\"UPDATE orders SET status='processing' WHERE id={order.id}\")\n    return result\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal limits concurrent Activity executions per Worker to 1 by default. Setting `max_concurrent_activities=50` on the Worker will fix the serialization."
+        },
+        {
+          "key": "B",
+          "text": "The 50 Workflows are all on the same Task Queue and Temporal Server routes them to a single Worker pod; horizontal scaling with more Worker replicas is the only solution."
+        },
+        {
+          "key": "C",
+          "text": "`legacy_db.execute_query()` is a blocking synchronous call inside an `async def` Activity. It blocks the entire asyncio event loop, so while one Activity is waiting on the DB, no other coroutines—including other Activity executions—can run. The fix is to either wrap the call with `asyncio.get_event_loop().run_in_executor()` to offload it to a thread, switch to an async-compatible DB client, or convert the Activity to a synchronous function registered with a `ThreadPoolExecutor` `activity_executor`."
+        },
+        {
+          "key": "D",
+          "text": "The `@activity.defn` decorator on an `async def` function implicitly wraps all internal calls with `asyncio.shield()`, which serializes access to prevent database connection pool exhaustion."
+        }
+      ],
+      "answer": "C",
+      "explanation": "This question targets one of the most insidious production footguns in Python async programming, amplified by Temporal's execution model. Python's asyncio event loop is single-threaded and cooperative: a coroutine only yields control when it hits an `await` expression. `legacy_db.execute_query()` is a blocking synchronous call with no `await`—it runs to completion without ever yielding. During that entire DB round-trip (potentially tens to hundreds of milliseconds), the event loop is frozen. No other `await`-able tasks can progress. This turns what appears to be concurrent activity into strictly serial execution.\n\nThe Temporal Python SDK docs explicitly warn: 'Blocking the async event loop in Python would turn your asynchronous program into a synchronous program that executes serially, defeating the entire purpose of using asyncio. This can also lead to potential deadlock, and unpredictable behavior.' This isn't Temporal-specific behavior—it's fundamental Python asyncio—but Temporal makes it particularly painful because dozens of seemingly independent Workflow-driven Activity executions share the same event loop on a Worker.\n\nThe three valid fixes each represent a different architectural tradeoff: (1) `run_in_executor()` keeps the async Activity but offloads blocking work to a thread pool—good for isolated legacy calls; (2) async DB client (e.g., `asyncpg`, `aiosqlite`) is the clean long-term solution; (3) converting to a sync Activity with `ThreadPoolExecutor` activity_executor is appropriate when the Activity is fundamentally I/O-bound and synchronous—the SDK runs it in a thread, keeping the event loop free.\n\nThe broader principle: in Temporal's Python SDK, `async def` Activities and `sync` Activities registered with a `ThreadPoolExecutor` are not interchangeable with different performance characteristics—they have fundamentally different concurrency semantics. Choosing wrong can silently serialize your entire Worker's Activity throughput with no error messages to diagnose from.",
+      "source_doc": "develop_python_activities_basics.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    }
+  ]
+}

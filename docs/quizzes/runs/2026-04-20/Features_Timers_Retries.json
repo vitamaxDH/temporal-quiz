@@ -1,0 +1,677 @@
+{
+  "category": "Features_Timers_Retries",
+  "questions": [
+    {
+      "id": "features_timers_retries_easy_001",
+      "category": "Features_Timers_Retries",
+      "difficulty": "easy",
+      "question": "What makes Temporal's Durable Timers different from a simple in-memory sleep in a regular process?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Durable Timers run on a dedicated Timer Worker that is separate from the main Worker process."
+        },
+        {
+          "key": "B",
+          "text": "Durable Timers are persisted, so they survive Worker or Temporal Service restarts and resume automatically when the system comes back online."
+        },
+        {
+          "key": "C",
+          "text": "Durable Timers require an external cron job to trigger the Workflow after the delay period ends."
+        },
+        {
+          "key": "D",
+          "text": "Durable Timers block the Worker thread for the full duration so no other work can interrupt the pause."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The key value of a Durable Timer is persistence. If the Worker or the Temporal Service goes down while a timer is counting down, the timer state is not lost. As soon as everything comes back up, the Workflow picks up exactly where it left off. A plain in-memory sleep would be lost on any process restart, forcing you to build your own recovery logic.",
+      "source_doc": "develop_java_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_easy_002",
+      "category": "Features_Timers_Retries",
+      "difficulty": "easy",
+      "question": "How resource-intensive is it to run a large number of Durable Timers on a single Worker?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Very resource-intensive — each Timer requires a dedicated thread, so running many Timers can quickly exhaust the Worker's memory."
+        },
+        {
+          "key": "B",
+          "text": "Moderately intensive — each Timer holds a network connection open to the Temporal Service for its entire duration."
+        },
+        {
+          "key": "C",
+          "text": "Very lightweight — sleeping does not tie up the process, so millions of Timers can run off a single Worker without heavy resource use."
+        },
+        {
+          "key": "D",
+          "text": "Completely free — Timers are offloaded to the operating system scheduler, so the Worker uses zero resources during a sleep."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation explicitly states that sleeping is a resource-light operation: it does not tie up the process. A single Worker can handle millions of Timers simultaneously. This is possible because the timer state lives in the Temporal Service, not in memory on the Worker, freeing the Worker to do other work during the wait.",
+      "source_doc": "develop_go_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_easy_003",
+      "category": "Features_Timers_Retries",
+      "difficulty": "easy",
+      "question": "How long can a Temporal Workflow sleep using a Durable Timer?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Up to 60 seconds, after which the Workflow must reschedule a new timer to continue waiting."
+        },
+        {
+          "key": "B",
+          "text": "Up to 24 hours, because the Temporal Service resets all timer state at midnight each day."
+        },
+        {
+          "key": "C",
+          "text": "Up to one week, because longer durations require a special long-running Workflow license."
+        },
+        {
+          "key": "D",
+          "text": "Days, months, or even years — Temporal imposes no practical short-term ceiling on timer duration."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Multiple SDK docs describe Workflows sleeping for 'days, months, or even years.' There is no short artificial ceiling. This is one of Temporal's standout capabilities: you can model long-running business processes — like a 90-day free trial or an annual renewal — as a single sleeping Workflow instead of stitching together cron jobs and database flags.",
+      "source_doc": "develop_go_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_easy_004",
+      "category": "Features_Timers_Retries",
+      "difficulty": "easy",
+      "question": "In the TypeScript SDK, what pattern can you use to take action if a long-running step is still in progress after a certain amount of time?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Wrap the step in a try/catch block and set a JavaScript setTimeout to throw an error after the deadline."
+        },
+        {
+          "key": "B",
+          "text": "Race the step's Promise against a sleep Timer, then check which one finished first to decide the next action."
+        },
+        {
+          "key": "C",
+          "text": "Poll the Temporal Service on an interval and cancel the Workflow if the step exceeds the time limit."
+        },
+        {
+          "key": "D",
+          "text": "Configure a maximum execution time on the Activity and let Temporal automatically trigger the fallback logic."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The TypeScript docs show a 'Racing Timers' pattern using Promise.race. You race the long-running operation against a sleep call. If the timer wins (meaning the operation is still running), you can take a fallback action like sending a notification email. This pattern lets you build deadline-aware logic directly inside the Workflow code, without external schedulers.",
+      "source_doc": "develop_typescript_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_easy_005",
+      "category": "Features_Timers_Retries",
+      "difficulty": "easy",
+      "question": "What happens to a Durable Timer that has already elapsed while the Worker was offline?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The timer is discarded, and the Workflow must be manually restarted from the beginning."
+        },
+        {
+          "key": "B",
+          "text": "The timer fires immediately when the Worker reconnects, and the Workflow continues from where it paused."
+        },
+        {
+          "key": "C",
+          "text": "The Temporal Service sends an alert email and waits for a human operator to acknowledge before resuming."
+        },
+        {
+          "key": "D",
+          "text": "The Workflow is automatically cancelled after a configurable grace period and must be re-submitted."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Because timer state is persisted in the Temporal Service, the Service knows the timer has elapsed even while the Worker was down. The moment the Worker reconnects, the Temporal Service delivers the timer resolution, and the Workflow resumes automatically — no manual intervention or restart required. This is durable execution in action.",
+      "source_doc": "develop_python_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_easy_006",
+      "category": "Features_Timers_Retries",
+      "difficulty": "easy",
+      "question": "In the Ruby SDK, what optional extra information can you attach to a Durable Timer call that is not possible with a plain OS-level sleep?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A callback function that fires every 10 seconds while the timer is counting down."
+        },
+        {
+          "key": "B",
+          "text": "A retry policy that automatically restarts the timer if the Worker crashes during the sleep."
+        },
+        {
+          "key": "C",
+          "text": "A human-readable summary string that becomes visible in the Temporal UI during the sleep period."
+        },
+        {
+          "key": "D",
+          "text": "A priority level that lets shorter timers skip ahead of longer ones in the task queue."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Ruby SDK docs note that the Workflow-aware sleep form (Temporalio::Workflow.sleep) allows you to pass a summary: keyword argument, which Temporal surfaces in its web UI. This makes it easy for operators to see at a glance what a sleeping Workflow is waiting for, something a plain OS sleep cannot provide.",
+      "source_doc": "develop_ruby_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_med_001",
+      "category": "Features_Timers_Retries",
+      "difficulty": "med",
+      "question": "A Temporal Workflow sleeps for 30 days using a durable Timer. Halfway through, the Worker process crashes and stays down for 2 days before being restarted. What happens when the Worker comes back online?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Timer is lost because it was held in-memory by the Worker process, and the Workflow must be restarted."
+        },
+        {
+          "key": "B",
+          "text": "The Timer deadline is reset from the moment the Worker restarts, effectively extending the sleep by 2 days."
+        },
+        {
+          "key": "C",
+          "text": "The Timer continues from where it left off. Once the full 30 days elapse, the Workflow resumes normally — Worker downtime has no effect on the Timer's deadline."
+        },
+        {
+          "key": "D",
+          "text": "The Temporal Service marks the Workflow as failed after detecting the Worker was unavailable for more than a configurable threshold."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Durable Timers are persisted in the Temporal Service's event history, not in the Worker process. When the Worker restarts, it replays the Workflow history and the Timer deadline remains unchanged. If the 30-day deadline already passed during the outage, the sleep call resolves immediately upon replay; if not, it waits out the remaining time. This is one of Temporal's core value propositions: long-running pauses survive infrastructure failures without any extra code. Option A is wrong because timers are not in-memory. Option B is wrong because deadlines are fixed at the time the Timer command is issued. Option D is wrong because Worker downtime alone does not fail a Workflow; the Workflow Task will simply not progress until a Worker picks it up again.",
+      "source_doc": "develop_go_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_med_002",
+      "category": "Features_Timers_Retries",
+      "difficulty": "med",
+      "question": "You want to send a reminder email if a user hasn't responded within 30 days, but immediately proceed if they do respond. Which TypeScript pattern correctly expresses this using Temporal primitives?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Use `setInterval` from Node.js to poll a flag every second, and cancel the interval when a Signal arrives."
+        },
+        {
+          "key": "B",
+          "text": "Race a Signal Trigger against `sleep('30 days')` with `Promise.race`, then check which resolved first to decide whether to send the email."
+        },
+        {
+          "key": "C",
+          "text": "Start a child Workflow with a 30-day `StartToCloseTimeout` and send a Signal from the parent when the user responds."
+        },
+        {
+          "key": "D",
+          "text": "Set a `scheduleToCloseTimeout` of 30 days on an Activity that blocks waiting for user input, and cancel it from a Signal handler."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Racing Signals pattern uses `Promise.race` between a `Trigger` (resolved by a Signal handler) and `sleep('30 days')`. If the Signal arrives first, `userInteracted` is `true` and no email is sent; if the timer fires first, `userInteracted` is `false` and you send the reminder. This is a first-class Temporal pattern documented in the TypeScript SDK. Option A uses a native Node.js timer, which is non-deterministic and not safe inside a Workflow. Option C overcomplicates this with a child Workflow and misuses `StartToCloseTimeout`, which applies to Activities. Option D also misuses Activity timeouts; blocking indefinitely in an Activity while waiting for external events is an anti-pattern.",
+      "source_doc": "develop_typescript_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_med_003",
+      "category": "Features_Timers_Retries",
+      "difficulty": "med",
+      "question": "In Go, what is the behavioral difference between `workflow.NewTimer(ctx, duration)` and `workflow.Sleep(ctx, duration)`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`NewTimer` is persisted while `Sleep` is an in-memory delay that does not survive Worker restarts."
+        },
+        {
+          "key": "B",
+          "text": "`Sleep` blocks the goroutine entirely, while `NewTimer` returns a channel that can be selected alongside other channels."
+        },
+        {
+          "key": "C",
+          "text": "`NewTimer` only supports durations up to 24 hours, while `Sleep` supports arbitrarily long durations."
+        },
+        {
+          "key": "D",
+          "text": "There is no practical difference; both are equivalent durable Timer mechanisms, with `Sleep` returning immediately for zero or negative durations."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Both `workflow.NewTimer` and `workflow.Sleep` create durable Timers backed by the Temporal Service — neither is in-memory only. The key practical difference documented is that `Sleep` returns immediately for zero or negative durations, whereas `NewTimer` gives you a `Future`/channel you can race against other futures with `workflow.Select`. Both survive Worker and service restarts. Option A is wrong: both are equally durable. Option B incorrectly describes goroutine blocking; Workflow code runs in a coroutine scheduler, not OS threads, and both calls yield deterministically. Option C is wrong: there is no 24-hour cap on either.",
+      "source_doc": "develop_go_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_med_004",
+      "category": "Features_Timers_Retries",
+      "difficulty": "med",
+      "question": "A developer writes the following TypeScript Workflow and reports that the `status` variable sometimes reads `'timed_out'` even when `complete()` runs successfully. What is the cause?\n\n```ts\nawait Promise.race([\n  sleep('5s').then(() =\u003e (status = 'timed_out')),\n  processOrder().then(() =\u003e (status = 'processed')),\n]);\nif (status === 'processed') await complete(); // takes \u003e 5s\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Workflow is non-deterministic because `Promise.race` is not supported inside Temporal Workflows."
+        },
+        {
+          "key": "B",
+          "text": "After `Promise.race` resolves, the losing branch's chained `.then` callback still executes, so the `sleep` branch can overwrite `status` to `'timed_out'` while `complete()` is awaited."
+        },
+        {
+          "key": "C",
+          "text": "`sleep('5s')` throws an exception if the order processing completes before 5 seconds, which overwrites the status variable."
+        },
+        {
+          "key": "D",
+          "text": "The `processOrder` Promise is garbage-collected after `Promise.race` resolves, so `status` is never set to `'processed'`."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is the 'Racing sleep.then antipattern' explicitly called out in the Temporal TypeScript docs. `Promise.race` resolves as soon as the first Promise settles, but it does NOT cancel the other branch. If `processOrder` wins the race, the code proceeds to `complete()`. However, if `complete()` takes more than the remaining time on the `sleep('5s')` timer, the `.then(() =\u003e status = 'timed_out')` from the sleep branch will still fire and overwrite `status`. The fix is to avoid chaining side-effect mutations directly onto the losing branch's `.then`. Option A is wrong; `Promise.race` is perfectly valid in Temporal TypeScript. Options C and D describe behaviors that do not exist.",
+      "source_doc": "develop_typescript_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_med_005",
+      "category": "Features_Timers_Retries",
+      "difficulty": "med",
+      "question": "What is the correct way to sleep for 5 minutes inside a PHP Temporal Workflow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`yield Workflow::timer(300);` — pass the duration in seconds and yield the result."
+        },
+        {
+          "key": "B",
+          "text": "`Workflow::sleep(5 * 60);` — use the static `sleep` method with seconds."
+        },
+        {
+          "key": "C",
+          "text": "`sleep(300);` — use PHP's native `sleep()` function, which Temporal intercepts automatically."
+        },
+        {
+          "key": "D",
+          "text": "`yield Workflow::await(fn() =\u003e false, 300);` — use `await` with a timeout of 300 seconds."
+        }
+      ],
+      "answer": "A",
+      "explanation": "In the Temporal PHP SDK, the correct API is `Workflow::timer()` with seconds passed as an integer, and the call must be yielded because it returns a Promise-like coroutine. 300 seconds equals 5 minutes. Option B uses a method name (`sleep`) that doesn't exist in the PHP SDK. Option C using native PHP `sleep()` would actually block the Worker thread and is explicitly unsafe in Workflow code — Temporal does not intercept native PHP functions. Option D misuses `Workflow::await`; the docs specifically note that Timer invocations cannot be placed inside `await` or `awaitWithTimeout`.",
+      "source_doc": "develop_php_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_med_006",
+      "category": "Features_Timers_Retries",
+      "difficulty": "med",
+      "question": "Why is a Temporal durable Timer described as 'resource-light' compared to, say, spawning a thread that calls `Thread.sleep()` for a long duration?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal compresses Timer state using a binary encoding, reducing storage overhead on the Temporal Service cluster."
+        },
+        {
+          "key": "B",
+          "text": "The Timer is recorded as a Command in the Workflow's event history. The Worker thread is freed immediately and not held; the Temporal Service notifies the Worker when the duration elapses."
+        },
+        {
+          "key": "C",
+          "text": "Temporal batches multiple Timers into a single OS timer, reducing the number of system calls made per Worker process."
+        },
+        {
+          "key": "D",
+          "text": "Workers use async I/O for Timer tracking, meaning one OS thread can handle at most a few thousand Timers concurrently."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When a Workflow calls `sleep()` or the equivalent, the SDK emits a Timer Command that is persisted in the Temporal Service event history. The Workflow coroutine is suspended and the Worker thread is freed entirely — no thread or goroutine is blocked waiting. Millions of Timers can be tracked by a single Worker because the Worker only wakes up when the Service delivers a Timer-fired event, which prompts a new Workflow Task. This is fundamentally different from `Thread.sleep()` which holds a thread in a blocked state. Option A is about storage encoding and unrelated to resource usage. Option C is a plausible-sounding but invented detail. Option D is partially true about async I/O but incorrectly states a cap of 'a few thousand'; the docs say millions.",
+      "source_doc": "develop_java_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_med_007",
+      "category": "Features_Timers_Retries",
+      "difficulty": "med",
+      "question": "In the Ruby SDK, what advantage does `Temporalio::Workflow.sleep` have over using Ruby's native `Kernel#sleep` inside a Workflow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`Temporalio::Workflow.sleep` is non-blocking and supports durations greater than 24 hours, while `Kernel#sleep` caps at 24 hours."
+        },
+        {
+          "key": "B",
+          "text": "`Temporalio::Workflow.sleep` raises a `Temporal::Error` on cancellation, while `Kernel#sleep` silently ignores cancellation requests."
+        },
+        {
+          "key": "C",
+          "text": "`Temporalio::Workflow.sleep` accepts a `summary:` keyword argument so the timer appears with a human-readable label in the Temporal UI."
+        },
+        {
+          "key": "D",
+          "text": "`Temporalio::Workflow.sleep` integrates with the Temporal scheduler and auto-retries if the Worker crashes, while `Kernel#sleep` does not retry."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Ruby SDK docs state that while `Kernel#sleep` technically works, `Temporalio::Workflow.sleep` allows you to pass a `summary:` keyword argument, which makes the timer visible with a descriptive label in the Temporal Web UI — useful for debugging long-running workflows. Both are technically valid for durable sleeping in the Ruby SDK, but the Workflow form is preferred for observability. Option A is false; there is no 24-hour cap on `Kernel#sleep` or durable timers. Option B is invented behavior not mentioned in the docs. Option D is wrong because both forms create durable timers when used in a Workflow context — the durability comes from the Temporal runtime, not which `sleep` function you call.",
+      "source_doc": "develop_ruby_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_med_008",
+      "category": "Features_Timers_Retries",
+      "difficulty": "med",
+      "question": "You need to implement an 'updatable deadline' in a Temporal TypeScript Workflow — users can send a Signal to push the deadline further into the future. Which approach is most appropriate?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Cancel the existing `sleep` call and immediately start a new one with the updated duration each time a Signal is received."
+        },
+        {
+          "key": "B",
+          "text": "Use `wf.condition()` in a loop: wait until either a deadline-update flag is set or the remaining time elapses. On each update, reset the flag and re-enter the loop with the new deadline."
+        },
+        {
+          "key": "C",
+          "text": "Store the deadline in a Query handler and read it from an Activity that polls on a schedule to decide whether to proceed."
+        },
+        {
+          "key": "D",
+          "text": "Use `setInterval` to check the deadline every second and resolve a `Trigger` when `Date.now()` exceeds it."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The `UpdatableTimer` pattern documented in the TypeScript SDK uses `wf.condition(predicate, timeout)` in a `while(true)` loop. `condition` returns `false` when its timeout expires (meaning no Signal was received and the deadline elapsed — break the loop) or `true` when the predicate becomes true (meaning a new deadline arrived via Signal — update the deadline and loop again). This lets you dynamically extend or shorten the timer without cancelling and recreating Workflow Tasks. Option A is not a direct API — you can't 'cancel' an ongoing `sleep` and restart it trivially in the same coroutine scope. Option C introduces unnecessary Activity polling, which is resource-heavy and adds latency. Option D uses a native `setInterval`, which is non-deterministic and unsafe in Workflow code.",
+      "source_doc": "develop_typescript_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_hard_001",
+      "category": "Features_Timers_Retries",
+      "difficulty": "hard",
+      "question": "Your team runs a subscription billing workflow that calls `Workflow.DelayAsync(TimeSpan.FromDays(30))` to wait between billing cycles. During a planned maintenance window, both the Temporal Service and all Workers are taken offline for 6 hours. When they come back online, what happens to workflows whose 30-day timer expired during the outage?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The timers are permanently lost because they were not persisted while the service was down, so each workflow must be restarted manually."
+        },
+        {
+          "key": "B",
+          "text": "The timers resolve as soon as the Worker and Temporal Service reconnect — the delay call completes and workflow execution continues from where it left off."
+        },
+        {
+          "key": "C",
+          "text": "The timers restart their full 30-day countdown from the moment the service comes back online, so affected billing cycles are delayed by the outage duration plus 30 more days."
+        },
+        {
+          "key": "D",
+          "text": "The timers fire but the workflow execution fails with a non-retryable error because the expected resume time was missed, requiring explicit error handling code."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Durable Timers are persisted in the Temporal Service's event history at the moment they are scheduled, not when they fire. When the timer's deadline passes — even while the service or workers are offline — the timer is recorded as completed in the history. As soon as the service and workers are back online, the worker replays the workflow history, sees that the timer has already elapsed, and resumes execution immediately. No data is lost and no manual intervention is needed. This is the central value proposition of Durable Timers: they survive infrastructure outages. If you had used a regular `Task.Delay` or thread sleep instead of `Workflow.DelayAsync`, the state would have been lost on restart.",
+      "source_doc": "develop_dotnet_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_hard_002",
+      "category": "Features_Timers_Retries",
+      "difficulty": "hard",
+      "question": "A Go Workflow uses `workflow.Sleep(ctx, 0)` — a zero-duration sleep. A developer on the team argues this is a bug and will block the workflow forever because no future event will fire the timer. Another developer says it is fine. Who is correct, and why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The first developer is correct. A zero-duration timer is never persisted by Temporal, so the workflow will be stuck waiting for an event that never comes."
+        },
+        {
+          "key": "B",
+          "text": "The first developer is correct. Temporal requires a minimum sleep duration of 1 second; anything less causes the SDK to return a validation error."
+        },
+        {
+          "key": "C",
+          "text": "The second developer is correct. A zero or negative duration passed to `workflow.Sleep` causes the function to return immediately without scheduling a timer event."
+        },
+        {
+          "key": "D",
+          "text": "The second developer is correct, but only because Temporal normalizes zero to the configured minimum timer resolution, which is 1 nanosecond by default."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Go SDK documentation explicitly states: 'A zero or negative sleep duration causes the function to return immediately.' This is analogous to how `time.Sleep(0)` works in standard Go. No timer command is written to the workflow history, so there is no event to wait on — the call simply yields once to the scheduler and then continues. This behavior is important to understand because it means you can conditionally call `workflow.Sleep` with a computed duration (potentially zero) without needing to guard the call with an `if duration \u003e 0` check. Zero-duration timers do not stall workflows.",
+      "source_doc": "develop_go_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_hard_003",
+      "category": "Features_Timers_Retries",
+      "difficulty": "hard",
+      "question": "Your platform team is evaluating whether to run millions of subscription-pause workflows, each sleeping for 7–90 days, on a shared cluster. A colleague estimates this will consume enormous memory on your Workers because each sleeping workflow ties up a goroutine/thread. How should you respond?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The concern is valid. Each sleeping workflow holds an open timer goroutine plus its stack, so millions of concurrent timers will exhaust Worker heap and require dedicated hardware."
+        },
+        {
+          "key": "B",
+          "text": "The concern is partially valid. Workers keep sleeping workflows in memory but release CPU; you need to scale Worker memory proportionally to the number of concurrent timers."
+        },
+        {
+          "key": "C",
+          "text": "The concern is unfounded. Sleeping is a resource-light operation — it does not tie up the process, and millions of timers can run off a single Worker because timer state lives in the Temporal Service, not in Worker memory."
+        },
+        {
+          "key": "D",
+          "text": "The concern is unfounded only if you configure the Worker's `MaxConcurrentWorkflowTasks` to a value higher than the number of sleeping workflows, otherwise they queue and block."
+        }
+      ],
+      "answer": "C",
+      "explanation": "A Durable Timer is persisted in the Temporal Service's event history. While a workflow is sleeping, the Worker is not holding any memory or threads for it — the workflow task completes, and the workflow is effectively 'parked' server-side until the timer fires. When the timer fires, a new workflow task is delivered to the Worker and the workflow code resumes via replay. This is fundamentally different from an OS-level `sleep` which blocks a thread. The documentation across all SDKs repeats this explicitly: 'you can run millions of Timers off a single Worker.' Scaling decisions for sleeping workflows should focus on task queue throughput at wake-up time, not Worker memory during sleep.",
+      "source_doc": "develop_java_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_hard_004",
+      "category": "Features_Timers_Retries",
+      "difficulty": "hard",
+      "question": "A TypeScript Workflow uses `Promise.race` to implement a 30-day timeout on a user interaction: it races a Signal-backed Trigger against `sleep('30 days')`. A bug is introduced by a developer who rewrites it as `Promise.race([sleep('30 days').then(() =\u003e status = 'timed_out'), userInteraction.then(() =\u003e status = 'processed')])` and then immediately checks `if (status === 'processed') await complete()`. What is the failure mode?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The rewritten code is equivalent. `Promise.race` resolves with the first settled promise, so only one `.then` branch will execute, and the status check is always accurate."
+        },
+        {
+          "key": "B",
+          "text": "The chained `.then` on the losing promise still executes after `Promise.race` resolves, so if `complete()` takes more than 5 seconds after the race, the sleep's `.then` may overwrite `status` to 'timed_out' mid-execution."
+        },
+        {
+          "key": "C",
+          "text": "The bug is that `sleep` returns a non-thenable in TypeScript, so chaining `.then` directly throws a TypeError at runtime rather than producing incorrect status values."
+        },
+        {
+          "key": "D",
+          "text": "The bug is that `Promise.race` in a Temporal Workflow blocks both branches until both settle, making it behave like `Promise.all` and causing the workflow to wait the full 30 days regardless."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The TypeScript documentation explicitly flags this as an antipattern: 'Be careful when racing a chained sleep. This might cause bugs because the chained `.then` will still continue to execute.' When `Promise.race` resolves (say, because the user interacted), the winning `.then` runs and sets `status = 'processed'`. But the losing sleep promise is still alive and will fire its `.then` when it eventually resolves. If `complete()` takes longer than the remaining time on the sleep, the sleep's `.then` executes mid-flight and overwrites `status` to 'timed_out', corrupting the state. The safe pattern is to race bare promises and use conditional logic outside the race, not side effects inside chained `.then` calls.",
+      "source_doc": "develop_typescript_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_hard_007",
+      "category": "Features_Timers_Retries",
+      "difficulty": "hard",
+      "question": "A TypeScript Workflow implements a countdown timer that can be shortened via a Signal. The `UpdatableTimer` class uses `wf.condition(() =\u003e this.deadlineUpdated, this.#deadline - Date.now())` in a loop. An engineer proposes replacing the loop with a single `sleep(this.#deadline - Date.now())` call, arguing it's simpler. Under what production condition does this simplification break the intended behavior?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It breaks when the worker restarts, because a single `sleep` call is not persisted across worker restarts the way a loop with `condition` is."
+        },
+        {
+          "key": "B",
+          "text": "It breaks when a Signal arrives with a shorter deadline, because the single `sleep` is already scheduled for the original deadline and cannot be cancelled or shortened mid-flight."
+        },
+        {
+          "key": "C",
+          "text": "It breaks only in TypeScript because `sleep` is not a native Promise and cannot be cancelled, while `condition` returns a cancellable Promise in all SDKs."
+        },
+        {
+          "key": "D",
+          "text": "It breaks when the workflow runs for more than 24 hours because `Date.now()` drifts relative to Temporal's internal clock, causing the single `sleep` to fire too early."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The `UpdatableTimer` pattern exists precisely because a single `sleep` call cannot be shortened after it is scheduled. Once `sleep(originalDeadline - Date.now())` is committed to workflow history as a timer command, it will fire at the original deadline regardless of any signals received. The loop-plus-`condition` pattern works around this by breaking out of the current `condition` wait whenever `deadlineUpdated` is set to true (by the Signal handler), then re-entering the loop with a fresh `condition` call using the new deadline. This creates a new, shorter timer in the workflow history. Both `sleep` and the loop approach are persisted across worker restarts — that is not the distinguishing factor. The key insight is that Temporal timers are immutable once scheduled; updating a deadline requires scheduling a new timer.",
+      "source_doc": "develop_typescript_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_hard_008",
+      "category": "Features_Timers_Retries",
+      "difficulty": "hard",
+      "question": "Your team runs a Python order workflow that calls `await asyncio.sleep(10)` to pause between processing steps. A new engineer replaces it with `await asyncio.sleep(10)` from a background `asyncio.Task` spawned inside the workflow function, arguing it's equivalent. During a load test, replay fails with a non-determinism error. What is the root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal's Python SDK intercepts `asyncio.sleep` only when called directly in the workflow coroutine's call stack. A sleep inside a plain `asyncio.Task` is not intercepted and schedules no timer command, so the task completes in wall-clock time during the original run but produces no history event to replay against."
+        },
+        {
+          "key": "B",
+          "text": "The Python SDK requires `asyncio.sleep` to be wrapped in `workflow.execute_activity` before it can be used in background tasks; calling it directly is always non-deterministic regardless of context."
+        },
+        {
+          "key": "C",
+          "text": "The non-determinism error is caused by the background task's sleep racing with the workflow's main coroutine, producing a different task-scheduling order on each replay due to OS thread scheduling."
+        },
+        {
+          "key": "D",
+          "text": "The error occurs because `asyncio.Task` objects are not serializable into Temporal's event history, so the SDK cannot persist the background task state and fails on replay."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Temporal's Python SDK patches `asyncio.sleep` so that when called within the workflow's sandboxed execution context, it schedules a durable timer command in the workflow history. However, this patching applies to calls that participate in the workflow's deterministic event loop. A background `asyncio.Task` created with `asyncio.create_task` inside a workflow may run in a context where the sleep is not intercepted, or its completion may not correspond to a timer event in the history. During the original run, the task's sleep completes based on wall-clock time, but no corresponding timer command is recorded. On replay, the SDK looks for that timer event in history and cannot find it, causing a non-determinism error. This is why Temporal workflows must use SDK-provided primitives and spawn work through SDK-sanctioned mechanisms rather than raw asyncio primitives.",
+      "source_doc": "develop_python_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_nightmare_001",
+      "category": "Features_Timers_Retries",
+      "difficulty": "nightmare",
+      "question": "A TypeScript Workflow implements a human-approval pattern using `Promise.race` between a Signal and a timer:\n\n```ts\nconst approved = new Trigger\u003cboolean\u003e();\nsetHandler(approveSignal, () =\u003e approved.resolve(true));\n\nconst result = await Promise.race([\n  sleep('7 days').then(() =\u003e { status = 'expired'; }),\n  approved.then(() =\u003e { status = 'approved'; })\n]);\n\nif (status === 'approved') {\n  await runPostApprovalLogic(); // takes ~10 minutes\n}\n```\n\n`runPostApprovalLogic()` completes successfully, but in the Workflow history you observe that `status` was briefly set to `'expired'` during replay even though the Signal arrived on day 3. A colleague suggests the fix is to use `condition()` instead. What is the root cause and why does `condition()` address it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Signal handler fires non-deterministically during replay because Temporal replays events out of order. Using `condition()` forces the runtime to serialize Signal handling before evaluating the race, ensuring deterministic ordering without the chained `.then` side effect."
+        },
+        {
+          "key": "B",
+          "text": "The chained `.then(() =\u003e { status = 'expired'; })` on the `sleep` continues to execute after `Promise.race` resolves, because JavaScript Promises do not cancel — the settled `.then` callback still runs. `condition()` with a timeout represents a single atomic check, so there is no floating continuation that mutates `status` after the race winner is determined."
+        },
+        {
+          "key": "C",
+          "text": "The 7-day timer fires during replay because the Workflow Test Environment does not suppress timers when a Signal is present. `condition()` integrates with the test time-skipping infrastructure so timers are properly canceled when the condition predicate becomes true."
+        },
+        {
+          "key": "D",
+          "text": "Replay evaluates `sleep('7 days')` before processing the Signal history event, causing the `.then` callback to execute first. `condition()` registers a predicate instead of chaining continuations, so the runtime evaluates it only after all pending history events are applied."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is the documented antipattern called 'Racing sleep.then'. When `Promise.race` resolves because the Signal won, the `sleep('7 days')` Promise is not canceled — JavaScript Promises are not cancelable. The chained `.then(() =\u003e { status = 'expired'; })` is already queued as a microtask continuation and will execute regardless of which branch won the race. If `runPostApprovalLogic()` takes longer than the remaining timer duration, the mutation to `status = 'expired'` occurs mid-execution, corrupting state. `wf.condition(predicate, timeout)` is the idiomatic Temporal pattern here: it expresses 'wait until the predicate is true OR the timeout fires' as a single operation without floating continuations. The Temporal workflow runtime handles the timer cancellation internally when the condition is satisfied, so no orphaned `.then` callbacks exist. The broader principle is that Promise chaining in Workflow code requires special care because the Temporal sandbox does not give you a way to cancel a scheduled `.then` — only primitives that integrate with the workflow event loop (like `condition`) can safely compose timer and signal handling without side-effect leakage.",
+      "source_doc": "develop_typescript_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_nightmare_002",
+      "category": "Features_Timers_Retries",
+      "difficulty": "nightmare",
+      "question": "A Go Workflow manages a multi-step SLA pipeline. It uses `workflow.NewTimer` to enforce a global deadline and `workflow.Sleep` inside each step for pacing. During a deploy, the Worker crashes while a 48-hour global timer is in-flight. After the Worker restarts 2 hours later, engineers observe that the 48-hour timer fires at the originally scheduled wall-clock time rather than extending by the 2-hour outage window. A junior engineer proposes switching to `workflow.Sleep` with a relative duration computed at runtime to \"reset\" the clock on each restart. Why is this proposal incorrect and what actually happens?\n\n```go\ntimer := workflow.NewTimer(ctx, 48*time.Hour) // absolute deadline from now\nselect {\ncase \u003c-timer.Channel(ctx):\n    return handleTimeout(ctx)\ncase \u003c-workDone:\n    timer.Cancel(ctx)\n    return handleSuccess(ctx)\n}\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The proposal is incorrect because `workflow.Sleep` also records an absolute scheduled time in the history event when first executed, and replay will honor that recorded time rather than recomputing a new relative duration from the restart timestamp. Both `NewTimer` and `Sleep` persist their fire-at timestamp at the moment of the first history write, so neither resets during a Worker outage."
+        },
+        {
+          "key": "B",
+          "text": "The proposal is incorrect because `workflow.Sleep` is not cancelable, so switching to it would prevent the engineer from canceling the deadline when `workDone` fires. The timer behavior during outages is identical between the two primitives because both are backed by the same server-side timer mechanism."
+        },
+        {
+          "key": "C",
+          "text": "The proposal would work for short outages but fail for outages longer than the original sleep duration because the Temporal server marks the timer as 'missed' after the scheduled time passes without a Worker available, requiring the Workflow to be reset manually before the timer can be re-registered."
+        },
+        {
+          "key": "D",
+          "text": "The proposal is incorrect only during replay: a freshly deployed Worker would use the new relative duration, but any Worker that replays the existing history would revert to the original timer. This inconsistency across Worker versions is a non-determinism violation that terminates the Workflow."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Temporal timers are durable precisely because their fire-at timestamp is recorded as a `TimerStarted` history event the first time that code path executes. When the Worker replays the history, the SDK sees the existing `TimerStarted` event and does NOT re-execute the timer registration — it simply recreates the in-memory future that will resolve when the server fires the `TimerFired` event. Switching to `workflow.Sleep` changes nothing: `Sleep` is implemented on top of the same server-side timer mechanism, and it records the same kind of `TimerStarted` history event on first execution. During replay, the SDK matches the `Sleep` call to the existing history event and restores the original deadline. There is no 'restart the clock on Worker restart' concept in Temporal's durable execution model. The documented guarantee — 'as soon as your Worker and Temporal Service are back up, the sleep() call will resolve' — means the timer fires at the originally scheduled time, not after an additional delay. This is a feature, not a bug: SLA deadlines must be absolute to be meaningful. The junior engineer's mental model conflates execution time with wall-clock time, a common misunderstanding when first encountering replay semantics.",
+      "source_doc": "develop_go_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_nightmare_003",
+      "category": "Features_Timers_Retries",
+      "difficulty": "nightmare",
+      "question": "A .NET Workflow uses `Workflow.DelayAsync` combined with versioning to handle a schema migration. The original code slept for 3 days before sending a notification. After a production incident, the team wants to reduce the delay to 1 day for all NEW Workflow executions while keeping the 3-day delay for in-flight executions. They write:\n\n```csharp\nvar version = Workflow.GetVersion(\"reduce-delay\", Workflow.DefaultVersion, 1);\nvar delay = version == Workflow.DefaultVersion\n    ? TimeSpan.FromDays(3)\n    : TimeSpan.FromDays(1);\nawait Workflow.DelayAsync(delay);\n```\n\nAn in-flight Workflow that already recorded `TimerStarted` for 3 days is now being replayed. What happens during that replay and why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "During replay the Worker executes `Workflow.GetVersion`, finds no `MarkerRecorded` event for 'reduce-delay' in the history, returns `Workflow.DefaultVersion`, computes a 3-day delay, and matches the existing `TimerStarted` event — replay proceeds correctly without a non-determinism error."
+        },
+        {
+          "key": "B",
+          "text": "During replay the Worker executes `Workflow.GetVersion`, finds no `MarkerRecorded` event in the history, defaults to version 1 (the max version passed), computes a 1-day delay, and attempts to match a `TimerStarted` event with 3 days — this duration mismatch triggers a non-determinism panic."
+        },
+        {
+          "key": "C",
+          "text": "During replay the Worker skips `Workflow.GetVersion` entirely for in-flight executions because the Workflow already passed the versioning checkpoint, and proceeds directly to replay the `TimerStarted` event with whatever duration was originally recorded, avoiding any mismatch."
+        },
+        {
+          "key": "D",
+          "text": "During replay the Worker replays `Workflow.GetVersion`, discovers the `MarkerRecorded` event is absent, and throws `WorkflowNondeterminismException` because the versioning marker must be present in history before any timer event that depends on it can be safely replayed."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Temporal's `GetVersion` (called `patched` in Python, `GetVersion` in Go/Java/.NET) is specifically designed for exactly this scenario. When an in-flight Workflow that pre-dates the versioning call replays, there is no `MarkerRecorded` event for that change ID in the history. The SDK interprets the absence of the marker as `DefaultVersion` (-1 in most SDKs). The version branch returns `DefaultVersion`, so `delay` is computed as 3 days, which matches the `TimerStarted` history event that was originally recorded. Replay succeeds. For brand-new executions after the deploy, the SDK writes a `MarkerRecorded` event with version=1 at the `GetVersion` call, so those executions will always replay with version=1 and the 1-day delay. This is the canonical purpose of the versioning API: it creates a branch point in history that is safe to replay both for old executions (no marker → DefaultVersion → old behavior) and new executions (marker present → new version → new behavior). The key insight is that `GetVersion` is not just a runtime if/else — it is a history-backed branch that persists the version decision so replay is always deterministic regardless of which Worker code version is running.",
+      "source_doc": "develop_dotnet_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "features_timers_retries_nightmare_004",
+      "category": "Features_Timers_Retries",
+      "difficulty": "nightmare",
+      "question": "A Python Workflow implements a reminder system using `asyncio.sleep` for a 30-day window, racing against a Signal using `asyncio.gather` with `return_exceptions=True`. The team later adds a `workflow.update` handler that allows customers to extend the reminder deadline. During load testing they observe that when an Update arrives at the same event-loop tick that the 30-day `asyncio.sleep` would fire, the workflow occasionally takes the 'no interaction' branch even though the Update was applied before the sleep resolved. Which Temporal design constraint is responsible for this behavior?\n\n```python\nasync def run(self) -\u003e str:\n    self._extended = False\n    sleep_task = asyncio.ensure_future(asyncio.sleep(30 * 24 * 3600))\n    interact_task = asyncio.ensure_future(self._wait_for_interaction())\n    done, _ = await asyncio.wait(\n        [sleep_task, interact_task], return_when=asyncio.FIRST_COMPLETED\n    )\n    if sleep_task in done and not self._extended:\n        return await send_reminder()\n    return \"interaction received\"\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal's workflow event loop processes all timer-fired events before signal/update events that share the same history position, so when the timer and the Update land in the same server-side task, the timer branch always wins the `asyncio.wait` race regardless of Update ordering in the history."
+        },
+        {
+          "key": "B",
+          "text": "Updates are delivered as `WorkflowTaskStarted` events in the same task as the timer, but `asyncio.wait` with `FIRST_COMPLETED` resolves non-deterministically when two futures complete within the same event-loop iteration, and Python's asyncio scheduler — not Temporal's history ordering — decides which `done` set is observed first."
+        },
+        {
+          "key": "C",
+          "text": "Temporal batches the timer-fired event and the Update acceptance event into a single workflow task when they arrive close together. Within that task, replay processes history events sequentially, and since `TimerFired` is recorded before `WorkflowExecutionUpdateAccepted` in the event stream, the timer future resolves first in the Python event loop, and `asyncio.wait` captures it as the sole `done` entry before the Update future can complete."
+        },
+        {
+          "key": "D",
+          "text": "The root cause is that `asyncio.sleep` in workflow code bypasses Temporal's deterministic timer registration and uses the system clock instead, so it fires immediately on replay when the 30-day wall-clock time has already passed, making it appear to win the race against the Update which is only applied after sleep resolves."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal executes Workflow logic within discrete Workflow Tasks. When a `TimerFired` event and a `WorkflowExecutionUpdateAccepted` event are batched into the same Workflow Task (which happens when they arrive at the server within the same scheduling window), the history sequence is fixed: timer events are ordered before the update acceptance event because the timer was originally scheduled earlier. During replay (or even live execution), the Python SDK processes history events in order. When `TimerFired` is processed, the `asyncio.sleep` future is resolved; Python's event loop runs its callbacks synchronously within the same microtask checkpoint. `asyncio.wait` with `FIRST_COMPLETED` resolves as soon as the first future completes — at the point the timer fires, the Update future has not yet been resolved because `WorkflowExecutionUpdateAccepted` hasn't been processed yet. So `sleep_task` is in `done` and `self._extended` is still `False`, sending the reminder even though the customer's Update was semantically 'simultaneous'. The fix is to use `wf.condition()` which allows the predicate `self._extended` to be evaluated atomically at the decision point, or to check `self._extended` as part of the branch condition after awaiting both completions. This illustrates why racing raw `asyncio` primitives against Temporal signals/updates is fragile: history event ordering within a task determines which future resolves first, not the developer's intuitive notion of 'simultaneous'.",
+      "source_doc": "develop_python_workflows_timers.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    }
+  ]
+}

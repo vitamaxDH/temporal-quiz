@@ -1,0 +1,705 @@
+{
+  "category": "Features_Nexus",
+  "questions": [
+    {
+      "id": "features_nexus_easy_001",
+      "category": "Features_Nexus",
+      "difficulty": "easy",
+      "question": "What is the main purpose of Temporal Nexus?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To replace Workflows with simpler HTTP-based API calls between services"
+        },
+        {
+          "key": "B",
+          "text": "To connect Temporal Applications within and across Namespaces using Endpoints, Service contracts, and Operations"
+        },
+        {
+          "key": "C",
+          "text": "To store Workflow history in a shared database accessible by multiple clusters"
+        },
+        {
+          "key": "D",
+          "text": "To schedule recurring Workflows across different time zones automatically"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Nexus is designed to connect Temporal Applications within and across Namespaces. It uses three key building blocks: a Nexus Endpoint (which routes requests), a Nexus Service contract (which defines what operations are available and their input/output types), and Nexus Operations (the actual callable units of work). This lets teams expose Workflow-backed capabilities to other teams or services without coupling them directly.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_easy_002",
+      "category": "Features_Nexus",
+      "difficulty": "easy",
+      "question": "In a Nexus setup, what is the role of a Nexus Endpoint?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It stores the results of completed Nexus Operations for later retrieval by the caller"
+        },
+        {
+          "key": "B",
+          "text": "It defines the input and output data types that a Nexus Service accepts"
+        },
+        {
+          "key": "C",
+          "text": "It routes requests from the caller Namespace to the correct handler Namespace and Task Queue"
+        },
+        {
+          "key": "D",
+          "text": "It registers Nexus Services with a Worker so they can process incoming tasks"
+        }
+      ],
+      "answer": "C",
+      "explanation": "A Nexus Endpoint acts as the routing layer between the caller and handler sides of a Nexus setup. When you create an endpoint, you give it a name and point it at a target Namespace and Task Queue. The caller Workflow references the endpoint by name, and Temporal takes care of forwarding requests to the right handler — even across Namespace boundaries.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_easy_003",
+      "category": "Features_Nexus",
+      "difficulty": "easy",
+      "question": "What is the difference between a synchronous and an asynchronous Nexus Operation handler?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Synchronous handlers complete and return a result immediately, while asynchronous handlers start a long-running Workflow and return later"
+        },
+        {
+          "key": "B",
+          "text": "Synchronous handlers can only be used within the same Namespace, while asynchronous handlers work across Namespaces"
+        },
+        {
+          "key": "C",
+          "text": "Synchronous handlers support retries automatically, while asynchronous handlers require manual retry logic in the caller"
+        },
+        {
+          "key": "D",
+          "text": "Synchronous handlers run inside a Workflow execution, while asynchronous handlers run directly on the Worker without Workflow context"
+        }
+      ],
+      "answer": "A",
+      "explanation": "A synchronous Nexus Operation handler completes quickly and returns a result directly to the caller — good for simple RPC-style calls like echoing a message or querying a Workflow. An asynchronous handler starts a backing Workflow and returns an operation token; the caller then waits for the Workflow to finish. This lets Nexus support both fast, lightweight calls and long-running, durable work.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_easy_004",
+      "category": "Features_Nexus",
+      "difficulty": "easy",
+      "question": "Why should Nexus Operation handlers be kept reliable and avoid unnecessary failures?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Because handler failures are permanently recorded in Workflow history and cannot be retried"
+        },
+        {
+          "key": "B",
+          "text": "Because a circuit breaker trips after 5 consecutive retryable errors, blocking all Operations from that caller to the Endpoint"
+        },
+        {
+          "key": "C",
+          "text": "Because failed handlers automatically cancel the caller Workflow and all its child Workflows"
+        },
+        {
+          "key": "D",
+          "text": "Because Nexus Operations do not support any form of retry, so each failure is final"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Nexus includes a circuit breaker mechanism: if a handler produces 5 consecutive retryable errors, the circuit breaker trips and blocks further Operations from the caller to that Endpoint. This protects the system from cascading failures. It also means handler reliability matters — flaky handlers don't just hurt individual operations, they can cut off an entire caller from the handler Endpoint.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_easy_005",
+      "category": "Features_Nexus",
+      "difficulty": "easy",
+      "question": "What are the three types of timeouts available when a caller Workflow executes a Nexus Operation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Request timeout, Response timeout, and Completion timeout"
+        },
+        {
+          "key": "B",
+          "text": "Start timeout, Run timeout, and Cancel timeout"
+        },
+        {
+          "key": "C",
+          "text": "Schedule-to-Close, Schedule-to-Start, and Start-to-Close timeouts"
+        },
+        {
+          "key": "D",
+          "text": "Enqueue timeout, Execution timeout, and Result timeout"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Nexus Operations support three timeout types that control different phases of the operation lifecycle. Schedule-to-Close limits the total duration from scheduling to completion. Schedule-to-Start limits how long the caller waits for the handler to pick up the operation. Start-to-Close limits how long the caller waits for an already-started asynchronous operation to complete. Together they give callers fine-grained control over how patient they are at each stage.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_easy_006",
+      "category": "Features_Nexus",
+      "difficulty": "easy",
+      "question": "When canceling a Nexus Operation from a caller Workflow, which cancellation type makes the caller wait until the handler confirms it received the cancellation request — without waiting for the operation to fully complete?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Abandon, which skips sending a cancellation request entirely and moves on immediately"
+        },
+        {
+          "key": "B",
+          "text": "TryCancel, which sends the request but reports cancellation to the caller right away without waiting"
+        },
+        {
+          "key": "C",
+          "text": "WaitCancellationCompleted, which waits for the operation to reach a terminal state before continuing"
+        },
+        {
+          "key": "D",
+          "text": "WaitCancellationRequested, which waits for the handler to acknowledge receipt of the cancellation but not for the operation to finish"
+        }
+      ],
+      "answer": "D",
+      "explanation": "WaitCancellationRequested tells the caller to send a cancellation request and then wait until the handler acknowledges that the request was received — but it does not wait for the operation to actually finish. This is a middle ground: you get confirmation the cancellation was delivered, but you don't block the caller Workflow while the handler winds down. Compare this to WaitCancellationCompleted (waits for full completion) or TryCancel (fires and forgets the request immediately).",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_med_002",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "In the .NET Nexus SDK, how does a caller Workflow execute a Nexus Operation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "By directly invoking the handler service's HTTP endpoint using an HttpClient configured with the Nexus Endpoint URL."
+        },
+        {
+          "key": "B",
+          "text": "By calling `Workflow.CreateNexusWorkflowClient\u003cIHelloService\u003e(endpointName).ExecuteNexusOperationAsync(...)` from within the Workflow method."
+        },
+        {
+          "key": "C",
+          "text": "By sending a Signal to the handler Workflow and then waiting for a Query to return the result, using the Temporal Client."
+        },
+        {
+          "key": "D",
+          "text": "By starting a child Workflow in the handler Namespace and awaiting its result using `Workflow.ExecuteChildWorkflowAsync`."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The .NET SDK provides `Workflow.CreateNexusWorkflowClient\u003cT\u003e(endpointName)` which returns a typed client scoped to the caller Workflow context, and `ExecuteNexusOperationAsync` submits the operation through the Nexus Machinery. This keeps the interaction declarative and deterministic within Workflow code. Option A is wrong — Nexus does not use direct HTTP calls from Workflow code. Option C describes a Signal/Query pattern, which is a different inter-workflow communication style. Option D describes child Workflows, which bypass the Nexus abstraction and don't route through a Nexus Endpoint.",
+      "source_doc": "feature-guide (develop_dotnet_nexus_feature-guide.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_med_003",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "Which Nexus Operation timeout applies exclusively to asynchronous operations and has no effect on synchronous ones?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Schedule-to-Close timeout, because it only counts time after the operation has left the task queue."
+        },
+        {
+          "key": "B",
+          "text": "Schedule-to-Start timeout, because synchronous operations never wait in a started state before completing."
+        },
+        {
+          "key": "C",
+          "text": "Start-to-Close timeout, because synchronous operations complete inline and never enter a separate 'started' phase."
+        },
+        {
+          "key": "D",
+          "text": "Heartbeat timeout, because only asynchronous operations are required to send periodic heartbeats to the caller."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Start-to-Close timeout limits how long the caller will wait for an asynchronous operation to complete *after it has started*. Synchronous operations return their result immediately within the initial request, so they never enter a distinct 'started-but-not-complete' state — there is nothing to time out. Schedule-to-Close applies to both sync and async operations. Schedule-to-Start controls how long to wait before the handler picks up the operation, which is relevant for both types. Heartbeat timeout is an Activity concept, not a Nexus Operation concept.",
+      "source_doc": "feature-guide (develop_dotnet_nexus_feature-guide.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_med_004",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "When creating an asynchronous Nexus Operation handler that starts a Workflow, what is the recommended approach for setting the handler Workflow ID?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Use a randomly generated UUID at runtime to ensure no two handler Workflow IDs ever collide across retries."
+        },
+        {
+          "key": "B",
+          "text": "Use the caller Workflow's Run ID, because it uniquely identifies the specific execution that triggered the Nexus Operation."
+        },
+        {
+          "key": "C",
+          "text": "Derive it from the Nexus Endpoint name combined with the operation name to create a globally unique, deterministic key."
+        },
+        {
+          "key": "D",
+          "text": "Use a business-meaningful ID, often sourced from the operation input or the stable `RequestId` allocated by Temporal for that operation."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Workflow IDs in Nexus serve as deduplication keys. Because the Nexus Machinery retries failed start requests, the handler Workflow ID must be stable across retries. The `context.HandlerContext.RequestId` is guaranteed by Temporal to be stable across retries of the same operation, making it a safe default when no business ID is available. A random UUID (A) would create duplicate Workflows on retry. The caller's Run ID (B) changes on each execution. Deriving from endpoint+operation name (C) would not be unique per request and would conflict across multiple callers.",
+      "source_doc": "feature-guide (develop_dotnet_nexus_feature-guide.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_med_005",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "How do you register a Nexus Service implementation in a handler Worker using the .NET SDK?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Call `AddNexusService(new HelloService())` on the `TemporalWorkerOptions`, alongside registering any handler Workflows that the service starts."
+        },
+        {
+          "key": "B",
+          "text": "Pass the service as a constructor argument to `TemporalWorker`, which automatically scans it for `[NexusOperationHandler]` attributes."
+        },
+        {
+          "key": "C",
+          "text": "Register the service as a gRPC interceptor on the `TemporalClient` so that incoming Nexus requests are routed before reaching the Worker."
+        },
+        {
+          "key": "D",
+          "text": "Annotate the Worker class itself with `[NexusServiceHandler]` and let the SDK discover all service implementations at startup."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The `.AddNexusService(new HelloService())` method on `TemporalWorkerOptions` is how a Nexus Service implementation is registered in a Worker. The sample code also shows that any handler Workflows (like `HelloHandlerWorkflow`) must be added separately via `AddWorkflow\u003cT\u003e()`. Option B is incorrect — the constructor doesn't accept service instances directly. Option C confuses gRPC interceptors with Nexus service registration; the client is not where handler routing is configured. Option D is incorrect; the `[NexusServiceHandler]` attribute decorates the service class, not the worker.",
+      "source_doc": "feature-guide (develop_dotnet_nexus_feature-guide.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_med_006",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "In a Temporal Nexus setup, what is the role of a Nexus Endpoint, and how is it created in a local development environment?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It is a DNS alias that routes HTTP traffic between caller and handler Workers; created by adding a record to the local `/etc/hosts` file."
+        },
+        {
+          "key": "B",
+          "text": "It is a configuration object inside the caller Workflow that maps operation names to handler task queues; defined in code using the SDK."
+        },
+        {
+          "key": "C",
+          "text": "It is a server-side routing rule that directs Nexus requests to a target Namespace and task queue; created using the `temporal operator nexus endpoint create` CLI command."
+        },
+        {
+          "key": "D",
+          "text": "It is a Workflow registered on the handler side that accepts incoming Nexus requests; created by running a dedicated endpoint Worker process."
+        }
+      ],
+      "answer": "C",
+      "explanation": "A Nexus Endpoint is a server-side entity that tells the Temporal cluster where to route Nexus Operation requests — specifically to a target Namespace and task queue. In local dev, you create it with `temporal operator nexus endpoint create --name ... --target-namespace ... --target-task-queue ...`. It can also be created via the Web UI. This is fundamentally different from DNS (A), SDK-level configuration in Workflow code (B), or a handler Workflow (D). The endpoint is infrastructure-level routing, not code-level wiring.",
+      "source_doc": "feature-guide (develop_dotnet_nexus_feature-guide.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_med_007",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "When a caller Workflow cancels a Nexus Operation using the `TryCancel` cancellation type, what is the behavior?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A cancellation request is sent to the handler, and the caller blocks until the handler Workflow confirms it has been cancelled and terminated."
+        },
+        {
+          "key": "B",
+          "text": "The Nexus Machinery stops retrying the operation immediately without ever sending a cancellation request to the handler side."
+        },
+        {
+          "key": "C",
+          "text": "The caller does not send any cancellation request and simply stops tracking the operation, leaving the handler to run to completion on its own."
+        },
+        {
+          "key": "D",
+          "text": "A cancellation request is initiated and cancellation is immediately reported to the caller, without guaranteeing delivery if the caller exits first."
+        }
+      ],
+      "answer": "D",
+      "explanation": "`TryCancel` initiates a cancellation request to the handler but immediately reports cancellation back to the caller — it does not wait for the handler to acknowledge or act on the request. Critically, if the caller exits before the cancellation is delivered, delivery is not guaranteed. This contrasts with `WaitCancellationRequested` (waits for the handler to acknowledge receipt) and `WaitCancellationCompleted` (waits for the operation to fully terminate). Option A describes `WaitCancellationCompleted`. Option B describes no-cancellation behavior, closer to `Abandon`. Option C describes the `Abandon` type.",
+      "source_doc": "feature-guide (develop_dotnet_nexus_feature-guide.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_med_008",
+      "category": "Features_Nexus",
+      "difficulty": "med",
+      "question": "In a polyglot Temporal Nexus setup where the caller and handler are written in different languages, what data serialization format does the documentation recommend and why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "MessagePack, because it is more compact than JSON and the Temporal default Data Converter supports it natively across all SDKs."
+        },
+        {
+          "key": "B",
+          "text": "Protobuf or JSON, because they are language-agnostic and supported by the default Data Converter's encoding order across SDKs."
+        },
+        {
+          "key": "C",
+          "text": "XML, because it provides schema validation out of the box and all Temporal SDKs include a built-in XML Data Converter."
+        },
+        {
+          "key": "D",
+          "text": "Language-native binary serialization, because the default Data Converter applies the Byte array encoding before all other formats."
+        }
+      ],
+      "answer": "B",
+      "explanation": "In a polyglot environment, the documentation explicitly recommends Protobuf or JSON as common choices because they are language-neutral and are both included in the default Data Converter's encoding order (Null → Byte array → Protobuf JSON → JSON). The .NET sample uses .NET classes serialized to JSON. MessagePack (A) is not part of the default encoding pipeline. XML (C) is not supported by the default Data Converter in any SDK. Language-native binary formats (D) are precisely what to avoid in polyglot contexts because they aren't portable across runtimes, even though Byte array encoding does appear early in the pipeline.",
+      "source_doc": "feature-guide (develop_dotnet_nexus_feature-guide.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_hard_001",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "Your team deploys a Temporal .NET Nexus handler that runs synchronous operations. After a bad deploy, five consecutive operations throw an unhandled exception. On-call gets paged because all Nexus calls from the caller namespace are now failing immediately—even after the bad pods are replaced with a fix. What Temporal mechanism caused the sudden blanket failure, and what does recovering from it require?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The handler task queue is paused by Temporal Server after repeated failures; recovery requires manually resuming the task queue via the CLI or Web UI before new operations can be dispatched."
+        },
+        {
+          "key": "B",
+          "text": "The caller namespace's visibility store marks the endpoint as degraded, causing all new operation schedules to be dropped until a namespace-level health check passes on the next polling interval."
+        },
+        {
+          "key": "C",
+          "text": "The Nexus circuit breaker trips after 5 consecutive retryable errors from the handler, blocking all operations from that caller to that endpoint; recovery requires the handler to begin returning successful responses so the circuit can reset."
+        },
+        {
+          "key": "D",
+          "text": "Temporal Server tombstones the Nexus endpoint after repeated 5xx responses; the endpoint must be deleted and recreated with the same target namespace and task queue to restore traffic."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal Nexus includes a circuit breaker that trips after 5 consecutive retryable errors from a handler. Once tripped, all operations from that caller to that endpoint are blocked—not just the ones that failed. This is why handler reliability is so important: a flaky synchronous handler can take down an entire integration path. Recovery happens when the handler starts returning successful responses and the circuit resets. The task queue is not paused, the endpoint is not tombstoned, and visibility has no role here. The practical lesson is to make synchronous handlers as reliable as possible and use error types carefully to avoid triggering the breaker on transient issues.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_hard_002",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "A caller Workflow in `nexus-simple-caller-namespace` executes a Nexus Operation backed by an async Workflow in `nexus-simple-handler-namespace`. The caller Workflow is cancelled mid-execution. An engineer assumes the handler Workflow will also be cancelled automatically. In production, what actually happens by default?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The handler Workflow is immediately terminated by Temporal Server when the caller Workflow is cancelled, because the two Workflows share a linked lifecycle through the Nexus endpoint binding."
+        },
+        {
+          "key": "B",
+          "text": "The default cancellation type is `WaitCancellationCompleted`, so the caller waits for the handler Workflow to fully complete (cancelled or otherwise) before the caller itself finishes cancellation."
+        },
+        {
+          "key": "C",
+          "text": "The default cancellation type is `Abandon`, so no cancellation request is sent to the handler Workflow, and it continues running indefinitely regardless of the caller's state."
+        },
+        {
+          "key": "D",
+          "text": "The caller Workflow sends a cancellation signal to the handler Workflow, but since signals are fire-and-forget, there is no guarantee the handler receives it before the caller closes."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The default `CancellationType` for Nexus Operations in .NET is `WaitCancellationCompleted`, meaning the caller waits for the operation to reach a terminal state (cancelled or otherwise) before it finishes its own cancellation. This is the safest default—it prevents orphaned handler Workflows from running unobserved. However, once the caller Workflow itself completes (including completing its cancellation), the Nexus Machinery stops making further cancellation attempts. Engineers who need different semantics (e.g., fire-and-forget cancellation) can set `TryCancel` or `Abandon` on `NexusWorkflowOperationOptions`. The handler Workflow is never automatically terminated by the server—it is a fully independent workflow unless explicitly cancelled.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_hard_003",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "You are reviewing a pull request where a developer deduplicates Nexus-started handler Workflows by generating a UUID at call time and using it as the Workflow ID. A senior engineer flags this as a correctness bug. What is the actual problem?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "UUIDs are not valid Workflow ID characters in Temporal, so the `StartWorkflowAsync` call will throw a validation error at the handler before the Workflow is created."
+        },
+        {
+          "key": "B",
+          "text": "UUID generation inside `FromHandleFactory` is not deterministic across Workflow replays, but since this is handler code (not workflow code), this only causes an issue when the handler worker restarts mid-operation."
+        },
+        {
+          "key": "C",
+          "text": "If the Nexus start request is retried (e.g., due to a transient network failure), a new UUID is generated each time, so multiple duplicate handler Workflows can be started instead of the intended single deduplicated execution."
+        },
+        {
+          "key": "D",
+          "text": "UUID-based IDs bypass the Nexus endpoint's conflict policy, causing all concurrent callers to share a single handler Workflow instance regardless of their input."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Nexus start request is retried by the caller's Nexus Machinery when transient failures occur. If the Workflow ID is generated fresh (e.g., a new UUID) on each handler invocation, each retry produces a different ID, creating duplicate handler Workflows instead of deduplicating them. The correct pattern is to use `context.HandlerContext.RequestId`, which is a stable ID allocated by Temporal for the operation and guaranteed to be the same across retries of the same operation. Alternatively, business-meaningful IDs passed in the operation input should be used. This is a subtle but production-critical correctness issue in Nexus handler design.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_hard_004",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "A .NET caller Workflow sets only a `StartToCloseTimeout` of 5 minutes on a Nexus Operation, without setting `ScheduleToCloseTimeout` or `ScheduleToStartTimeout`. The handler task queue is backlogged and the operation doesn't start for 8 minutes. What happens?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The operation fails immediately because no `ScheduleToCloseTimeout` is set, and Temporal requires at least one outer bound timeout on all Nexus Operations."
+        },
+        {
+          "key": "B",
+          "text": "The operation waits indefinitely for the handler to pick it up, then the 5-minute `StartToCloseTimeout` begins counting only once the operation is started; no timeout fires during the 8-minute queue wait."
+        },
+        {
+          "key": "C",
+          "text": "The `StartToCloseTimeout` begins counting from when the operation is scheduled (not started), so it expires after 5 minutes and the operation is cancelled before the handler picks it up."
+        },
+        {
+          "key": "D",
+          "text": "Without a `ScheduleToStartTimeout`, Temporal defaults to a 10-minute Schedule-to-Start window; since 8 minutes is within that window, the operation starts normally and then has 5 minutes to complete."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`Start-to-Close timeout` in Nexus only applies to asynchronous operations and begins counting after the operation has been started by the handler—not from when it was scheduled. Since no `ScheduleToStartTimeout` is set, there is no enforcement of how long the caller waits for the handler to pick up the operation, so the 8-minute queue backlog causes no timeout. Once the handler finally starts the operation, the 5-minute `StartToCloseTimeout` begins. Similarly, `ScheduleToCloseTimeout` would bound the total lifecycle. Engineers monitoring a Nexus operation stuck waiting for a backlogged task queue should add a `ScheduleToStartTimeout` to catch this scenario.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_hard_005",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "A polyglot team has a Go service producing Nexus Operations and a .NET service consuming them. The .NET SDK's default Data Converter is used on the handler side. During integration testing, the .NET handler occasionally fails to deserialize inputs sent by the Go caller. The Go caller is using Protobuf. What is the most likely root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The .NET SDK's default Data Converter applies encoding in the order: Null, Byte array, Protobuf JSON, then JSON. If the Go caller sends raw Protobuf binary (not Protobuf JSON), the .NET handler's converter will not match it and deserialization fails."
+        },
+        {
+          "key": "B",
+          "text": "Nexus does not support Protobuf payloads at all; all inputs and outputs must be plain JSON, and the Go service must re-encode its payloads before sending them through a Nexus endpoint."
+        },
+        {
+          "key": "C",
+          "text": "The Nexus endpoint strips payload metadata headers during cross-namespace routing, so the content-type hint is lost and the .NET converter falls back to raw byte deserialization, which fails for Protobuf."
+        },
+        {
+          "key": "D",
+          "text": "The .NET SDK requires a custom `PayloadCodec` to be registered on the worker before it can decode any cross-namespace payloads, regardless of encoding format."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The .NET SDK's default Data Converter processes encodings in order: Null → Byte array → Protobuf JSON → JSON. Critically, it supports Protobuf JSON (the JSON encoding of Protobuf messages), not raw Protobuf binary wire format. If the Go caller sends Protobuf binary, the .NET converter will not recognize it and deserialization fails. In a polyglot environment, the documentation explicitly recommends using Protobuf JSON or plain JSON for cross-SDK compatibility—both of which are in the default converter's supported chain. Teams must align on the encoding format in their Nexus Service contract definition to avoid these cross-language integration failures.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_hard_006",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "Your team wants to expose an existing Workflow that takes three separate parameters—`string userId`, `string region`, and `int priority`—as a Nexus Operation. A junior engineer says this is impossible because Nexus Operations only support a single input parameter. How should you actually solve this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Wrap all three parameters into a single input record type in the Nexus Service contract, then inside `WorkflowRunOperationHandler.FromHandleFactory`, unpack the record and pass the individual values as separate arguments to `StartWorkflowAsync`."
+        },
+        {
+          "key": "B",
+          "text": "Use Nexus Operation headers to pass `region` and `priority` as metadata, keeping `userId` as the single typed input parameter, since headers are the designated mechanism for auxiliary operation parameters."
+        },
+        {
+          "key": "C",
+          "text": "Change the underlying Workflow signature to accept a single wrapper object; Nexus cannot expand parameters and the Workflow definition must be refactored to match the single-input constraint."
+        },
+        {
+          "key": "D",
+          "text": "Register three separate single-argument Nexus Operations (one per parameter) and have the caller chain them sequentially; this is the idiomatic Temporal pattern for multi-argument Workflows exposed via Nexus."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Nexus Operations accept only a single input parameter, but this does not mean the underlying Workflow must have a single parameter. The correct pattern is to define a composite input record in the Nexus Service contract that bundles all required fields. Inside `WorkflowRunOperationHandler.FromHandleFactory`, the handler unpacks the record and calls `StartWorkflowAsync` with the individual arguments mapped to the Workflow's actual parameters (e.g., `wf.RunAsync(input.UserId, input.Region, input.Priority)`). This is explicitly shown in the multi-arg sample. The Workflow signature does not need to change, headers are not the right mechanism for typed input data, and chaining multiple operations would be incorrect and inefficient.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_hard_007",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "An engineer registers a Nexus Service handler Worker connected to `nexus-simple-handler-namespace` but accidentally points it at a task queue named `nexus-simple-caller-sample` instead of `nexus-simple-handler-sample`. The Nexus endpoint was created with `--target-task-queue nexus-simple-handler-sample`. A caller Workflow executes a Nexus Operation. What observable symptom will appear in production?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Nexus endpoint creation command will fail at the CLI level because Temporal validates that a worker is polling the specified task queue before the endpoint can be created."
+        },
+        {
+          "key": "B",
+          "text": "The caller Workflow will immediately receive a `NexusOperationFailure` with a `NOT_FOUND` error because the endpoint target task queue is validated against registered workers at operation dispatch time."
+        },
+        {
+          "key": "C",
+          "text": "The Nexus Operation will be dispatched to `nexus-simple-handler-sample` but queue indefinitely with no worker polling it; the caller will see the operation stuck pending until a `ScheduleToCloseTimeout` fires or a correctly configured worker comes online."
+        },
+        {
+          "key": "D",
+          "text": "The caller worker will automatically reroute the operation to the task queue it is polling, since both workers share the same namespace and Temporal performs dynamic task queue discovery."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal does not validate at endpoint creation time or operation dispatch time whether a worker is actively polling the target task queue. The Nexus endpoint simply routes requests to `nexus-simple-handler-sample`. Since the handler worker is polling `nexus-simple-caller-sample` instead, no worker ever picks up the Nexus task from `nexus-simple-handler-sample`. The operation sits in pending state indefinitely. In production, this shows up as a Nexus Operation stuck in a `Started` or `Scheduled` state in the caller Workflow's event history, with no progress. It will only fail once a `ScheduleToCloseTimeout` is exceeded, or if a corrected worker is deployed. Dynamic task queue rerouting does not exist in Temporal.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_hard_008",
+      "category": "Features_Nexus",
+      "difficulty": "hard",
+      "question": "A team runs both a Nexus handler Worker and a Nexus caller Worker in the same process for simplicity during early development. The handler Worker connects to `nexus-simple-handler-namespace` and the caller Worker connects to `nexus-simple-caller-namespace`. In Temporal Cloud production, they discover cross-namespace Nexus calls fail with authorization errors, even though both namespaces exist. What operational step are they most likely missing?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "In Temporal Cloud, the Nexus endpoint must be re-created using the Cloud UI or `tcld` CLI rather than the `temporal` CLI, because `temporal operator nexus endpoint create` targets self-hosted clusters only."
+        },
+        {
+          "key": "B",
+          "text": "In Temporal Cloud, cross-namespace Nexus calls require the caller namespace to be explicitly allowlisted on the Nexus endpoint as an allowed caller, which is a Temporal Cloud-specific endpoint configuration step not required on the development server."
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud requires mTLS certificates to be rotated monthly; the authorization error indicates the worker certificates have expired and must be renewed before any cross-namespace calls can succeed."
+        },
+        {
+          "key": "D",
+          "text": "Running handler and caller workers in the same process is not supported in Temporal Cloud; they must be deployed as separate services with distinct API keys before cross-namespace Nexus calls are permitted."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud has additional security controls for Nexus endpoints compared to the local development server. In Temporal Cloud, a Nexus endpoint must be configured with an explicit list of allowed caller namespaces—this is not required on the `temporal server start-dev` development server, which is why the issue doesn't appear locally. Without allowlisting the caller namespace on the endpoint, cross-namespace Nexus calls will fail with authorization errors even if both namespaces exist and workers are running. This is a common gotcha when graduating from local dev to Temporal Cloud. The process topology (same vs. different process) has no bearing on this, and certificate expiry would produce a different error type.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_nightmare_001",
+      "category": "Features_Nexus",
+      "difficulty": "nightmare",
+      "question": "A .NET team deploys a Nexus handler Worker in `handler-ns` and a caller Workflow in `caller-ns`. The caller Workflow executes an asynchronous `SayHello` Nexus Operation backed by `HelloHandlerWorkflow`, using `WorkflowRunOperationHandler.FromHandleFactory` with `new() { Id = context.HandlerContext.RequestId }`. During a network partition, the caller's Nexus Machinery retries the start request three times. Which of the following correctly describes what happens to the handler-side Workflow execution, and why?\n\n```csharp\nWorkflowRunOperationHandler.FromHandleFactory(\n    (WorkflowRunOperationContext context, IHelloService.HelloInput input) =\u003e\n        context.StartWorkflowAsync(\n            (HelloHandlerWorkflow wf) =\u003e wf.RunAsync(input),\n            new() { Id = context.HandlerContext.RequestId }));\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Three separate `HelloHandlerWorkflow` instances are created because each retry carries a new client-generated request ID, so the deduplication key changes on every retry and Temporal cannot coalesce them."
+        },
+        {
+          "key": "B",
+          "text": "Exactly one `HelloHandlerWorkflow` instance runs. The `RequestId` is allocated by Temporal when the caller Workflow schedules the operation and is stable across retries, so repeated `StartWorkflow` calls with the same Workflow ID are idempotent and attach to the already-started Workflow."
+        },
+        {
+          "key": "C",
+          "text": "The Nexus Machinery suppresses all retries during a network partition and surfaces a non-retryable error to the caller Workflow, so no handler Workflow is ever started until the partition resolves and the caller explicitly re-schedules the operation."
+        },
+        {
+          "key": "D",
+          "text": "Two `HelloHandlerWorkflow` instances may run: the first from the original request and a second from the first retry, because the circuit breaker interrupts deduplication after one consecutive failure and opens a new execution slot."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal allocates the `RequestId` (also called the operation token seed) when the caller Workflow first schedules the Nexus Operation — not on each retry. This ID is therefore identical on every retry attempt made by the Nexus Machinery. Using `context.HandlerContext.RequestId` as the handler Workflow ID means every `StartWorkflow` call uses the same Workflow ID. Temporal's Workflow start semantics are idempotent for the same Workflow ID: if a Workflow with that ID is already running (or completed), subsequent start calls are ignored and the existing execution is reused. This is the exact deduplication guarantee that makes `WorkflowRunOperationHandler.FromHandleFactory` safe to use with retries. The circuit breaker (trips after 5 consecutive retryable errors) is a different mechanism that blocks *new* operation dispatches from a caller to an endpoint — it does not affect deduplication of an already-in-flight operation. The key architectural insight is that Nexus separates the concern of 'who assigned the ID' (Temporal, at schedule time) from 'who retries the start' (Nexus Machinery, after failures), so the handler side is always idempotent without any extra developer effort.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_nightmare_002",
+      "category": "Features_Nexus",
+      "difficulty": "nightmare",
+      "question": "A platform team configures a Nexus Endpoint pointing at `handler-namespace` / task queue `handler-tq`. They then deploy a handler Worker registered like this:\n\n```csharp\nnew TemporalWorkerOptions(taskQueue: \"handler-tq\")\n    .AddNexusService(new HelloService())\n    .AddWorkflow\u003cHelloHandlerWorkflow\u003e()\n```\n\nA synchronous `Echo` operation handler calls only `OperationHandler.Sync` and returns immediately. A caller Workflow invokes `Echo` and also invokes the async `SayHello` operation, which internally calls `context.StartWorkflowAsync`. The team notices that the circuit breaker trips. Which failure pattern most plausibly causes this, and why does the circuit breaker's scope matter?\n\n```csharp\n[NexusOperationHandler]\npublic IOperationHandler\u003cEchoInput, EchoOutput\u003e Echo() =\u003e\n    OperationHandler.Sync\u003cEchoInput, EchoOutput\u003e(\n        (ctx, input) =\u003e { throw new Exception(\"storage unavailable\"); });\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Only `SayHello` failures can trip the circuit breaker because synchronous handlers bypass the breaker; `Echo` failures are surfaced directly as application errors to the caller without counting toward the threshold."
+        },
+        {
+          "key": "B",
+          "text": "The circuit breaker trips per Workflow execution, so five failures in `Echo` within one caller Workflow trip the breaker only for that Workflow's future calls, leaving other callers unaffected."
+        },
+        {
+          "key": "C",
+          "text": "Five consecutive retryable errors from the `Echo` handler — such as the thrown `Exception` — trip the circuit breaker for the entire Endpoint, blocking all operations from any caller to that Endpoint until it resets, not just the failing operation type."
+        },
+        {
+          "key": "D",
+          "text": "The circuit breaker only engages when the underlying handler Workflow crashes, so a synchronous handler that throws a C# exception will never count toward the breaker threshold regardless of how many times it fails."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Nexus circuit breaker operates at the Endpoint level, not per-operation-type, per-caller-Workflow, or per-execution. After 5 consecutive retryable errors from any handler registered at that Endpoint, the breaker trips and blocks all future Nexus requests from callers to that Endpoint until the breaker resets. This means a buggy synchronous `Echo` handler that throws a retryable exception will prevent `SayHello` operations — and all other operations on the same Endpoint — from being dispatched, even though those operations are healthy. The design rationale is that the circuit breaker protects the handler Worker from being overwhelmed by a flood of retries when it is clearly in a degraded state, without requiring the breaker to track state per operation. This has a critical operational implication: if one operation handler is unreliable (e.g., it calls a flaky downstream service), it can take down Nexus availability for all operations at that Endpoint. Teams should ensure handler reliability and consider separating high-risk operations onto distinct Endpoints. The documentation explicitly states 'handlers should be reliable since the circuit breaker trips after 5 consecutive retryable errors, blocking all Operations from the caller to that Endpoint.'",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_nightmare_003",
+      "category": "Features_Nexus",
+      "difficulty": "nightmare",
+      "question": "A caller Workflow sets `CancellationType = TryCancel` on a Nexus Operation call to an asynchronous `SayHello` operation. The caller Workflow is then terminated by an operator using `temporal workflow terminate` immediately after the cancellation token is signaled but before the cancellation request is acknowledged by the handler namespace. Which of the following accurately describes the resulting state?\n\n```csharp\nvar output = await Workflow.CreateNexusWorkflowClient\u003cIHelloService\u003e(IHelloService.EndpointName)\n    .ExecuteNexusOperationAsync(svc =\u003e svc.SayHello(new(name, language)),\n        new NexusWorkflowOperationOptions\n        {\n            CancellationType = NexusOperationCancellationType.TryCancel\n        });\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The handler Workflow is guaranteed to be cancelled because Temporal's Nexus Machinery persists the cancellation intent in the caller's event history before the caller terminates, and the server delivers the cancel on the caller's behalf."
+        },
+        {
+          "key": "B",
+          "text": "The handler Workflow continues running undisturbed. `TryCancel` initiates a best-effort cancellation request and immediately reports cancellation to the caller, but does not guarantee delivery if the caller exits before the request reaches the handler namespace."
+        },
+        {
+          "key": "C",
+          "text": "The Nexus Machinery automatically upgrades the cancellation type to `WaitCancellationCompleted` when it detects caller termination, ensuring the handler Workflow is cancelled before the caller's history is closed."
+        },
+        {
+          "key": "D",
+          "text": "The operation enters a `CancellationPending` limbo state visible in the handler namespace's visibility store; the handler Workflow is paused but not terminated, and resumes automatically if a new caller Workflow with the same run ID attaches."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The `TryCancel` cancellation type is explicitly defined as: initiate a cancellation request and immediately report cancellation to the caller, without guaranteeing that the cancellation is delivered to the handler if the caller exits before delivery completes. This is a deliberate trade-off: `TryCancel` is a fire-and-forget signal that allows the caller to move on quickly (e.g., for timeout-driven cleanup), but it accepts the risk of the cancellation being lost. When the caller Workflow is terminated externally before the cancel request is acknowledged, the Nexus Machinery on the caller side stops operating — it will not make further attempts to deliver cancellation. The handler-side `HelloHandlerWorkflow` will continue running indefinitely unless it has its own timeout or the handler Worker processes the cancellation independently. This contrasts with `WaitCancellationRequested` (waits for acknowledgment) and `WaitCancellationCompleted` (the default — waits for the operation to reach a terminal cancelled state). The practical lesson: use `TryCancel` only when losing the cancellation signal is acceptable; if you need delivery guarantees, use the default `WaitCancellationCompleted` and wait for pending operations to finish before exiting the Workflow. Also note: once a caller Workflow completes (including via termination), Nexus Machinery makes no further cancellation attempts for in-flight operations.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_nexus_nightmare_004",
+      "category": "Features_Nexus",
+      "difficulty": "nightmare",
+      "question": "An operator creates a Nexus Endpoint as follows:\n\n```bash\ntemporal operator nexus endpoint create \\\n  --name nexus-simple-endpoint \\\n  --target-namespace nexus-simple-handler-namespace \\\n  --target-task-queue nexus-simple-handler-sample\n```\n\nThe handler Worker is registered on `nexus-simple-handler-namespace` / `nexus-simple-handler-sample` with both `AddNexusService(new HelloService())` and `AddWorkflow\u003cHelloHandlerWorkflow\u003e()`. A caller Worker is registered on `nexus-simple-caller-namespace` / `nexus-simple-caller-sample`. An engineer asks: 'What prevents the caller Workflow from directly starting `HelloHandlerWorkflow` in the handler namespace without going through the Nexus Endpoint?' Which answer correctly explains the architectural enforcement and its operational benefit?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Nothing technically prevents it — a caller can always start a Workflow in any namespace if it has the namespace name and task queue. The Nexus Endpoint is purely a logical convenience layer with no enforcement, and its only benefit is a stable named address that abstracts the underlying task queue."
+        },
+        {
+          "key": "B",
+          "text": "The caller namespace's SDK client is scoped to `nexus-simple-caller-namespace`; to start a Workflow directly in the handler namespace, the caller would need a separate client connected to `nexus-simple-handler-namespace`. The Nexus Endpoint enforces the cross-namespace boundary by routing through the server, providing a single access point with circuit breaking, timeout enforcement, and operation-level observability without exposing handler implementation details to the caller."
+        },
+        {
+          "key": "C",
+          "text": "Temporal's server enforces that Workflows registered on a Nexus task queue can only be started via a Nexus Endpoint; direct `StartWorkflow` calls to those task queues are rejected with a `PermissionDenied` error at the server level regardless of which client is used."
+        },
+        {
+          "key": "D",
+          "text": "Cross-namespace Workflow starts are blocked by default in Temporal Cloud through namespace isolation policies, and the Nexus Endpoint is the only approved mechanism for cross-namespace communication in both Cloud and self-hosted deployments because it is the only path that passes RBAC checks."
+        }
+      ],
+      "answer": "B",
+      "explanation": "There is no server-level enforcement that prevents a caller from using a separately-scoped client to directly start `HelloHandlerWorkflow` in the handler namespace — technically, if an engineer creates a `TemporalClient` connected to `nexus-simple-handler-namespace`, they can call `StartWorkflowAsync` directly. The actual enforcement is *client-scope*: the caller Worker's client is initialized against `nexus-simple-caller-namespace`, so it cannot directly address workflows in `nexus-simple-handler-namespace` without creating a separate client. The Nexus Endpoint is an architectural contract, not a server ACL. Its real benefits are: (1) the Endpoint acts as a stable, versioned service boundary — handler teams can change the underlying Workflow ID scheme, task queue name, or even switch to a different implementation without breaking callers; (2) the Nexus Machinery provides circuit breaking, retry logic, and timeout enforcement at the operation boundary; (3) the operation token allows the server to track cross-namespace operation state; (4) in Temporal Cloud, Nexus Endpoints integrate with IAM/RBAC to control which caller namespaces can invoke which handler namespaces. The deeper principle: Nexus is a service contract layer, not just a routing rule. It decouples the caller's view of 'what operation I'm calling' from the handler's implementation of 'how that operation runs', which is essential for team-level autonomy and safe evolution of cross-namespace dependencies.",
+      "source_doc": "develop_dotnet_nexus_feature-guide.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    }
+  ]
+}

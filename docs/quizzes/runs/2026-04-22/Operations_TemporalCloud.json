@@ -1,0 +1,313 @@
+{
+  "category": "Operations_TemporalCloud",
+  "questions": [
+    {
+      "id": "operations_temporalcloud_easy_001",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "easy",
+      "question": "When exporting Workflow History to AWS S3 from Temporal Cloud, where must the S3 bucket be located relative to your Namespace?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "In any AWS region, since Temporal Cloud handles cross-region routing automatically"
+        },
+        {
+          "key": "B",
+          "text": "In the same region as your Namespace, which is a required prerequisite for export to work"
+        },
+        {
+          "key": "C",
+          "text": "In the us-east-1 region, which is the only region Temporal Cloud currently supports for export"
+        },
+        {
+          "key": "D",
+          "text": "In a region chosen by the IAM role, regardless of where the Namespace is hosted"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The S3 bucket must reside in the same AWS region as your Namespace — this is a required prerequisite for configuring a Workflow History Export Sink. Mismatched regions would cause the export to fail. This constraint ensures low-latency, compliant data transfer between Temporal Cloud and your storage destination.",
+      "source_doc": "cloud_aws-export-s3.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "operations_temporalcloud_easy_002",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "easy",
+      "question": "When you look at a Workflow's event history in Temporal Cloud, what does the 'Billable Actions' column help you do?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Replay the Workflow step by step so you can debug exactly where an error occurred"
+        },
+        {
+          "key": "B",
+          "text": "See which Worker processed each event and how long it took to complete"
+        },
+        {
+          "key": "C",
+          "text": "Estimate the cost of a Workflow and understand which events are driving your usage charges"
+        },
+        {
+          "key": "D",
+          "text": "Compare the Workflow's performance against other Workflows in the same Namespace"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Each event in a Workflow's history that represents a Billable Action is annotated with the number of Actions it consumed. This lets you project costs (e.g., 20 Actions × 100 runs/day × 30 days = 60,000 Actions/month) and identify which parts of your Workflow are the biggest cost drivers. It's a practical tool for both budgeting and optimization.",
+      "source_doc": "cloud_billing-and-usage_actions-usage.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "operations_temporalcloud_easy_003",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "easy",
+      "question": "Why does the Temporal Cloud Billing API generate reports asynchronously rather than returning data immediately?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Asynchronous generation allows the API to queue large or overlapping report requests and process them without blocking the caller while the data is compiled"
+        },
+        {
+          "key": "B",
+          "text": "Billing data is encrypted and must be decrypted by a separate service before it can be returned to the caller"
+        },
+        {
+          "key": "C",
+          "text": "The API requires manual approval from a Temporal Cloud administrator before any report can be released to the requester"
+        },
+        {
+          "key": "D",
+          "text": "Reports are sent directly to the user's email rather than returned via API, so there is no synchronous response to provide"
+        }
+      ],
+      "answer": "A",
+      "explanation": "Generating a billing report can take variable amounts of time depending on the date range requested and overall platform load. By making it asynchronous, the API accepts your request immediately, queues it if needed (only one report per account runs at a time), and lets you poll for completion using the returned report ID. This pattern — initiate, then poll — is common in Temporal Cloud's Operations API for long-running tasks.",
+      "source_doc": "cloud_billing-and-usage_billing-api.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "operations_temporalcloud_med_001",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "med",
+      "question": "When configuring Workflow History Export to AWS S3 via the Temporal Cloud UI, why does Temporal Cloud provision multiple internal IAM roles rather than a single IAM role for the export operation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To comply with AWS requirements that mandate at least two IAM roles per CloudFormation stack when writing to S3 from external accounts."
+        },
+        {
+          "key": "B",
+          "text": "To enable parallel multi-region writes so that exported workflow histories are simultaneously replicated across availability zones."
+        },
+        {
+          "key": "C",
+          "text": "To provide security isolation, load distribution, warm standby against throttling, and resilience against cloud provider account-level issues affecting a single role."
+        },
+        {
+          "key": "D",
+          "text": "To allow different Temporal Cloud namespaces within the same account to each own a dedicated IAM role, preventing cross-namespace export conflicts."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal Cloud intentionally creates multiple intermediary IAM roles and randomly selects among them for each export write. This provides four concrete benefits: (1) security isolation — a compromised role can be decommissioned without stopping exports; (2) load distribution across roles; (3) warm standby to avoid throttling when switching roles; and (4) resilience against account-level AWS issues. Option A is incorrect — AWS has no such CloudFormation requirement. Option B is incorrect — the multiple roles are not for parallel multi-region writes; the S3 bucket must actually reside in the same region as the namespace. Option D is incorrect — the multiple roles are internal to Temporal Cloud's infrastructure, not per-namespace allocations controlled by the customer.",
+      "source_doc": "cloud_aws-export-s3.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "operations_temporalcloud_med_002",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "med",
+      "question": "A developer inspects a closed Workflow's event history in the Temporal Cloud UI and notices that the Billable Action count shown is lower than what actually appears on their invoice. Which of the following is the MOST likely explanation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The UI only counts actions from the first 100 events in a workflow history, truncating the displayed estimate for long-running workflows."
+        },
+        {
+          "key": "B",
+          "text": "Certain billable concepts — such as Queries, Activity Heartbeats, Schedule actions, and Export — are not captured in the per-event history estimate shown in the UI."
+        },
+        {
+          "key": "C",
+          "text": "Billable Actions are only visible to Account Owners; developers see a redacted view that hides a portion of the action count for privacy reasons."
+        },
+        {
+          "key": "D",
+          "text": "The invoice includes a fixed platform fee per workflow execution that is separate from actions and is never reflected in the event history UI."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Billable Action estimate shown inside Workflow event history is explicitly documented as experimental and only covers actions that exist within the workflow event history itself. Several billable concepts fall outside this scope: Queries, Activity Heartbeats, Rejected Update Workflow Executions, Export, Schedule, and replicated actions from namespace replication. This means the in-UI estimate can be lower than the actual invoice amount. Option A is incorrect — there is no 100-event truncation rule. Option C is incorrect — visibility into Billable Actions is not redacted from developers; the usage dashboard is restricted by role, but the per-workflow estimate is visible to anyone viewing that workflow. Option D is incorrect — there is no documented fixed per-execution platform fee separate from actions.",
+      "source_doc": "cloud_billing-and-usage_actions-usage.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "operations_temporalcloud_med_003",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "med",
+      "question": "You are building an automated FinOps pipeline that needs hourly Namespace-level cost data for the current and previous billing months from Temporal Cloud. Which API behavior must your code account for?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Reports are generated synchronously, so a single POST returns the CSV payload directly in the response body with no need to poll for status."
+        },
+        {
+          "key": "B",
+          "text": "Only one billing report per account is generated at a time; additional requests are queued, and you should poll GetBillingReport with exponential backoff and download the CSV before its URL expires."
+        },
+        {
+          "key": "C",
+          "text": "The API enforces a strict two-report-per-day limit per namespace, so your pipeline must batch all namespaces into a single report request to avoid throttling."
+        },
+        {
+          "key": "D",
+          "text": "Billing reports are streamed via a long-lived WebSocket connection; your client must keep the connection open until the full CSV is received or the stream times out."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal Cloud Billing API is explicitly asynchronous: you call CreateBillingReport to initiate generation, then poll GetBillingReport until the state becomes BILLING_REPORT_STATE_GENERATED, and finally download the CSV before the URL expires. The docs also note that only one report per account is generated at a time and additional requests are queued — so a robust pipeline needs to handle queuing and use an idempotency key (async_operation_id) when retrying. Option A is wrong — the API is async, not synchronous. Option C is wrong — the documented constraint is one concurrent report per account, not a two-per-day namespace limit. Option D is wrong — there is no WebSocket streaming mechanism; reports are delivered as downloadable CSV files.",
+      "source_doc": "cloud_billing-and-usage_billing-api.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "operations_temporalcloud_med_004",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "med",
+      "question": "An Account Owner on a standard Temporal Cloud agreement wants to downgrade their plan mid-month. What billing behavior should they expect according to Temporal Cloud's plan management rules?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The downgrade takes effect at the start of the next billing period, and the current month's billing and entitlements remain unchanged until then."
+        },
+        {
+          "key": "B",
+          "text": "The downgrade request is queued and requires approval from the Temporal sales team before it can be applied to the account."
+        },
+        {
+          "key": "C",
+          "text": "The downgrade is processed immediately, but billing and entitlements are backdated to the beginning of the current billing period, and no further downgrade is allowed until the next period after an upgrade."
+        },
+        {
+          "key": "D",
+          "text": "The downgrade is processed immediately and prorated from the request date, reducing entitlements proportionally for the remainder of the billing month."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal Cloud's documentation states that downgrade requests are processed immediately, and billing and entitlements are backdated to the beginning of the billing period — meaning the customer is effectively billed at the lower plan rate for the entire month. This is distinct from upgrades, which are prorated from the upgrade date and grant the full upgraded entitlements for that month. The docs also specify that after an upgrade, a downgrade cannot be processed until the following billing period. Option A is wrong — downgrades are immediate, not deferred to next month. Option B is wrong — no sales team approval is required for self-service standard agreement customers. Option D is wrong — downgrades are backdated to the start of the period, not prorated from the request date.",
+      "source_doc": "cloud_billing-and-usage_billing.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "operations_temporalcloud_hard_001",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "hard",
+      "question": "Your team exports closed Workflow histories to S3 from Temporal Cloud. After a routine AWS security audit, your IAM team rotates one of the IAM roles that Temporal Cloud was using for export writes. Within minutes, exports resume without any intervention. Your colleague argues the exports should have failed permanently until the role was re-registered. Who is correct, and why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Your colleague is correct. Temporal Cloud binds to a single IAM role per export sink, so rotating that role breaks the sink until the ARN is updated in the Namespace export configuration."
+        },
+        {
+          "key": "B",
+          "text": "Your colleague is correct. The CloudFormation stack caches IAM credentials, so a role rotation invalidates the stack and requires re-deployment before exports can continue."
+        },
+        {
+          "key": "C",
+          "text": "You are correct. Temporal Cloud provisions multiple internal intermediary IAM roles for each export sink and randomly selects from them per write, so retiring one role does not halt exports as long as other roles remain valid."
+        },
+        {
+          "key": "D",
+          "text": "You are correct, but only because S3 bucket policies allow writes regardless of the IAM role used, making the specific role irrelevant to export availability."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal Cloud intentionally provisions multiple internal intermediary IAM roles per export sink and randomly selects from them when writing to S3. This design provides security isolation (compromising one role does not compromise the system), load distribution, warm standby to avoid throttling during role switches, and resilience against account-level issues. Because the system already has other valid roles available, rotating or decommissioning a single role does not interrupt exports. The bucket policy alone does not provide this guarantee — the trust relationship must exist between the Temporal Cloud intermediary roles and the customer's IAM role.",
+      "source_doc": "cloud_aws-export-s3.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "operations_temporalcloud_hard_002",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "hard",
+      "question": "A FinOps engineer pulls Workflow cost data from the Temporal Cloud UI's Billable Actions column for a heavily-used Namespace. They notice the per-Workflow Action counts look lower than expected, and the finance team's monthly invoice is noticeably higher than the sum of per-Workflow estimates. Which combination of billable concepts most likely explains the gap?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Child Workflow executions and Workflow Task completions are excluded from the in-history estimate but are counted on the invoice, inflating the billed total above what the UI shows."
+        },
+        {
+          "key": "B",
+          "text": "The in-history Billable Action estimate omits Actions from Queries, Activity Heartbeats, Export, Schedules, Rejected Update executions, and Namespace replication — all of which are billed but not reflected in per-Workflow event history totals."
+        },
+        {
+          "key": "C",
+          "text": "Signal deliveries and Timer fires are stripped from the event history view for security reasons, so the Billable Action estimate systematically undercounts those event types."
+        },
+        {
+          "key": "D",
+          "text": "The UI only shows Actions for the most recent 30 days, so long-running Workflows accumulate billed Actions outside that window that never appear in the estimate."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Billable Action estimate in the Workflow event history view is an experimental feature that only accounts for Actions within event history. It explicitly excludes Queries, Activity Heartbeats, Rejected Update Workflow Executions, Export, Schedules, and Actions replicated via Namespace replication. Each of these can generate substantial billing in a production system — for example, a high-throughput Namespace with frequent Activity Heartbeats or cross-region replication will see material charges that are entirely absent from the per-Workflow UI estimate. Engineers should treat the in-history estimate as a lower bound and use the Billing API or Usage dashboard for accurate cost attribution.",
+      "source_doc": "cloud_billing-and-usage_actions-usage.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "operations_temporalcloud_hard_003",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "hard",
+      "question": "Your platform team is building an automated FinOps pipeline that generates Temporal Cloud billing reports via the Billing API for the current month and the previous month. The pipeline sends a CreateBillingReport request every hour to keep reports fresh, and sometimes submits duplicate requests during retry storms. After a week, the team notices reports are delayed and sometimes queued for long periods. What operational mistake is causing this, and what should they fix?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The pipeline is requesting hourly granularity, which is not supported for the current billing month. Switching to daily granularity would eliminate the queue buildup."
+        },
+        {
+          "key": "B",
+          "text": "The pipeline is not downloading reports before URL expiry, which causes the API to re-queue the same generation job and exhaust concurrency slots."
+        },
+        {
+          "key": "C",
+          "text": "Only one billing report per account is generated at a time; additional requests are accepted but queued. Generating overlapping large-range reports hourly and not using idempotency keys during retries causes requests to pile up in the queue rather than deduplicating."
+        },
+        {
+          "key": "D",
+          "text": "Billing reports for the current month are not available until the billing period closes, so all current-month requests fail silently and retry indefinitely, filling the queue."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Billing API enforces per-account concurrency: only one billing report is generated at a time, and additional requests are queued. The best practices section explicitly warns against frequent generation of large overlapping ranges in the current billing period. Additionally, the API supports idempotency via the async_operation_id field — retrying without this key creates new queued entries rather than deduplicating with in-flight requests. The correct approach is to generate reports less frequently, use exponential backoff when polling GetBillingReport, supply an idempotency key on retries, and download the CSV immediately after the report reaches BILLING_REPORT_STATE_GENERATED before the URL expires. The current billing month is supported; it just reflects data up to current_time minus 24 hours.",
+      "source_doc": "cloud_billing-and-usage_billing-api.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    },
+    {
+      "id": "operations_temporalcloud_hard_004",
+      "category": "Operations_TemporalCloud",
+      "difficulty": "hard",
+      "question": "An Account Owner requests an immediate plan upgrade from Standard to a higher tier mid-month. Later that same billing period, they decide the higher tier is unnecessary and request a downgrade. The finance team expects the downgrade to take effect immediately and credits to be applied only going forward. What will actually happen to billing and entitlements for that billing period?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The downgrade is queued and takes effect at the start of the next billing period; the current month is billed entirely at the upgraded plan rate with no proration."
+        },
+        {
+          "key": "B",
+          "text": "The downgrade is rejected because a downgrade cannot be processed in the same billing period as an upgrade; the team must wait until the next billing cycle to submit the downgrade request."
+        },
+        {
+          "key": "C",
+          "text": "The downgrade is processed immediately and billing is prorated from the downgrade request date, with the remainder of the month billed at the lower tier rate."
+        },
+        {
+          "key": "D",
+          "text": "The downgrade is processed immediately and billing is backdated to the beginning of the billing period at the lower tier rate, retroactively reducing that month's charges."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud's plan change rules explicitly state that after an upgrade, a downgrade cannot be processed until the following billing period. This means the Account Owner cannot downgrade in the same billing period they upgraded. Upgrades are processed immediately and billed on a pro-rated basis, and the full month's entitlements (included Actions and Storage) reflect the upgraded plan immediately. Downgrades, when eventually processed in a future billing period, are also immediate but have their billing and entitlements backdated to the beginning of that future billing period. Understanding this asymmetry is important for cost planning: teams should avoid impulsive upgrades mid-month if they anticipate reverting quickly, as they will be locked into the higher tier for the remainder of the billing period.",
+      "source_doc": "cloud_billing-and-usage_billing.html",
+      "generated_at": "2026-04-22T17:00:56Z"
+    }
+  ]
+}

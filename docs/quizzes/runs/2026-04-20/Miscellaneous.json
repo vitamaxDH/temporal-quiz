@@ -1,0 +1,369 @@
+{
+  "category": "Miscellaneous",
+  "questions": [
+    {
+      "id": "miscellaneous_easy_001",
+      "category": "Miscellaneous",
+      "difficulty": "easy",
+      "question": "Which of the following languages does Temporal NOT currently offer an official SDK for?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Ruby"
+        },
+        {
+          "key": "B",
+          "text": "Swift"
+        },
+        {
+          "key": "C",
+          "text": "Python"
+        },
+        {
+          "key": "D",
+          "text": "TypeScript"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal provides official SDKs for .NET, Go, Java, PHP, Python, Ruby, and TypeScript — but Swift is not on that list. SDKs matter because they give developers language-native tools to define Workflows and Activities, letting teams use Temporal's durable execution model without leaving their preferred language ecosystem.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_easy_002",
+      "category": "Miscellaneous",
+      "difficulty": "easy",
+      "question": "Why does Temporal offer SDKs in multiple programming languages instead of a single universal SDK?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Different languages compile to different binary formats that the Temporal server requires for task routing."
+        },
+        {
+          "key": "B",
+          "text": "Each SDK enforces its own retry policy, so teams must pick the SDK whose defaults match their SLA requirements."
+        },
+        {
+          "key": "C",
+          "text": "Teams can write Workflows and Activities in the language they already use, reducing the learning curve and fitting into existing codebases."
+        },
+        {
+          "key": "D",
+          "text": "The Temporal server is written in a different language for each cloud region, so the SDK must match the region's language."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal's multi-language SDK strategy is about developer experience and adoption: you shouldn't have to rewrite your whole stack just to get durable execution and automatic retries. By supporting Go, Java, Python, TypeScript, PHP, Ruby, and .NET, Temporal meets teams where they are, making it straightforward to add resilience to existing services.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_easy_003",
+      "category": "Miscellaneous",
+      "difficulty": "easy",
+      "question": "A developer who builds web backends in TypeScript wants to start using Temporal. Which SDK should they reach for first?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Go SDK, because it is the most mature and widely used in production environments."
+        },
+        {
+          "key": "B",
+          "text": "The Java SDK, because Temporal's core server is JVM-based and Java SDKs always have first-class support."
+        },
+        {
+          "key": "C",
+          "text": "The Python SDK, because scripting languages are recommended for beginners learning Temporal concepts."
+        },
+        {
+          "key": "D",
+          "text": "The TypeScript SDK, because it lets them define Workflows and Activities in the same language they already know."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Temporal offers a dedicated TypeScript SDK precisely so JavaScript/TypeScript developers can build durable Workflows without switching languages. Starting with a familiar language lets newcomers focus on understanding Temporal's core concepts — like how workflow state survives process restarts — rather than fighting an unfamiliar language at the same time.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_med_001",
+      "category": "Miscellaneous",
+      "difficulty": "med",
+      "question": "A Temporal workflow accumulates state over millions of iterations and begins hitting history size limits. Which approach is most appropriate to address this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Increase the default event history limit in the Temporal server configuration to allow more events per workflow execution."
+        },
+        {
+          "key": "B",
+          "text": "Use Continue-As-New to complete the current workflow execution and start a fresh one, carrying over only the necessary state as input arguments."
+        },
+        {
+          "key": "C",
+          "text": "Spawn a child workflow for each iteration so that history is distributed across multiple workflow executions automatically."
+        },
+        {
+          "key": "D",
+          "text": "Compress the workflow state by storing it in an Activity and retrieving it via a Query, reducing the number of recorded history events."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Continue-As-New is the idiomatic Temporal solution for long-running workflows that would otherwise exceed the 50,000-event history limit. It atomically completes the current execution and schedules a new one with a clean history, passing forward only the state you need. Option A is incorrect because the server limit exists for operational reasons and is not meant to be increased as a workaround. Option C might help in some designs, but spawning a child per iteration is not a general pattern for history management and adds coordination overhead. Option D misunderstands how Queries work — Queries are read-only and do not reduce events written to history; they cannot be used to compress state.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_med_002",
+      "category": "Miscellaneous",
+      "difficulty": "med",
+      "question": "In a Python Temporal workflow, you want external systems to push real-time updates that the workflow can act on, and you also need callers to be able to read the current accumulated result synchronously. Which combination of Temporal primitives maps to these two requirements?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Use a Signal to receive incoming updates so the workflow can mutate state, and a Query to let callers read the current state without blocking the workflow."
+        },
+        {
+          "key": "B",
+          "text": "Use an Update for incoming data so callers get a validated acknowledgement, and a Signal for read-only inspection of workflow state."
+        },
+        {
+          "key": "C",
+          "text": "Use two Signals — one to push data and one to request the state — so that both operations go through the same durable messaging channel."
+        },
+        {
+          "key": "D",
+          "text": "Use a Query for both operations, since Queries can carry payload that modifies workflow state when the workflow is replaying."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Signals are fire-and-forget messages delivered to a running workflow's inbox, allowing external systems to push data that the workflow can react to and use to mutate state. Queries provide a synchronous, read-only view of workflow state at any point — they do not create history events and cannot block the workflow. Option B has Signal and Query backwards. Option C is wrong because Queries are not Signals; you cannot use a Signal to read state synchronously. Option D is wrong because Queries are strictly read-only — they cannot and should not mutate state, and their behavior during replay is specifically designed to avoid side effects.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_med_003",
+      "category": "Miscellaneous",
+      "difficulty": "med",
+      "question": "You are configuring a Temporal Activity that calls an unreliable third-party HTTP API. The activity typically completes in under 5 seconds, but occasionally the HTTP call hangs indefinitely. Which timeout is the correct one to set to ensure the activity worker process is not stuck waiting forever on a single attempt?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "ScheduleToCloseTimeout, which caps the total wall-clock time from when the activity is scheduled until it either succeeds or exhausts all retries."
+        },
+        {
+          "key": "B",
+          "text": "ScheduleToStartTimeout, which limits how long the activity can wait in the task queue before a worker picks it up."
+        },
+        {
+          "key": "C",
+          "text": "HeartbeatTimeout, which causes the activity to fail if it does not call RecordHeartbeat within the specified interval, detecting hangs in long-running work."
+        },
+        {
+          "key": "D",
+          "text": "StartToCloseTimeout, which bounds the execution time of a single activity attempt from when a worker starts it until it completes or fails."
+        }
+      ],
+      "answer": "D",
+      "explanation": "StartToCloseTimeout limits the duration of a single activity attempt — exactly what you need when an HTTP call might hang indefinitely. If the attempt exceeds this timeout, Temporal marks it as failed and can retry. Option A (ScheduleToCloseTimeout) caps the entire lifecycle including all retries combined, so a long value would still allow individual attempts to hang. Option B (ScheduleToStartTimeout) only covers queue wait time and is irrelevant once the worker has picked up the task. Option C (HeartbeatTimeout) is useful for long-running activities that can periodically report progress, but it requires the activity code to actively call RecordHeartbeat; for a simple HTTP call that either returns quickly or hangs, StartToCloseTimeout is simpler and more direct.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_med_004",
+      "category": "Miscellaneous",
+      "difficulty": "med",
+      "question": "Your organization runs Temporal Cloud and wants to enforce that only authenticated internal services can submit workflow executions or poll task queues — with mutual verification of both client and server certificates. Which connectivity mechanism should be configured?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Configure IP allowlists on the Temporal Cloud namespace so that only requests originating from known CIDR ranges are accepted by the frontend service."
+        },
+        {
+          "key": "B",
+          "text": "Enable mTLS by provisioning client certificates for each service and providing the CA certificate to Temporal Cloud, so both sides verify identity during the TLS handshake."
+        },
+        {
+          "key": "C",
+          "text": "Use API keys with RBAC roles assigned per service account, relying on bearer token validation in the gRPC metadata to restrict namespace access."
+        },
+        {
+          "key": "D",
+          "text": "Deploy workers inside a private link-connected VPC so that traffic never traverses the public internet, removing the need for application-layer authentication."
+        }
+      ],
+      "answer": "B",
+      "explanation": "mTLS (mutual TLS) is the mechanism that provides cryptographic mutual authentication — both the client service and the Temporal Cloud endpoint verify each other's certificates during the TLS handshake. This ensures only services holding valid, CA-signed client certificates can connect. Option A (IP allowlists) is a network-layer control that complements mTLS but does not provide identity verification at the application level — a compromised host within the allowed range would still have access. Option C (API keys + RBAC) provides authorization but uses bearer tokens rather than mutual certificate verification; it does not give the client cryptographic proof of the server's identity. Option D (private link) isolates network routing but is a network topology choice, not an authentication mechanism — it does not prevent unauthorized services within the same VPC from connecting.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_hard_001",
+      "category": "Miscellaneous",
+      "difficulty": "hard",
+      "question": "Your team is building a Temporal application where the workflow orchestration layer is written in Python, but a high-throughput data-processing activity must be written in Go for performance. A teammate proposes running both language runtimes in the same Worker process to keep deployment simple. What is the correct architectural approach in Temporal, and why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "This is supported natively: Temporal Workers can embed multiple SDK runtimes in the same process, so both Python workflows and Go activities can share a single worker binary without any special configuration."
+        },
+        {
+          "key": "B",
+          "text": "You must rewrite the entire application in a single language, because Temporal enforces a one-SDK-per-namespace constraint that prevents cross-language task queue registration."
+        },
+        {
+          "key": "C",
+          "text": "Each language runtime runs in its own Worker process polling the same (or separate) task queues; Temporal's task-queue-based dispatch makes cross-language architectures composable without requiring a shared runtime or polyglot process."
+        },
+        {
+          "key": "D",
+          "text": "Temporal supports at most two languages per application, so a Go-plus-Python setup is valid, but adding a third SDK (e.g., Java) would require migrating to a separate Temporal namespace."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal SDKs are independent processes that communicate with the Temporal server over gRPC — they do not share memory or a runtime. The correct pattern for polyglot Temporal applications is to run separate Worker processes, each built with the appropriate SDK, polling the same or dedicated task queues. A Python Worker handles Python workflow and activity tasks; a Go Worker handles Go activity tasks. The Temporal server routes tasks by task queue name, so the orchestration layer never needs to know which language is executing a given activity. This is one of Temporal's key architectural strengths: language-agnostic task dispatch. The common misconception is that a single Worker process must serve all code, which would require a polyglot runtime — something no Temporal SDK supports.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_hard_002",
+      "category": "Miscellaneous",
+      "difficulty": "hard",
+      "question": "A platform team is standardizing on Temporal and must choose a single SDK for a greenfield service that will: (1) run CPU-bound workflow logic with thousands of concurrent workflow executions, (2) require deterministic replay guarantees, and (3) integrate tightly with an existing gRPC microservice ecosystem already written in Go. The team lead suggests using the TypeScript SDK because 'it has the most active community updates.' What is the strongest technical counter-argument for choosing the Go SDK instead?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The TypeScript SDK cannot register more than one workflow type per Worker, making it unsuitable for services with many workflow definitions running concurrently on the same task queue."
+        },
+        {
+          "key": "B",
+          "text": "Go's native goroutine model maps directly onto Temporal's coroutine-based workflow execution, minimizing overhead for thousands of concurrent workflow coroutines, and the Go SDK shares type safety and gRPC interop with the existing service ecosystem — reducing serialization boundaries and operational complexity."
+        },
+        {
+          "key": "C",
+          "text": "The TypeScript SDK requires Node.js, which uses an event loop that serializes I/O and is incompatible with Temporal's requirement that workflow code run in a separate thread per execution."
+        },
+        {
+          "key": "D",
+          "text": "Go is the only Temporal SDK that supports the full set of Temporal features including Schedules, Nexus, and Continue-As-New, whereas TypeScript only supports a subset of the Server API."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The strongest technical argument for Go here is the combination of (1) goroutine-based concurrency, which directly matches Temporal's coroutine model for workflow replay — thousands of dormant goroutines are extremely cheap in Go, (2) native gRPC support and type-safe protobuf integration, reducing friction when calling into an existing Go microservice layer, and (3) a mature, production-hardened SDK with extensive use in Temporal's own internal infrastructure. Choice C contains a misconception: the TypeScript SDK runs workflow code in a deterministic sandbox (using the V8 isolate approach), not in raw Node.js event loop threads — it is a valid production SDK. Choice D is false; all major Temporal SDKs support the core feature set including Schedules and Continue-As-New. Choice A is also false; TypeScript Workers support multiple workflow types. The lesson: SDK selection should be driven by runtime performance characteristics, existing ecosystem fit, and operational familiarity — not community activity metrics alone.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_hard_003",
+      "category": "Miscellaneous",
+      "difficulty": "hard",
+      "question": "An engineering team migrates a long-running order-fulfillment workflow from the Java SDK to the Python SDK after a reorg. They stand up new Python Workers on the same task queue and deploy them alongside the old Java Workers. Within minutes, they see replay errors and 'non-determinism detected' failures in the Temporal Web UI for existing in-flight workflows. What is the root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Python's GIL prevents it from replaying Java-generated workflow history, because the two runtimes use incompatible coroutine scheduling models that produce different event ordering during replay."
+        },
+        {
+          "key": "B",
+          "text": "The Temporal server detected that two different SDK languages registered on the same task queue and automatically invalidated the workflow history to enforce single-language consistency."
+        },
+        {
+          "key": "C",
+          "text": "In-flight workflows have existing event history recorded against the Java SDK's workflow code. When a Python Worker picks up a task for one of these workflows, it attempts to replay that history using Python workflow logic, which produces a different command sequence — triggering a non-determinism error."
+        },
+        {
+          "key": "D",
+          "text": "The Python SDK uses a different serialization format for workflow commands than the Java SDK, so the Temporal server rejects the Python Worker's completions as malformed history events."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal's replay mechanism requires that the workflow code executed today produces exactly the same sequence of Commands as the code that originally generated the event history. When you swap languages, the new SDK's workflow code is structurally different from the old one — even if the business logic is 'equivalent,' the SDK-level coroutine scheduling, timer registration order, and command emission can differ. A Python Worker that picks up a task for a workflow originally started under the Java SDK will try to replay the existing history using Python code, and the resulting command sequence will diverge, causing a non-determinism error. The correct migration strategy is to drain in-flight workflows on the old Java Workers before routing new executions to Python Workers, or use Worker Versioning / Build ID–based routing to ensure old executions always reach compatible workers. Choice D is incorrect: Temporal uses a language-agnostic protobuf/gRPC command protocol, not SDK-specific serialization for commands. Choice B is fabricated behavior. Choice A confuses runtime concurrency models with replay mechanics.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_hard_004",
+      "category": "Miscellaneous",
+      "difficulty": "hard",
+      "question": "A startup is building its first Temporal application. The backend team uses Ruby for their web API, but Temporal's Ruby SDK is listed as community-supported rather than officially maintained by Temporal Technologies. The team is deciding between adopting the Ruby SDK or wrapping a Go or Java Worker with a thin RPC layer that their Ruby API calls to start workflows. Which operational risk most strongly favors the RPC-wrapper approach in a production environment?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Ruby SDK cannot connect to Temporal Cloud because mTLS certificate handling is only implemented in the officially supported SDKs (Go, Java, Python, TypeScript, .NET)."
+        },
+        {
+          "key": "B",
+          "text": "Community-supported SDKs may lag behind Temporal Server API versions, meaning new server features (e.g., Worker Versioning, Nexus, Updates) may be unavailable or buggy, and there is no SLA on critical bug fixes — creating long-term drift risk in a production system."
+        },
+        {
+          "key": "C",
+          "text": "Using the Ruby SDK requires running a separate Temporal namespace exclusively for Ruby workflows, which doubles the operational overhead of namespace management and visibility query costs."
+        },
+        {
+          "key": "D",
+          "text": "The RPC-wrapper approach is required by Temporal's licensing terms, which prohibit community SDK usage in commercial SaaS products without a paid support agreement."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The primary production risk of community-supported SDKs is feature lag and maintenance gaps. Temporal regularly ships new server-side features (Worker Versioning, Nexus, Workflow Updates, etc.), and officially maintained SDKs are updated in lockstep. A community SDK may not implement new APIs, may contain unpatched bugs, and has no formal SLA for critical fixes. In contrast, wrapping a Go or Java Worker exposes only a thin, stable RPC boundary to the Ruby service (e.g., via gRPC or HTTP), while the Worker itself benefits from a fully supported, actively maintained SDK. This is a real architectural pattern used by teams whose primary language lacks a first-class Temporal SDK. Choice A is a plausible-sounding but false claim — mTLS support depends on the specific SDK implementation, not on official vs. community status, and several community SDKs do support mTLS. Choice C invents a namespace-per-language constraint that doesn't exist. Choice D fabricates licensing restrictions.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_nightmare_001",
+      "category": "Miscellaneous",
+      "difficulty": "nightmare",
+      "question": "A platform team is migrating a high-volume Go workflow service to Temporal. They plan to run workers in three separate Kubernetes deployments, each polling the same task queue, and want to perform a zero-downtime rollout of a workflow logic change that affects branching behavior. During the rollout, old worker pods (v1) and new worker pods (v2) will coexist on the same task queue for up to 20 minutes. A senior engineer proposes using `workflow.GetVersion` (patching) to guard the changed branch. A junior engineer argues that because Temporal replays history deterministically, any running workflow instance that was started by a v1 worker and is mid-execution will automatically route its next workflow task back to a v1 pod, so versioning is unnecessary. Which statement most accurately describes what happens during the mixed-deployment window?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The junior engineer is correct: Temporal's sticky task queue mechanism ensures that a workflow's subsequent tasks are routed exclusively to the worker that last executed it, so a v1-started workflow will always land on a v1 pod and no versioning guard is needed."
+        },
+        {
+          "key": "B",
+          "text": "Sticky scheduling does prefer the same worker host for follow-on tasks, but sticky queues have a configurable timeout (default 5 seconds of inactivity) after which the task falls back to the normal task queue. Once it lands on a v2 pod, the v2 code replays the full history without the version marker, takes the new branch, and causes a non-determinism panic, making `workflow.GetVersion` essential."
+        },
+        {
+          "key": "C",
+          "text": "Temporal routes workflow tasks by workflow ID hash across all workers on the task queue, so routing is deterministic per workflow ID but not per worker version; as long as both worker versions are running, each workflow ID consistently lands on the same pod regardless of version, eliminating the need for patching."
+        },
+        {
+          "key": "D",
+          "text": "The Temporal server detects differing binary checksums between old and new workers and automatically suspends workflow tasks for running instances until the rollout completes, so mid-flight workflows are never replayed by the wrong version during the mixed-deployment window."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's sticky task queue is an optimization: when a workflow task completes, the server schedules the *next* task on a 'sticky' queue that only the same worker host polls, avoiding a full history reload. However, sticky queues have a `StickyScheduleToStartTimeout` (default ~5s). If the pod is busy, scaled down, or the task sits unprocessed beyond that timeout, the server falls back to the normal (non-sticky) task queue, where *any* available worker — including a v2 pod — can pick it up. When a v2 pod replays a history that was written by v1 logic, it executes the *new* branching code. Without a version marker in the history, the replay produces a different sequence of commands than what the history recorded, triggering a non-determinism error (panic in Go). `workflow.GetVersion` writes a `MarkerRecorded` event into the history the first time the version check runs, so on replay any worker — v1 or v2 — reads that marker and follows the same branch, making the logic safe across the mixed-deployment window. The key architectural insight is that sticky scheduling is a *performance* hint, not a *correctness* guarantee; correctness under rolling deploys must be achieved through explicit versioning (patching or worker versioning build IDs), not by relying on task affinity.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    },
+    {
+      "id": "miscellaneous_nightmare_002",
+      "category": "Miscellaneous",
+      "difficulty": "nightmare",
+      "question": "A team building a Python Temporal application needs to process very large payloads (up to 50 MB per activity result) that contain sensitive PII. They configure a custom `PayloadCodec` that compresses and then encrypts every payload before it leaves the SDK, and they store the encryption keys in a KMS accessible only inside their VPC. They also enable Temporal Cloud with a Private Link endpoint so that worker traffic never traverses the public internet. During a post-incident review, the security team asks: at what point in the data flow is the payload in plaintext, and who has the ability to read it? Which answer is most accurate?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The payload is in plaintext only inside the worker process (before encoding on write, after decoding on read). The Temporal Cloud control plane, the Temporal history service, and the visibility store all see only the encrypted+compressed bytes. Private Link prevents network interception but does not affect where decryption happens; KMS access controls determine which worker processes can decrypt."
+        },
+        {
+          "key": "B",
+          "text": "The payload is in plaintext inside the worker process and also briefly inside the Temporal Cloud frontend service, which must inspect payload metadata to route large blobs to blob storage; the Private Link connection protects the transit leg but the frontend decrypts for routing purposes before re-encrypting for persistence."
+        },
+        {
+          "key": "C",
+          "text": "Because Private Link is configured, all payload encryption is handled by the Temporal Cloud TLS termination layer rather than the SDK codec; the custom `PayloadCodec` is redundant and the plaintext is accessible to anyone with access to the Temporal Cloud namespace credentials."
+        },
+        {
+          "key": "D",
+          "text": "The payload is encrypted at the SDK layer before leaving the worker, but the Temporal Cloud visibility store indexes payload content for search attribute queries, so the visibility store backend necessarily has access to the plaintext in order to build the search index."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Temporal's `PayloadCodec` operates at the SDK boundary: encoding happens *before* data is serialized into gRPC messages sent to the server, and decoding happens *after* raw bytes arrive from the server into the SDK. This means the Temporal Cloud frontend, history service, matching service, and visibility store never see plaintext — they store and forward opaque byte blobs. Private Link / VPC connectivity controls the network path between the worker and the Temporal Cloud endpoint, preventing man-in-the-middle interception in transit, but it is orthogonal to where decryption occurs. The only processes that can decrypt are those with KMS access — i.e., workers running inside the authorized VPC with the right IAM/KMS policy. Critically, the Temporal Web UI and `tctl`/`temporal` CLI also cannot read payloads without running a local Codec Server that performs decryption on behalf of the UI, which must also have KMS access. The visibility store only stores and indexes *search attributes* (typed scalars explicitly set by workflow code), not payload content, so it never touches the encrypted payload blob. The architectural principle: Temporal's encryption story is 'bring your own keys, encrypt before the wire' — the server is explicitly kept outside the trust boundary for payload confidentiality, which is why a codec that relies on server-side decryption (option B) would violate the design, and why mTLS/Private Link alone (option C) is insufficient for payload-level confidentiality.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-20T15:25:08Z"
+    }
+  ]
+}

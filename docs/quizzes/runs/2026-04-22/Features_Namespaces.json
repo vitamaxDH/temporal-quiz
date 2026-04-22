@@ -1,0 +1,369 @@
+{
+  "category": "Features_Namespaces",
+  "questions": [
+    {
+      "id": "features_namespaces_easy_001",
+      "category": "Features_Namespaces",
+      "difficulty": "easy",
+      "question": "Why would a team use separate Temporal Namespaces for 'dev' and 'prod' environments?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Namespaces allow different programming languages to run in the same cluster without conflicts."
+        },
+        {
+          "key": "B",
+          "text": "Namespaces reduce the number of Workers needed by sharing Task Queues across environments."
+        },
+        {
+          "key": "C",
+          "text": "Namespaces isolate Workflow Executions so that activity in one environment cannot affect another environment."
+        },
+        {
+          "key": "D",
+          "text": "Namespaces encrypt Workflow data automatically when moving between development and production stages."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Namespaces provide isolation boundaries for Workflow Executions. By using separate Namespaces for 'dev' and 'prod', teams ensure that test workflows never interfere with live production workflows — and vice versa. This same isolation principle also works between teams, preventing one team's workflows from impacting another's. Think of Namespaces as separate compartments inside a Temporal cluster.",
+      "source_doc": "develop_go_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_easy_002",
+      "category": "Features_Namespaces",
+      "difficulty": "easy",
+      "question": "When registering a new Namespace, which setting is always required?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A replication configuration that lists all clusters the Namespace should be active on."
+        },
+        {
+          "key": "B",
+          "text": "A Workflow Execution Retention Period that sets how long Event History is kept."
+        },
+        {
+          "key": "C",
+          "text": "An Authorizer plugin that controls who is allowed to run Workflows in the Namespace."
+        },
+        {
+          "key": "D",
+          "text": "A custom Task Queue name that all Workflows in the Namespace must use by default."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Every Namespace registration requires a Retention Period (WorkflowExecutionRetentionPeriod), which tells Temporal how long to keep Workflow Execution Event History in its persistence store before cleaning it up. The minimum allowed value is 1 day. This setting is mandatory — omitting it will cause an error. It helps control storage costs while preserving enough history for debugging and auditing.",
+      "source_doc": "develop_java_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_easy_003",
+      "category": "Features_Namespaces",
+      "difficulty": "easy",
+      "question": "What happens to existing running Workflow Executions when a Namespace is deprecated?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "All running Workflow Executions are immediately cancelled and removed from the persistence store."
+        },
+        {
+          "key": "B",
+          "text": "Running Workflow Executions are paused until the Namespace is either restored or fully deleted."
+        },
+        {
+          "key": "C",
+          "text": "Running Workflow Executions are migrated automatically to a default Namespace to continue running."
+        },
+        {
+          "key": "D",
+          "text": "Existing and running Workflow Executions continue to run, but no new Workflow Executions can be started on that Namespace."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Deprecating a Namespace is a soft shutdown — it changes the Namespace state to 'DEPRECATED,' which blocks new Workflow Executions from being created there, but allows any already-running workflows to finish naturally. This is different from deleting a Namespace, which permanently removes all running and completed Workflow Executions from both the persistence store and the visibility store.",
+      "source_doc": "develop_java_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_med_001",
+      "category": "Features_Namespaces",
+      "difficulty": "med",
+      "question": "When registering a Namespace programmatically using the Go SDK, which field is mandatory in the RegisterNamespaceRequest?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "ActiveClusterName must be specified to tell the Temporal Service which cluster will handle Workflow Executions in the new Namespace."
+        },
+        {
+          "key": "B",
+          "text": "WorkflowExecutionRetentionPeriod must be set, and its minimum allowed value is 1 day."
+        },
+        {
+          "key": "C",
+          "text": "SecurityToken must be provided to authenticate the registration request against the Temporal Frontend Service."
+        },
+        {
+          "key": "D",
+          "text": "NamespaceFilter must be provided so the Temporal Service knows how to route task queues within the new Namespace."
+        }
+      ],
+      "answer": "B",
+      "explanation": "WorkflowExecutionRetentionPeriod is a mandatory field when registering a Namespace. It controls how long Workflow Execution Event History is kept in the persistence store, and the minimum value is 1 day. Omitting it will cause an error. ActiveClusterName, SecurityToken, and NamespaceFilter are all optional or unrelated to the registration request — they represent plausible-sounding but incorrect requirements.",
+      "source_doc": "develop_go_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_med_002",
+      "category": "Features_Namespaces",
+      "difficulty": "med",
+      "question": "A team deprecates a Namespace using the Java SDK's DeprecateNamespace API. What is the effect on existing Workflow Executions running in that Namespace?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "All running Workflow Executions are immediately terminated and their history is removed from the persistence store."
+        },
+        {
+          "key": "B",
+          "text": "Running Workflow Executions are paused and queued until the Namespace is re-activated or deleted."
+        },
+        {
+          "key": "C",
+          "text": "Existing and running Workflow Executions continue to run, but no new Workflow Executions can be started on the deprecated Namespace."
+        },
+        {
+          "key": "D",
+          "text": "Running Workflow Executions finish normally, and new Workflow Executions are silently rerouted to the default Namespace."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Deprecating a Namespace changes its state to DEPRECATED, which prevents new Workflow Executions from being started on it. However, any already-running or existing Workflow Executions continue to completion unaffected. This is distinct from deleting a Namespace, which removes all running and completed Workflow Executions from both the persistence and visibility stores. The 'pause', 'terminate', or 'silent reroute' behaviors described in the other options do not exist.",
+      "source_doc": "develop_java_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_med_003",
+      "category": "Features_Namespaces",
+      "difficulty": "med",
+      "question": "Your team manages a self-hosted Temporal Service and wants to restrict which engineers can create or update Namespaces. What is the correct mechanism to enforce this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Set per-Namespace ACL rules inside each RegisterNamespaceRequest by populating the SecurityToken field with an RBAC policy string."
+        },
+        {
+          "key": "B",
+          "text": "Configure a custom Authorizer plugin on the Frontend Service of the Temporal Service to control who can create, update, or deprecate Namespaces."
+        },
+        {
+          "key": "C",
+          "text": "Use the Temporal Cloud UI RBAC settings, which are synchronized to self-hosted clusters automatically via the tcld CLI."
+        },
+        {
+          "key": "D",
+          "text": "Deploy a separate API gateway in front of the Temporal Frontend that intercepts and validates namespace management calls before forwarding them."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's documentation explicitly states that you should use a custom Authorizer plugin on the Frontend Service to restrict namespace management operations (create, update, deprecate) on a self-hosted cluster. The SecurityToken field is a low-level proto field, not a full RBAC policy mechanism. Temporal Cloud UI RBAC settings do not synchronize to self-hosted clusters — the docs note that Cloud UI and tcld commands do not work with self-hosted services. A standalone API gateway is not part of Temporal's supported security model for this purpose.",
+      "source_doc": "develop_go_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_med_004",
+      "category": "Features_Namespaces",
+      "difficulty": "med",
+      "question": "After registering a new Namespace with the Go SDK's Register API, your code immediately starts a Workflow Execution targeting that Namespace and receives a 'Namespace not found' error. What is the most likely cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The NamespaceClient requires a separate Dial call to activate the Namespace before any Workflow Client can target it."
+        },
+        {
+          "key": "B",
+          "text": "The WorkflowExecutionRetentionPeriod was set too low, causing the Namespace to be auto-purged before the Workflow could start."
+        },
+        {
+          "key": "C",
+          "text": "The Namespace was registered using a self-hosted API, which is incompatible with the Workflow Client used to start the execution."
+        },
+        {
+          "key": "D",
+          "text": "Namespace registration via the SDK API can take up to 10 seconds to propagate, and the Workflow Execution was started before registration completed."
+        }
+      ],
+      "answer": "D",
+      "explanation": "The documentation explicitly warns that namespace registration using the programmatic API takes up to 10 seconds to complete, and you must wait for this propagation before starting Workflow Executions against the new Namespace. A 'Namespace not found' error immediately after registration is almost always this race condition. A separate Dial call is needed to configure which Namespace the client targets, but it does not activate the Namespace. The retention period has no bearing on Namespace availability at creation time, and self-hosted APIs are fully compatible with the same Workflow Clients.",
+      "source_doc": "develop_go_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_hard_001",
+      "category": "Features_Namespaces",
+      "difficulty": "hard",
+      "question": "Your team is automating Temporal namespace lifecycle management for a self-hosted cluster. A script registers a new namespace via the Go SDK's `NamespaceClient.Register` API and immediately starts a workflow execution against it — but the workflow start call consistently returns a 'namespace not found' error. The registration API call itself returned no error. What is the most likely cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `NamespaceClient` used for registration must be the same client instance used to start workflow executions; creating a separate workflow client causes a cache miss that prevents namespace visibility."
+        },
+        {
+          "key": "B",
+          "text": "Namespace registration via the SDK API is asynchronous and can take up to 10 seconds to propagate across the Temporal Service; starting a workflow immediately after the API returns success will fail if that window has not elapsed."
+        },
+        {
+          "key": "C",
+          "text": "The `WorkflowExecutionRetentionPeriod` was not set in the registration request, so the namespace exists in a pending state and cannot accept workflow executions until updated with a valid retention value."
+        },
+        {
+          "key": "D",
+          "text": "Self-hosted Temporal requires a manual cache flush via `temporal operator namespace describe` before a newly registered namespace becomes routable to workflow start requests."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly states: 'Namespace registration using this API takes up to 10 seconds to complete. Ensure that you wait for this registration to complete before starting the Workflow Execution against the Namespace.' The Register API returning without an error only means the request was accepted, not that propagation is complete. Immediately starting a workflow against the namespace can fail with 'namespace not found' during this propagation window. The other options describe real-sounding but incorrect mechanisms — there is no same-client requirement, no 'pending' state from a missing retention period (that would cause the registration call itself to fail), and no manual cache flush step.",
+      "source_doc": "develop_go_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_hard_002",
+      "category": "Features_Namespaces",
+      "difficulty": "hard",
+      "question": "An engineering team deprecates a high-traffic namespace in their self-hosted Temporal cluster using the Java SDK's `DeprecateNamespace` API to begin decommissioning it. A few minutes later, on-call gets paged because several long-running workflows appear stuck. What is the actual behavior of a deprecated namespace, and what is causing the on-call alert?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Deprecating a namespace immediately terminates all running workflow executions and removes their history from the persistence store, which is why the workflows appear stuck — they have been force-closed."
+        },
+        {
+          "key": "B",
+          "text": "Deprecation sets the namespace to a read-only state: running workflows continue executing normally but workers can no longer poll for new tasks, causing task queue backlogs that make healthy workflows appear stuck in the UI."
+        },
+        {
+          "key": "C",
+          "text": "Deprecation prevents new workflow executions from starting on the namespace, but all existing and running workflow executions continue to run normally; the stuck workflows are caused by an unrelated issue, not the deprecation."
+        },
+        {
+          "key": "D",
+          "text": "Deprecation suspends scheduling of new activity tasks and timers on the namespace while preserving workflow state, so existing workflows pause at their next activity or sleep boundary until the namespace is re-activated."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Java SDK documentation is explicit: 'Once a Namespace is deprecated, you cannot start new Workflow Executions on it. All existing and running Workflow Executions on a deprecated Namespace will continue to run.' Deprecation is a lifecycle state change — it gates new starts, not in-flight executions. The on-call alert is therefore caused by something else coincidental with the deprecation (a deployment issue, worker crash, etc.), not the deprecation itself. The other options incorrectly describe termination (A), worker polling suspension (B), or timer/activity pausing (D) — none of which are part of the deprecated state semantics.",
+      "source_doc": "develop_java_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_hard_003",
+      "category": "Features_Namespaces",
+      "difficulty": "hard",
+      "question": "A platform team wants to delete a namespace that was used for load testing on their self-hosted Temporal cluster. The namespace contains hundreds of completed workflow executions and a handful of still-running ones. They call the `DeleteNamespace` API. What happens to the running workflow executions and the completed history records?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The API fails with a validation error because running workflow executions must be terminated manually before a namespace can be deleted; completed executions are removed but in-flight ones block the operation."
+        },
+        {
+          "key": "B",
+          "text": "Running workflows are allowed to drain to completion before the namespace is removed; completed workflow history is deleted immediately from the persistence store but remains in the visibility store until the next compaction."
+        },
+        {
+          "key": "C",
+          "text": "All running and completed workflow executions are deleted, and both the persistence store and the visibility store records are removed as part of the namespace deletion."
+        },
+        {
+          "key": "D",
+          "text": "The namespace is moved to a tombstone state and its workflows are archived according to the namespace's history archival configuration before final removal from persistence and visibility stores."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Both the Go and Java SDK documentation state this clearly: 'Deleting a Namespace deletes all running and completed Workflow Executions on the Namespace, and removes them from the persistence store and the visibility store.' There is no drain period, no partial deletion, and no archival step — DeleteNamespace is destructive and immediate for all executions regardless of their state. This is a critical operational distinction from DeprecateNamespace (which preserves running executions). Teams who call DeleteNamespace expecting a graceful drain will lose in-flight work.",
+      "source_doc": "develop_go_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_hard_004",
+      "category": "Features_Namespaces",
+      "difficulty": "hard",
+      "question": "A security-conscious organization runs a self-hosted Temporal cluster shared by multiple product teams. They need to ensure that only designated platform engineers can create or modify namespaces, while individual teams can still operate their own workflow executions. Which Temporal mechanism directly enforces this namespace-level access control boundary on a self-hosted cluster?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Namespace-scoped API keys configured in the Temporal Cloud UI restrict namespace creation and update operations to users holding the Admin role, while standard users retain workflow execution permissions."
+        },
+        {
+          "key": "B",
+          "text": "A custom Authorizer plugin deployed on the Frontend Service intercepts namespace management API calls (Register, Update, Deprecate) and enforces access policies before the requests are processed."
+        },
+        {
+          "key": "C",
+          "text": "The Temporal CLI's `--namespace` flag validates caller identity against a built-in RBAC store, rejecting namespace mutation commands from users not listed as namespace owners."
+        },
+        {
+          "key": "D",
+          "text": "Worker-level mTLS certificates scoped to specific namespaces prevent unauthorized clients from submitting namespace registration or update requests to the Frontend Service."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly states in all SDK sections: 'Use a custom Authorizer on your Frontend Service in the Temporal Service to set restrictions on who can create, update, or deprecate Namespaces.' The Authorizer plugin is the designated extension point for namespace-level authorization on self-hosted deployments. Namespace-scoped API keys (A) are a Temporal Cloud concept, not self-hosted. The Temporal CLI has no built-in RBAC store (C). mTLS certificates (D) provide transport-layer authentication but do not enforce fine-grained namespace management permissions — that is the Authorizer's job. This is an important operator-facing distinction between self-hosted and Cloud access control models.",
+      "source_doc": "develop_go_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_nightmare_001",
+      "category": "Features_Namespaces",
+      "difficulty": "nightmare",
+      "question": "Your platform team runs a self-hosted Temporal cluster. A developer writes the following Go bootstrap code that registers a namespace and immediately starts a workflow against it:\n\n```go\nnsClient, _ := client.NewNamespaceClient(client.Options{HostPort: addr})\nretention := durationpb.New(24 * time.Hour)\n_ = nsClient.Register(ctx, \u0026workflowservice.RegisterNamespaceRequest{\n    Namespace:                        \"payments\",\n    WorkflowExecutionRetentionPeriod: \u0026retention,\n})\n\nwfClient, _ := client.Dial(client.Options{\n    HostPort:  addr,\n    Namespace: \"payments\",\n})\n_, err := wfClient.ExecuteWorkflow(ctx, options, PaymentWorkflow, input)\n```\n\nIn staging this works fine, but in production the `ExecuteWorkflow` call intermittently returns \"namespace not found\" errors. The developer argues the registration API call returned no error, so the namespace must exist. Which combination of factors best explains the failure, and what is the correct mitigation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `NewNamespaceClient` and `Dial` share no internal state, so the workflow client's connection pool does not see the newly registered namespace. The fix is to reuse the same underlying gRPC channel for both clients so the namespace cache is shared."
+        },
+        {
+          "key": "B",
+          "text": "Namespace registration via the SDK API is eventually consistent and can take up to 10 seconds to propagate across Frontend Service nodes. A successful `Register` call only means the RPC was accepted; the namespace may not be queryable by every node yet. The fix is to add a retry-with-backoff loop (or a sleep of ≥10 seconds) between registration and the first `ExecuteWorkflow` call, and to set the retention period ≥1 day since the minimum allowed value is 1 day."
+        },
+        {
+          "key": "C",
+          "text": "The `WorkflowExecutionRetentionPeriod` of exactly 24 hours is below the enforced minimum of 2 days on self-hosted clusters, causing the registration to silently succeed at the API layer but fail validation internally. The fix is to raise the retention period to at least 48 hours before attempting any workflow execution."
+        },
+        {
+          "key": "D",
+          "text": "The Frontend Service caches namespace metadata only after the first `DescribeNamespace` call succeeds. Because the developer never calls `Describe` between registration and execution, the cache is cold and lookups fail intermittently. The mitigation is to call `DescribeNamespace` once after registration to warm the cache before starting any workflow."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal documentation explicitly states: 'Namespace registration using this API takes up to 10 seconds to complete. Ensure that you wait for this registration to complete before starting the Workflow Execution against the Namespace.' The registration RPC succeeds (returns no error) as soon as the Frontend Service writes the namespace record to the persistence store, but the change must propagate to the in-memory caches of all Frontend Service nodes in the cluster. Because production clusters typically run multiple Frontend replicas behind a load balancer, subsequent gRPC calls can land on a different node that has not yet refreshed its cache, producing 'namespace not found'. The fix is a deliberate pause or retry loop. The retention minimum of 1 day (not 2) is correctly stated in the docs — 24 hours satisfies the minimum — so option C is wrong. Option A is a plausible-sounding but fabricated behavior; the two client types use independent connections but that is not the source of this race. Option D invents a 'warm the cache with Describe' pattern that does not exist. The deeper principle: SDK Registration APIs are thin wrappers over an eventually consistent distributed system; any code that assumes immediate read-your-writes consistency after namespace registration is racy in multi-node deployments. Design bootstrap scripts to treat namespace provisioning as an async operation.",
+      "source_doc": "develop_go_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_namespaces_nightmare_002",
+      "category": "Features_Namespaces",
+      "difficulty": "nightmare",
+      "question": "An operator is decommissioning a Temporal namespace called `legacy-team` on a self-hosted cluster. The namespace has both a history archival URI and a visibility archival URI configured, and the cluster's visibility store is a dual-visibility setup mid-migration. The operator calls the `DeleteNamespace` API. Which of the following accurately describes what `DeleteNamespace` does and what the operator must handle separately?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`DeleteNamespace` removes the namespace record, purges all workflow execution history from the persistence store and the visibility store, and also deletes any archived data at the configured archival URIs. Because archival data is cleaned up automatically, no additional operator action is required after the API call returns."
+        },
+        {
+          "key": "B",
+          "text": "`DeleteNamespace` removes the namespace record and all running and completed workflow executions from the persistence store and the visibility store, but it does NOT touch externally archived data at the history or visibility archival URIs. The operator must separately purge archived objects from the blob store (e.g., S3 or GCS) and, if the cluster is mid dual-visibility migration, verify that both the primary and secondary visibility stores have been drained, since `DeleteNamespace` only targets the currently active store."
+        },
+        {
+          "key": "C",
+          "text": "`DeleteNamespace` transitions the namespace to a DEPRECATED state first, waits for all running workflows to complete under the retention period, and only then removes records from the persistence and visibility stores. The operator must monitor the namespace state and call a separate `PurgeNamespace` API once deprecation is confirmed to finalize deletion."
+        },
+        {
+          "key": "D",
+          "text": "`DeleteNamespace` removes workflow execution records from the persistence store only; the visibility store is not touched because visibility records are considered read-only audit logs. The operator must manually run `temporal operator namespace purge-visibility` to remove entries from the visibility store before the namespace can be fully deleted."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation states: 'Deleting a Namespace deletes all running and completed Workflow Executions on the Namespace, and removes them from the persistence store and the visibility store.' So both stores are cleared — ruling out option D. However, the API says nothing about purging externally archived data. Archival in Temporal works by writing blobs (history events, visibility records) to an external URI (S3, GCS, etc.) during the workflow retention period. `DeleteNamespace` clears the live persistence and visibility databases, but it has no knowledge of, or authority over, the external blob store. Those archived objects will remain and accumulate costs unless the operator manually purges them. Option A is wrong because archival data is not auto-deleted. Option C confuses `DeprecateNamespace` (which sets state to DEPRECATED and blocks new workflow starts but lets existing ones finish) with `DeleteNamespace` (which is an immediate hard delete); there is no two-phase deprecate-then-purge flow for `DeleteNamespace`. The dual-visibility angle matters because in a mid-migration dual-visibility setup, records may exist in both the old and new stores; operators should confirm both are handled before treating the namespace as fully gone. The broader production insight: namespace deletion is a destructive, largely irreversible operation — archived blobs surviving deletion can incur ongoing storage costs and may pose compliance risks if the data was supposed to be expunged.",
+      "source_doc": "develop_java_client_namespaces.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    }
+  ]
+}

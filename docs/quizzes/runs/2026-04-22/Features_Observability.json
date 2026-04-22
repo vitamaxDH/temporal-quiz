@@ -1,0 +1,677 @@
+{
+  "category": "Features_Observability",
+  "questions": [
+    {
+      "id": "features_observability_easy_001",
+      "category": "Features_Observability",
+      "difficulty": "easy",
+      "question": "Temporal Cloud exposes two distinct sources of metrics. What is the key difference between Cloud metrics and SDK metrics?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Cloud metrics monitor the Temporal Service from the platform's perspective, while SDK metrics monitor individual Workers and application behavior from your code's perspective."
+        },
+        {
+          "key": "B",
+          "text": "Cloud metrics are only available for paid accounts, while SDK metrics are free and available to all Temporal users by default."
+        },
+        {
+          "key": "C",
+          "text": "Cloud metrics track historical workflow data permanently, while SDK metrics are temporary and discarded after each workflow run completes."
+        },
+        {
+          "key": "D",
+          "text": "Cloud metrics require a separate agent installed on each Worker, while SDK metrics are collected automatically by the Temporal Service without any setup."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Cloud metrics give you visibility into how the Temporal Service itself is performing (request rates, latencies, state transitions), while SDK metrics show what's happening inside your Workers and client code. Together they give you end-to-end observability — you need both to fully understand whether a slowdown lives in the platform or in your own application logic.",
+      "source_doc": "cloud_metrics_index.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_easy_002",
+      "category": "Features_Observability",
+      "difficulty": "easy",
+      "question": "When setting up the Temporal Cloud OpenMetrics endpoint, what authentication method is required to make requests?",
+      "choices": [
+        {
+          "key": "B",
+          "text": "A username and password pair configured in the Temporal Cloud UI under the Security settings panel."
+        },
+        {
+          "key": "C",
+          "text": "An API key associated with a Service Account that has been granted the appropriate permissions for reading metrics."
+        },
+        {
+          "key": "A",
+          "text": "No authentication is needed — the OpenMetrics endpoint is publicly accessible so any Prometheus scraper can reach it."
+        },
+        {
+          "key": "D",
+          "text": "An OAuth 2.0 token obtained by logging into Temporal Cloud and exchanging your session credentials for a short-lived token."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The OpenMetrics endpoint uses API key authentication. You create a Service Account in Temporal Cloud, assign it the 'Metrics Read-Only' Account Level role, and then generate an API key for that account. The key is then passed as a Bearer token in the Authorization header. This is more scalable than per-user credentials because the key belongs to a service account rather than an individual.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_easy_003",
+      "category": "Features_Observability",
+      "difficulty": "easy",
+      "question": "You are scraping the Temporal Cloud OpenMetrics endpoint and your monitoring tool shows data that appears to be about 3 minutes old. What is the most likely explanation?",
+      "choices": [
+        {
+          "key": "D",
+          "text": "Your scrape interval is configured too infrequently, so the endpoint caches old data and does not refresh until a new scrape is triggered."
+        },
+        {
+          "key": "A",
+          "text": "The OpenMetrics endpoint intentionally returns metrics offset by approximately 3 minutes to account for the time it takes metric data to propagate through Temporal Cloud's infrastructure."
+        },
+        {
+          "key": "B",
+          "text": "The 3-minute lag means your API key has exceeded its rate limit and the endpoint is serving stale cached data as a fallback response."
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud only generates new metrics every 3 minutes, so any shorter scrape interval will always show repeated identical values."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Temporal Cloud's OpenMetrics endpoint applies a built-in 3-minute offset to account for the time it takes metrics to originate and become available. This is normal and expected — the docs note it is in line with delays from other major cloud providers. The practical implication is that you should configure Prometheus with `honor_timestamps: true` so it uses the timestamps from the response rather than the scrape time, avoiding misleading gaps in your dashboards.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_easy_004",
+      "category": "Features_Observability",
+      "difficulty": "easy",
+      "question": "Why might a Temporal Cloud operator want to use namespace or metric filtering when scraping the OpenMetrics endpoint?",
+      "choices": [
+        {
+          "key": "C",
+          "text": "Filtering is required by Temporal Cloud policy — all scrape requests must specify at least one namespace or metric name or they will be rejected."
+        },
+        {
+          "key": "D",
+          "text": "Filtering prevents Temporal Cloud from billing for metrics that are not explicitly requested by the scraping system."
+        },
+        {
+          "key": "A",
+          "text": "Without filtering, scrape requests cannot be authenticated and will return an HTTP 401 error instead of metric data."
+        },
+        {
+          "key": "B",
+          "text": "High-cardinality labels like task queue and workflow type can produce tens of thousands of time series, potentially exceeding the 30,000 data-point-per-scrape limit and causing truncated responses."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The OpenMetrics endpoint caps responses at 30,000 data points per scrape. Labels like `temporal_task_queue` and `temporal_workflow_type` multiply your series count rapidly — for example, 6 metrics × 10 namespaces × 50 task queues × 20 workflow types = 60,000 series, double the limit. Filtering by namespace or metric name at scrape time keeps the response size manageable and ensures your monitoring system receives complete data rather than a truncated subset.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_easy_005",
+      "category": "Features_Observability",
+      "difficulty": "easy",
+      "question": "The legacy PromQL endpoint for Temporal Cloud metrics is being deprecated. What is the recommended replacement, and roughly when will the old endpoint stop working?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Users should switch to direct database queries against Temporal's internal storage, which will be made publicly accessible before October 2026."
+        },
+        {
+          "key": "C",
+          "text": "The replacement is the OpenMetrics endpoint at metrics.temporal.io, and the legacy PromQL endpoint will be disabled for all users on October 5, 2026."
+        },
+        {
+          "key": "B",
+          "text": "Temporal recommends building a custom metrics exporter using the Temporal SDK, since no official replacement endpoint is planned before the shutdown date."
+        },
+        {
+          "key": "D",
+          "text": "Users are encouraged to migrate to Temporal's embedded Grafana dashboards, which replace the PromQL endpoint and require no additional configuration."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The legacy PromQL endpoint (which used mTLS certificate auth and exposed `temporal_cloud_v0_*` metrics) was deprecated on April 2, 2026, and will be fully disabled on October 5, 2026. The replacement is the OpenMetrics endpoint at `metrics.temporal.io`, which uses API key authentication and exposes the newer `temporal_cloud_v1_*` metrics. Temporal provides a migration guide with a complete v0-to-v1 metric mapping to help operators transition smoothly.",
+      "source_doc": "cloud_metrics_index.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_easy_006",
+      "category": "Features_Observability",
+      "difficulty": "easy",
+      "question": "Which Temporal Cloud account role is required to configure a metrics endpoint in the Temporal Cloud UI?",
+      "choices": [
+        {
+          "key": "D",
+          "text": "Any authenticated user can configure the metrics endpoint, because observability is considered a read-only operation that poses no security risk."
+        },
+        {
+          "key": "A",
+          "text": "A Namespace Admin role is sufficient because metrics are scoped per Namespace and that role has full control over individual Namespace settings."
+        },
+        {
+          "key": "B",
+          "text": "Only the original account creator can configure metrics endpoints, as this permission cannot be delegated to other user roles."
+        },
+        {
+          "key": "C",
+          "text": "The Account Owner or Global Admin role is required to view and manage third-party integration settings, including metrics endpoint configuration."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Configuring the metrics endpoint is an account-level operation, so it requires either the Account Owner or Global Admin role. This makes sense from a security standpoint — metrics endpoints expose broad operational data across all Namespaces in the account, so access to configure them should be restricted to administrators rather than individual namespace operators or developers.",
+      "source_doc": "cloud_metrics_general-setup.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_med_001",
+      "category": "Features_Observability",
+      "difficulty": "med",
+      "question": "A team is setting up Temporal Cloud observability for the first time in mid-2026. Which metrics endpoint should they use?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The PromQL endpoint at `https://\u003caccount-id\u003e.tmprl.cloud/prometheus`, authenticated with mTLS client certificates, which exposes `temporal_cloud_v0_*` metrics."
+        },
+        {
+          "key": "B",
+          "text": "The OpenMetrics endpoint at `metrics.temporal.io`, authenticated with an API key, which exposes `temporal_cloud_v1_*` metrics."
+        },
+        {
+          "key": "C",
+          "text": "The SDK metrics endpoint, which is the only supported endpoint for new Temporal Cloud accounts created after 2025."
+        },
+        {
+          "key": "D",
+          "text": "Either endpoint is fine for new users; the PromQL endpoint is only deprecated for accounts created before 2024."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The PromQL endpoint (`temporal_cloud_v0_*`) was deprecated on April 2, 2026 and is no longer accepting new users; it will be fully disabled on October 5, 2026. New users must use the OpenMetrics endpoint at `metrics.temporal.io`, which uses API key authentication and exposes `temporal_cloud_v1_*` metrics. SDK metrics are a separate, complementary source that monitors Workers and application behavior — they cannot replace Cloud metrics. The deprecation applies to all new users regardless of account creation date.",
+      "source_doc": "cloud_metrics_index.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_med_002",
+      "category": "Features_Observability",
+      "difficulty": "med",
+      "question": "When configuring the Temporal Cloud OpenMetrics endpoint in Prometheus, which scrape interval is recommended and why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "60 seconds, because that matches the exact metric update frequency and avoids duplicate data points in the time series."
+        },
+        {
+          "key": "B",
+          "text": "5 minutes, because metric data is only available after a 3-minute latency window, so scraping faster wastes quota."
+        },
+        {
+          "key": "C",
+          "text": "30 seconds, because metrics update once per minute and intervals longer than 60 seconds may skip data points entirely."
+        },
+        {
+          "key": "D",
+          "text": "15 seconds, because the endpoint returns data at 15-second resolution and a matching interval prevents gaps."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation explicitly recommends a 30-second scrape interval. Metrics update once per minute, so scraping at intervals longer than 60 seconds risks skipping data points entirely. A 60-second interval is risky because any slight drift could cause a miss. The 15-second resolution figure applies to the legacy PromQL endpoint, not the OpenMetrics endpoint. The 5-minute suggestion is wrong — the 3-minute data latency is an offset built into the API response timestamps, not a reason to scrape less frequently. You should also set `honor_timestamps: true` in Prometheus to correctly handle the timestamp offset.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_med_003",
+      "category": "Features_Observability",
+      "difficulty": "med",
+      "question": "What role is required to create a Service Account API key for accessing the Temporal Cloud OpenMetrics endpoint?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Service Account must be granted the `Namespace Admin` role so it can read metrics scoped to specific namespaces."
+        },
+        {
+          "key": "B",
+          "text": "The Service Account must have the `Developer` Account Level Role, which includes read access to all observability data."
+        },
+        {
+          "key": "C",
+          "text": "The Service Account must be granted the `Global Admin` role because metrics span the entire account, not individual namespaces."
+        },
+        {
+          "key": "D",
+          "text": "The Service Account must be assigned the `Metrics Read-Only` Account Level Role, which grants the minimum permissions needed for metrics access."
+        }
+      ],
+      "answer": "D",
+      "explanation": "The documentation specifies that you should create a Service Account with the **Metrics Read-Only** Account Level Role and then generate an API key within that Service Account. This follows least-privilege principles — the account only needs to read metrics, not manage namespaces or perform admin operations. Namespace Admin is a namespace-scoped role, not an account-level one. Developer and Global Admin roles are not documented as the correct choice here; Global Admin is overkill for a read-only scraping account and creates unnecessary security risk.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_med_004",
+      "category": "Features_Observability",
+      "difficulty": "med",
+      "question": "A Prometheus scrape of `https://metrics.temporal.io/v1/metrics` returns an `X-Completeness: limited` response header. What does this mean and what should you do?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The API key has expired and the response only contains cached data from the last successful request; rotate the key and retry."
+        },
+        {
+          "key": "B",
+          "text": "The response was truncated because the result exceeded 30,000 metric data points; use namespace or metric filtering to reduce response size."
+        },
+        {
+          "key": "C",
+          "text": "The account has exceeded the 180 requests per hour rate limit; wait for the window to reset before scraping again."
+        },
+        {
+          "key": "D",
+          "text": "The metrics endpoint is in a degraded state and only partial regions reported data; retry with exponential backoff until `complete` is returned."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`X-Completeness: limited` means the response was truncated due to the 30,000 metric data points per scrape limit — not an auth or rate limit issue. The correct mitigation is to add query parameters to filter by namespace (`namespaces=production-*`) or specific metrics (`metrics=temporal_cloud_v1_approximate_backlog_count`). Rate limit exhaustion returns HTTP 429 with a `Retry-After` header, not a `limited` completeness value. The `unknown` value (not `limited`) indicates regional issues or timeouts where completeness cannot be determined.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_med_005",
+      "category": "Features_Observability",
+      "difficulty": "med",
+      "question": "What is the fundamental difference between Cloud metrics and SDK metrics in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Cloud metrics cover all Namespaces in an account while SDK metrics only cover a single Namespace; both measure Temporal Service internals."
+        },
+        {
+          "key": "B",
+          "text": "Cloud metrics measure the Temporal Service's behavior from the platform perspective, while SDK metrics measure individual Workers and application behavior from the client perspective."
+        },
+        {
+          "key": "C",
+          "text": "SDK metrics are real-time while Cloud metrics have a built-in data latency, making SDK metrics better for alerting and Cloud metrics better for historical analysis."
+        },
+        {
+          "key": "D",
+          "text": "Cloud metrics require Temporal Cloud while SDK metrics work with both self-hosted and Temporal Cloud deployments; the data they capture is otherwise equivalent."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation clearly distinguishes the two sources: **Cloud metrics** monitor Temporal Cloud's behavior from the Temporal Service perspective (e.g., state transitions, frontend request rates), while **SDK metrics** monitor individual Workers and your application code's behavior (e.g., activity execution latency, workflow task processing). They are complementary — used together they cover the full stack. Option A is wrong because both can span multiple namespaces. Option C conflates a real limitation (latency) with a false distinction about use cases. Option D is partially true but misses the core conceptual difference the question is asking about.",
+      "source_doc": "cloud_metrics_index.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_med_006",
+      "category": "Features_Observability",
+      "difficulty": "med",
+      "question": "Your team has 10 namespaces, 50 task queues, and 20 workflow types. A Temporal Cloud metric that includes both `temporal_task_queue` and `temporal_workflow_type` labels will produce how many time series, and is this a concern?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "1,000 time series (10 namespaces × 50 task queues × 2 labels); this is below the 30,000 limit and unlikely to cause issues."
+        },
+        {
+          "key": "B",
+          "text": "10,000 time series (10 namespaces × 50 task queues × 20 workflow types); this is below the 30,000 per-scrape limit but approaches it as more metrics are added."
+        },
+        {
+          "key": "C",
+          "text": "100,000 time series (10 × 50 × 20 × 10 namespaces doubled); this far exceeds the 30,000 limit and will truncate responses."
+        },
+        {
+          "key": "D",
+          "text": "500 time series (50 task queues × 10 namespaces); workflow types are not factored into cardinality because they are aggregated server-side."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Cardinality is calculated as: namespaces × task queues × workflow types per metric. For a single metric with both labels: 10 × 50 × 20 = 10,000 series. The documentation's own example of 6 such metrics yields 60,000 series and exceeds the 30,000 limit. With just 3 metrics using both high-cardinality labels you'd already hit 30,000. This means cardinality management (filtering at scrape time, label dropping via `metric_relabel_configs`, or using OpenTelemetry filter processors) is important even at moderate scale. The 30,000 limit is per scrape, not per metric.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_hard_001",
+      "category": "Features_Observability",
+      "difficulty": "hard",
+      "question": "Your team just migrated from the legacy PromQL endpoint to the new OpenMetrics endpoint. A Grafana alert that used to fire within 2 minutes of a workflow spike is now consistently firing 4–5 minutes late. You haven't changed any Prometheus scrape intervals or alert evaluation windows. What is the most likely cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The OpenMetrics endpoint rate-limits at 180 requests/hour, so Prometheus is being throttled and missing scrapes during high-traffic periods, causing delayed alert evaluation."
+        },
+        {
+          "key": "B",
+          "text": "The OpenMetrics endpoint has a built-in 3-minute data latency offset baked into returned timestamps, and if Prometheus is not configured with `honor_timestamps: true`, it may treat those timestamps as current time, causing further skew."
+        },
+        {
+          "key": "C",
+          "text": "The v1 metrics are pre-computed rate gauges with delta temporality, so Prometheus applies an additional internal averaging window before exposing them to alerting rules."
+        },
+        {
+          "key": "D",
+          "text": "Switching from mTLS certificate auth to API key auth added an extra round-trip for token validation on every scrape, adding network latency that compounds across scrape intervals."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The OpenMetrics endpoint returns metrics with a 3-minute data latency offset — data points are available for query within 3 minutes of origination, and the endpoint explicitly returns metrics from `current timestamp minus a fixed offset`. The documentation recommends setting `honor_timestamps: true` in Prometheus so that Prometheus uses the timestamps in the response rather than the scrape time. If `honor_timestamps` is false (the default in many configs), Prometheus stamps metrics with the scrape time, masking the built-in latency during normal operation. After a migration, this interaction becomes visible when alert windows are tight. Rate limiting (A) would cause HTTP 429s, not silent latency. The pre-computed rate gauge design (C) doesn't add an extra Prometheus averaging window. Auth overhead (D) is negligible and not documented as a latency contributor.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_hard_002",
+      "category": "Features_Observability",
+      "difficulty": "hard",
+      "question": "An SRE team scrapes the Temporal Cloud OpenMetrics endpoint every 60 seconds because they want to minimize API calls. They observe that some data points in their Grafana dashboards appear to be skipped — there are gaps in otherwise continuous time series. What does the documentation say is the root cause, and what is the correct remediation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A 60-second scrape interval matches the metric update cadence exactly, so clock drift between Prometheus and the Temporal service causes every other scrape to miss the update window; the fix is to use `honor_timestamps: true`."
+        },
+        {
+          "key": "B",
+          "text": "Metrics update once per minute, so a 60-second scrape interval provides no margin for jitter and may skip data points; the recommended scrape interval is 30 seconds to reliably capture each update."
+        },
+        {
+          "key": "C",
+          "text": "The 3-minute data latency causes metric families to be empty during the first few scrapes after a period of inactivity; reducing the scrape interval below 60 seconds forces data to be backfilled."
+        },
+        {
+          "key": "D",
+          "text": "The `X-Completeness: limited` header is returned when the response exceeds 30k data points, silently dropping some series; reducing scrape interval to 30 seconds spreads the load and prevents truncation."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The API reference explicitly states: 'Use 30s [scrape interval]. Intervals longer than 60s may skip datapoints because metrics update once per minute.' A 60-second scrape interval gives zero tolerance for any timing variation between when data is published and when the scrape fires. Using 30 seconds ensures each 1-minute update window is hit at least once. Clock drift (A) is a real concern but not the documented explanation — the fix there would also be `honor_timestamps`, not interval reduction alone. The 3-minute latency (C) affects alert freshness but not whether a scrape captures a data point. The `X-Completeness` header (D) relates to response truncation due to cardinality, not to interval-based gaps.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_hard_003",
+      "category": "Features_Observability",
+      "difficulty": "hard",
+      "question": "A platform team has 15 namespaces, 80 task queues, and 25 workflow types. They scrape all `temporal_cloud_v1_*` metrics that carry both `temporal_task_queue` and `temporal_workflow_type` labels. There are 6 such metrics. Their Prometheus scrape starts returning `X-Completeness: limited` headers. Which action directly targets the documented root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Reduce the scrape interval from 60s to 30s, because a shorter interval spreads the data points across more scrapes and each response will contain fewer total points."
+        },
+        {
+          "key": "B",
+          "text": "Switch from API key authentication to mTLS certificates, because the legacy PromQL endpoint does not enforce a per-scrape data point limit."
+        },
+        {
+          "key": "C",
+          "text": "Add namespace or metric filtering to the scrape config using the `namespaces` and `metrics` query parameters, bringing total series below the 30k-per-scrape limit."
+        },
+        {
+          "key": "D",
+          "text": "Enable `honor_timestamps: true` in Prometheus, which causes the scraper to deduplicate series with identical timestamps and reduces effective cardinality."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation provides a cardinality formula: Total series = Base metrics × Namespaces × Task queues × Workflow types. For this team: 6 × 15 × 80 × 25 = 180,000 series — far above the 30k-per-scrape limit, which triggers `X-Completeness: limited` (response truncation). The documented mitigation is to use namespace or metric query parameters to reduce response size. Scrape interval (A) doesn't reduce total series per response — it just changes how often the full (truncated) response is fetched. Switching to mTLS/PromQL (B) doesn't help because the PromQL endpoint is deprecated and being shut down. `honor_timestamps` (D) affects timestamp handling, not cardinality.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_hard_004",
+      "category": "Features_Observability",
+      "difficulty": "hard",
+      "question": "You are setting up a Service Account to scrape Temporal Cloud metrics from the OpenMetrics endpoint. Your security team requires least-privilege access. Which account-level role does the Temporal documentation specify for this use case?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Account Owner, because only Account Owners can generate long-lived API keys that survive namespace-level permission changes."
+        },
+        {
+          "key": "B",
+          "text": "Global Admin, because the OpenMetrics endpoint aggregates metrics across all namespaces and only Global Admin can view cross-namespace data."
+        },
+        {
+          "key": "C",
+          "text": "Metrics Read-Only, which is an account-level role assigned to a Service Account from which an API key is then generated."
+        },
+        {
+          "key": "D",
+          "text": "Namespace Admin on each target namespace, because the API key inherits namespace-scoped permissions and must be granted access per namespace."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The API reference documents a specific least-privilege path: navigate to Settings → Service Accounts, create a service account with the 'Metrics Read-Only' Account Level Role, then generate an API key within that service account. The API key inherits the permissions of its owning Service Account. Account Owner and Global Admin (A, B) are higher-privilege roles than necessary for read-only metric scraping. Namespace Admin (D) is a namespace-level role; the OpenMetrics endpoint is account-level and its setup requires an account-level role, not per-namespace grants.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_hard_005",
+      "category": "Features_Observability",
+      "difficulty": "hard",
+      "question": "A team monitoring Temporal Cloud is seeing their Prometheus instance receive an HTTP 429 response from `metrics.temporal.io`. They are running 4 Prometheus replicas each scraping the endpoint every 30 seconds. Why are they hitting the rate limit, and what is the minimal configuration change to fix it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Each Prometheus replica uses a separate API key, and each key is limited to 180 requests/hour. Consolidating to a single API key shared across all replicas will quadruple the effective limit."
+        },
+        {
+          "key": "B",
+          "text": "The rate limit is 180 requests/hour per account (~3 requests/minute). Four replicas at 30s each generate ~8 requests/minute, doubling the limit. The fix is to reduce to at most 1–2 active scraping replicas or increase the scrape interval to 60 seconds."
+        },
+        {
+          "key": "C",
+          "text": "The 429 is caused by response size exceeding 30k data points, not by request frequency. Adding `namespaces` filters will reduce payload size and eliminate the 429."
+        },
+        {
+          "key": "D",
+          "text": "Prometheus replicas running in HA mode count as a single logical client, so the 429 is triggered by a different tenant sharing the account limit. Isolating to a dedicated account resolves this."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The OpenMetrics API rate limit is 180 requests per account per hour, which equates to approximately 3 requests per minute. Four Prometheus replicas each scraping every 30 seconds generate 4 × 2 = 8 requests per minute — more than double the allowed rate. The limit is account-scoped, not per-API-key (ruling out A). 429 errors are caused by request rate, not response payload size — the payload size limit causes `X-Completeness: limited`, not a 429 (ruling out C). Prometheus HA replicas are independent scrapers from the API's perspective and each counts against the account limit (ruling out D). The fix is to reduce active scrapers or increase the interval.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_hard_006",
+      "category": "Features_Observability",
+      "difficulty": "hard",
+      "question": "Your organization is still using the legacy PromQL endpoint with `temporal_cloud_v0_*` metrics and mTLS certificate authentication. A new team member tries to onboard their Grafana instance to the same account's PromQL endpoint but cannot get access. They have a valid client certificate signed by the same CA. What is the most operationally accurate explanation for this situation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The PromQL endpoint requires per-namespace certificates; the new team member must generate a separate client certificate scoped to each target namespace."
+        },
+        {
+          "key": "B",
+          "text": "The PromQL endpoint deprecated on April 2, 2026 and is no longer accepting new users; even with a valid CA-signed certificate, new clients cannot be onboarded and they must use the OpenMetrics endpoint instead."
+        },
+        {
+          "key": "C",
+          "text": "The root CA certificate must be re-uploaded after every new client certificate is generated; the existing CA registration in the Observability settings was invalidated when the first client certificate was issued."
+        },
+        {
+          "key": "D",
+          "text": "mTLS on the PromQL endpoint uses client certificate pinning rather than CA chain validation, so only the original certificate that was uploaded to generate the endpoint is accepted."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation states explicitly: 'The PromQL endpoint and its `temporal_cloud_v0_*` metrics were deprecated on April 2, 2026 and are no longer accepting new users.' A valid CA-signed certificate is irrelevant because the barrier is not cryptographic — it's that new onboarding to the PromQL endpoint has been closed. Existing users can still use it (until October 5, 2026), but new clients cannot register. Per-namespace certificates (A) are not a real requirement — the PromQL endpoint is account-level. CA re-upload (C) is not documented as required per-certificate. Certificate pinning (D) is not how the endpoint works; the setup docs describe uploading a root CA and allowing any client cert signed by it.",
+      "source_doc": "cloud_metrics_general-setup.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_hard_007",
+      "category": "Features_Observability",
+      "difficulty": "hard",
+      "question": "A team uses both SDK metrics and Temporal Cloud metrics in the same Grafana dashboard. They notice that their SDK metric `workflow_completed_count` shows a spike at 14:05, but the Cloud metric `temporal_cloud_v1_workflow_success_count` for the same namespace doesn't show the spike until 14:08. They're concerned there's a misconfiguration. What is the correct interpretation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Cloud metric is delayed because it aggregates across all regions before publishing, and cross-region aggregation adds variable latency that cannot be configured away."
+        },
+        {
+          "key": "B",
+          "text": "The 3-minute difference is expected: Cloud metrics have a documented 3-minute data latency from origination to availability at the OpenMetrics endpoint, while SDK metrics are emitted directly from Workers with near-real-time latency."
+        },
+        {
+          "key": "C",
+          "text": "The discrepancy means the SDK is double-counting workflow completions that Cloud metrics deduplicate; adjusting the SDK metric emission interval to 3 minutes will align them."
+        },
+        {
+          "key": "D",
+          "text": "SDK metrics and Cloud metrics measure fundamentally different things and should never be compared on the same timeline; the 3-minute gap indicates the SDK client clock is drifted and needs NTP correction."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation is explicit that Cloud metrics have a 3-minute data latency: 'Metric data points are available for query within 3 minutes of their origination.' SDK metrics are emitted by Workers and Clients directly and are not subject to this server-side processing lag. The two sources are designed to be used together to 'measure the health and performance of your full Temporal infrastructure,' and a ~3-minute offset between them is normal and expected. Cross-region aggregation (A) may contribute to latency but the documented figure is 3 minutes total, not variable and uncontrollable. The double-counting claim (C) is unfounded. SDK vs. Cloud metrics do measure from different perspectives but can and should be compared on the same timeline (D); a clock drift explanation doesn't fit a consistent 3-minute offset.",
+      "source_doc": "cloud_metrics_index.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_hard_008",
+      "category": "Features_Observability",
+      "difficulty": "hard",
+      "question": "A DevOps engineer configures a Prometheus scrape job for the Temporal Cloud OpenMetrics endpoint with the following Prometheus config snippet. They later find that metrics for a newly added `staging-eu` namespace are missing from their dashboards even though workflows are running there. What is the cause?\n\n```yaml\nscrape_configs:\n- job_name: 'temporal-cloud'\n  static_configs:\n    - targets: ['metrics.temporal.io']\n  metrics_path: '/v1/metrics'\n  params:\n    namespaces: ['prod-*']\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `static_configs` target should be `metrics.temporal.io:443` explicitly; without the port, Prometheus defaults to port 80, which rejects HTTPS connections and silently drops non-matching namespaces."
+        },
+        {
+          "key": "B",
+          "text": "The `namespaces: ['prod-*']` wildcard filter explicitly restricts scraping to namespaces matching that pattern; `staging-eu` does not match `prod-*` and is therefore excluded from the response."
+        },
+        {
+          "key": "C",
+          "text": "Prometheus `params` only support exact string matching, not glob patterns; `prod-*` is treated as a literal namespace name and no namespaces are returned, causing all metrics to be missing."
+        },
+        {
+          "key": "D",
+          "text": "The `metrics_path` must include the account ID (e.g., `/v1/metrics?account=\u003cid\u003e`); without it, the endpoint returns only the default namespace and ignores the `namespaces` filter entirely."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The OpenMetrics API supports wildcard filtering on the `namespaces` query parameter (e.g., `production-*`), and this is exactly the documented use case. The Prometheus `params` config passes these directly as HTTP query parameters to the endpoint. A `namespaces: ['prod-*']` filter means only namespaces matching the `prod-*` pattern are included in the response — `staging-eu` does not match and will be silently omitted. The engineer needs to either add `staging-*` to the filter or remove the namespace filter to get all namespaces. Port specification (A) is not the issue; Prometheus handles HTTPS with TLS config, not port in the target. The documentation explicitly shows wildcard support (ruling out C). There is no account ID path requirement in the documented API (ruling out D).",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_nightmare_001",
+      "category": "Features_Observability",
+      "difficulty": "nightmare",
+      "question": "Your team runs Temporal Cloud with 15 namespaces, 80 task queues, and 30 workflow types. You've set up Prometheus to scrape the OpenMetrics endpoint every 30 seconds with `honor_timestamps: true`. After a week, your on-call engineer notices that Prometheus is frequently receiving `X-Completeness: limited` responses and some dashboards show gaps. The Prometheus job config currently has no `params` filtering. What is the PRIMARY architectural cause of the truncated responses, and what is the correct remediation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The 30-second scrape interval is faster than the 3-minute data latency window, causing Prometheus to request data before it is available. The fix is to increase the scrape interval to 5 minutes to align with the data availability SLA and add `honor_timestamps: true` so Prometheus respects the offset timestamps returned by the endpoint."
+        },
+        {
+          "key": "B",
+          "text": "The total time series cardinality (15 namespaces × 80 task queues × 30 workflow types × ~6 workflow metrics ≈ 216,000 series) far exceeds the 30,000 data-points-per-scrape limit, causing truncated `limited` responses. The fix is to add namespace and metric filtering via `params` in the Prometheus scrape config, or use `metric_relabel_configs` to consolidate high-cardinality label values."
+        },
+        {
+          "key": "C",
+          "text": "The 180-requests-per-hour account-level rate limit is being breached because Prometheus scrapes every 30 seconds (≈120 requests/hour), which leaves no headroom for other tooling. The fix is to consolidate all monitoring into one scrape job and reduce the interval to 60 seconds so total requests stay under the rate limit ceiling."
+        },
+        {
+          "key": "D",
+          "text": "The `honor_timestamps` flag is causing Prometheus to reject metric data points whose timestamps fall outside its configured staleness window, discarding the 3-minute-offset data returned by the OpenMetrics endpoint. The fix is to disable `honor_timestamps` so Prometheus uses its own ingestion timestamp instead of the endpoint-supplied offset timestamps."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The OpenMetrics endpoint enforces a hard limit of 30,000 data points per scrape response and signals truncation via the `X-Completeness: limited` header. Total series cardinality is roughly the product of metrics × namespaces × task queues × workflow types. With 15 namespaces, 80 task queues, 30 workflow types, and ~6 workflow-level metrics that carry both `temporal_task_queue` and `temporal_workflow_type` labels, you get 15 × 80 × 30 × 6 = 216,000 series — more than 7× the per-scrape limit. This is the documented cardinality explosion pattern. The correct remediation is to use the `namespaces` and `metrics` query parameters (via Prometheus `params`) to reduce the response to only what you need, and/or use `metric_relabel_configs` to consolidate non-critical label values into catch-all buckets. Option A is wrong because the scrape interval interacts with data latency but `honor_timestamps: true` is actually the CORRECT setting — it tells Prometheus to respect the 3-minute offset timestamps returned by the endpoint rather than stamping them with the scrape time, which would create false 'current' data. Option C is a distractor: 120 requests/hour is safely under the 180/hour limit. Option D inverts the `honor_timestamps` guidance — Temporal explicitly recommends enabling it so the offset timestamps are honored. The broader lesson: before onboarding Cloud metrics, always estimate your cardinality using the formula `Base metrics × Namespaces × Task queues × Workflow types` and pre-filter at scrape time if you approach the 30k limit.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_nightmare_002",
+      "category": "Features_Observability",
+      "difficulty": "nightmare",
+      "question": "A platform team is migrating from the legacy PromQL endpoint (`temporal_cloud_v0_*` metrics) to the new OpenMetrics endpoint (`temporal_cloud_v1_*` metrics). They plan to run both endpoints in parallel during the transition — the old endpoint authenticated via mTLS client certificates, the new endpoint authenticated via API keys tied to a Service Account. A security-minded engineer raises a concern: under the new model, if an API key is compromised, the blast radius is different than a compromised mTLS client certificate. Which statement MOST accurately describes the trust and permission boundary difference between the two authentication models?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Both models scope access identically at the account level. The only practical difference is that mTLS certificates have a fixed expiration baked into the certificate's validity period, while API keys can be revoked on-demand, making API keys strictly more secure in a credential-compromise scenario."
+        },
+        {
+          "key": "B",
+          "text": "Under the PromQL (mTLS) model, the client certificate authenticates at the account level and grants read access to all namespace metrics for that account with no further RBAC scoping. Under the OpenMetrics model, an API key is owned by a Service Account with a specific Account Level Role (e.g., 'Metrics Read-Only'), so the permissions are explicitly scoped and auditable via the Service Account's role, enabling least-privilege access that was not available with raw certificate authentication."
+        },
+        {
+          "key": "C",
+          "text": "Under the PromQL (mTLS) model, each namespace requires its own dedicated certificate, so compromise of one certificate exposes only that namespace's metrics. Under the OpenMetrics model, a single API key grants access to all namespaces in the account, making it a higher-blast-radius credential by design."
+        },
+        {
+          "key": "D",
+          "text": "The OpenMetrics API key model and the mTLS certificate model are functionally equivalent from a permissions standpoint, since both are account-scoped. The security engineer's concern is unfounded because the Service Account's 'Metrics Read-Only' role is a cosmetic label that does not restrict which metrics or namespaces the key can access."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The PromQL endpoint uses mTLS client certificates added to the account's observability settings. Those certificates authenticate the caller at the account boundary but the access control model is coarse — there is no per-namespace or role-based scoping. Anyone with the certificate can query all `v0_*` metrics for the account. The OpenMetrics endpoint, by contrast, uses API keys that are owned by Service Accounts. Service Accounts are created with an explicit Account Level Role — specifically 'Metrics Read-Only' for observability use cases. This means access is explicitly enumerated and auditable: you can see which service accounts exist, what roles they hold, and revoke individual keys. This is a genuine least-privilege improvement. Option A is partially true (API keys can be revoked on-demand, certificates require waiting for expiry or rotating the root CA) but misses the more important point about RBAC scoping. Option C inverts reality — the mTLS model does NOT require per-namespace certificates; a single root CA certificate added to the account grants account-wide access, not per-namespace isolation. Option D is wrong — the 'Metrics Read-Only' role is a real access control boundary, not cosmetic. The production lesson: when migrating, create dedicated Service Accounts per team or scraping system using 'Metrics Read-Only', rotate API keys on a schedule, and treat the key rotation as part of your standard secrets management pipeline — something that was harder to operationalize with long-lived mTLS certificates.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_nightmare_003",
+      "category": "Features_Observability",
+      "difficulty": "nightmare",
+      "question": "An SRE team configures Prometheus to scrape the Temporal Cloud OpenMetrics endpoint at `metrics.temporal.io/v1/metrics` every 30 seconds with `honor_timestamps: true`. They notice that their alerting rule `temporal_cloud_v1_approximate_backlog_count \u003e 1000` fires approximately 3 minutes after they observe a real backlog spike in their application logs. They also notice that when they query the endpoint directly with `curl`, the timestamps in the response are consistently about 3 minutes behind wall-clock time. A colleague suggests disabling `honor_timestamps` to make Prometheus stamp the metrics with the ingestion time instead, which would make alerts fire sooner. What is the actual trade-off of disabling `honor_timestamps` in this scenario?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Disabling `honor_timestamps` would have no practical effect because Prometheus ignores the OpenMetrics timestamp field by default; the 3-minute delay is caused by Prometheus's own evaluation interval and group_wait settings in Alertmanager, which should be tuned instead."
+        },
+        {
+          "key": "B",
+          "text": "Disabling `honor_timestamps` causes Prometheus to stamp each metric with the scrape ingestion time rather than the endpoint-supplied timestamp. This makes alerts appear to fire ~3 minutes sooner in wall-clock terms, but the data is still 3 minutes old — you are misleading your alerting system about when events occurred. This can corrupt range queries, rate calculations, and joined dashboards that depend on metric timestamps reflecting actual event time, while providing no real improvement in detection latency."
+        },
+        {
+          "key": "C",
+          "text": "Disabling `honor_timestamps` eliminates the 3-minute data latency because Prometheus will re-query the upstream source at ingestion time rather than using cached aggregated values, effectively bypassing the OpenMetrics endpoint's fixed offset window and returning near-real-time data."
+        },
+        {
+          "key": "D",
+          "text": "Disabling `honor_timestamps` makes alerts fire sooner and is the recommended approach for latency-sensitive alerting because the 3-minute offset is a presentation artifact of the Prometheus HTTP API query layer, not a fundamental property of the underlying metric data."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The 3-minute data latency is a fundamental property of how Temporal Cloud aggregates and exposes metrics — it is explicitly documented as a fixed offset applied at the endpoint level (`current timestamp minus 3 minutes rounded to the start of the minute`). The endpoint returns metrics with timestamps set to that offset, and Temporal explicitly recommends setting `honor_timestamps: true` in Prometheus so those timestamps are used as-is. Disabling `honor_timestamps` does NOT reduce the actual data latency — it only changes the label Prometheus attaches to the data point. You will see the metric appear to be 'current' in Prometheus queries, but the underlying value still reflects state from 3 minutes ago. The consequence is subtle and dangerous: `rate()` and `increase()` calculations over time windows, joined metrics from other sources, and any human inspection of 'when did this happen' will be wrong by ~3 minutes. This is a classic observability correctness vs. appearance trade-off. Option A is wrong — `honor_timestamps` absolutely affects how Prometheus stores metric timestamps, and the delay is not from Alertmanager. Option C is wrong — disabling `honor_timestamps` does not bypass the server-side aggregation window; the endpoint still returns the same 3-minute-old values. Option D is wrong — the 3-minute offset is a server-side data pipeline property, not a client query artifact. The production lesson: when you have a fixed data pipeline latency, the right response is to account for it in your alerting thresholds (set `for` duration appropriately) and SLO definitions, not to hide it from your monitoring system through timestamp manipulation.",
+      "source_doc": "cloud_metrics_openmetrics_api-reference.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_observability_nightmare_004",
+      "category": "Features_Observability",
+      "difficulty": "nightmare",
+      "question": "A team operating Temporal Cloud has built a unified observability dashboard that combines SDK metrics (emitted by their Workers via the SDK's metrics handler) and Cloud metrics (scraped from the OpenMetrics endpoint). They are debugging a situation where `temporal_cloud_v1_approximate_backlog_count` for a critical task queue is near zero, but Workers are reporting high `schedule_to_start_latency` via SDK metrics, and operators see from Cloud metrics that `temporal_cloud_v1_worker_task_slots_available` is also near zero. Which of the following conclusions CORRECTLY interprets the interaction between these two metric sources?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The near-zero backlog count and near-zero available slots together indicate that Workers are processing tasks as fast as they arrive, and the high `schedule_to_start_latency` in SDK metrics is a reporting artifact caused by clock skew between the Cloud metrics aggregation window (3-minute offset) and the SDK's real-time metric emission, not a real performance problem."
+        },
+        {
+          "key": "B",
+          "text": "Near-zero `approximate_backlog_count` combined with near-zero `worker_task_slots_available` and high SDK-reported `schedule_to_start_latency` indicates that Workers are fully saturated — all slots are consumed — and new tasks briefly queue but are immediately picked up, masking the backlog in the aggregated Cloud metric. The SDK metric captures the per-task latency experienced in real time, revealing saturation that the 1-minute-aggregated backlog count obscures."
+        },
+        {
+          "key": "C",
+          "text": "Since Cloud metrics and SDK metrics monitor different layers (service vs. Worker), they cannot be meaningfully correlated in a single dashboard. The high `schedule_to_start_latency` is from the SDK and reflects only the local Worker's queue depth, while Cloud metrics reflect a different namespace partition, making cross-source comparison unreliable without additional attribution labels."
+        },
+        {
+          "key": "D",
+          "text": "The data indicates a network partition between Workers and the Temporal Cloud frontend. Near-zero backlog means tasks are not being scheduled, near-zero available slots means Workers have no capacity, and high `schedule_to_start_latency` confirms that tasks that do reach Workers are delayed in transit due to connectivity degradation between the SDK and the service."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question requires reasoning about what each metric source actually measures and how their combination reveals a condition that neither source alone would clearly expose. `temporal_cloud_v1_approximate_backlog_count` is a Cloud metric representing the number of tasks sitting in the task queue backlog at the service level, aggregated over a window. `temporal_cloud_v1_worker_task_slots_available` (a Cloud metric) shows how many capacity slots Workers have registered. `schedule_to_start_latency` is an SDK metric emitted by the Worker when a task is actually dispatched — it measures the time between when Temporal scheduled the task and when a Worker picked it up. The pattern of near-zero backlog + near-zero available slots + high schedule-to-start latency is the classic Worker saturation signature: Workers are consuming tasks so fast that the backlog never accumulates to a visible level in the 1-minute aggregated Cloud metric, but every slot is occupied and tasks experience real queuing time that the SDK captures with per-task precision. This is precisely why the Temporal docs say 'When used together, Cloud and SDK metrics measure the health and performance of your full Temporal infrastructure' — neither source alone tells the full story. Option A incorrectly attributes the high latency to clock skew; the SDK emits `schedule_to_start_latency` based on timestamps embedded in the task message itself, not wall-clock comparison to Cloud metrics. Option C is wrong — Cloud metrics include `temporal_namespace` and `temporal_task_queue` labels that directly correlate with SDK metric dimensions, making cross-source correlation both possible and recommended. Option D incorrectly diagnoses a network partition; a partition would show tasks not being dispatched at all, not high latency on tasks that are being picked up. The production lesson: build dashboards that overlay Cloud metrics (service-perspective capacity and throughput) with SDK metrics (Worker-perspective latency and task execution) on the same task queue dimension — saturation, misconfiguration, and network issues each produce distinct multi-source signatures.",
+      "source_doc": "cloud_metrics_index.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    }
+  ]
+}

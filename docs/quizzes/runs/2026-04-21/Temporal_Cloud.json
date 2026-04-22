@@ -1,0 +1,313 @@
+{
+  "category": "Temporal_Cloud",
+  "questions": [
+    {
+      "id": "temporal_cloud_easy_001",
+      "category": "Temporal_Cloud",
+      "difficulty": "easy",
+      "question": "What is the primary purpose of Audit Logs in Temporal Cloud?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To record every Workflow execution start, stop, and status change inside a Namespace"
+        },
+        {
+          "key": "B",
+          "text": "To track who performed administrative operations on Temporal Cloud resources, and when"
+        },
+        {
+          "key": "C",
+          "text": "To store Worker process crash reports and retry attempt details for debugging"
+        },
+        {
+          "key": "D",
+          "text": "To back up Workflow History data so it can be restored after a cluster failure"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Audit Logs answer the 'who, when, and what' questions about Temporal Cloud control-plane operations — for example, who created or deleted a Namespace, who invited a user, or who rotated an API key. This helps organizations satisfy security and compliance requirements. Importantly, Audit Logs do NOT capture data-plane events like Workflow starts or terminations; the Export feature handles that use case instead.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "temporal_cloud_easy_002",
+      "category": "Temporal_Cloud",
+      "difficulty": "easy",
+      "question": "Which AWS service does Temporal Cloud use as the destination for streaming Audit Logs?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "AWS Lambda, which processes and forwards log events to downstream systems"
+        },
+        {
+          "key": "B",
+          "text": "AWS CloudWatch Logs, which stores and indexes log entries for querying"
+        },
+        {
+          "key": "C",
+          "text": "Amazon S3, which stores log files as objects in a versioned bucket"
+        },
+        {
+          "key": "D",
+          "text": "Amazon Kinesis Data Streams, which receives log events as a real-time stream"
+        }
+      ],
+      "answer": "D",
+      "explanation": "Temporal Cloud streams Audit Logs to an Amazon Kinesis Data Stream that you configure in your own AWS account. You are then responsible for building or connecting a consumer that reads from that Kinesis stream and delivers the logs wherever you need them — for example, to an S3 bucket or a SIEM tool. GCP Pub/Sub is the equivalent destination for Google Cloud users.",
+      "source_doc": "cloud_audit-logs-aws.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "temporal_cloud_easy_003",
+      "category": "Temporal_Cloud",
+      "difficulty": "easy",
+      "question": "Which Temporal Cloud role is required to configure an Audit Log Integration or view Audit Logs?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Any authenticated user within the account, since audit visibility is a read-only operation"
+        },
+        {
+          "key": "B",
+          "text": "Namespace Admin, because Audit Logs are scoped to individual Namespaces"
+        },
+        {
+          "key": "C",
+          "text": "Account Owner or Global Administrator, because Audit Logs are an account-level control-plane feature"
+        },
+        {
+          "key": "D",
+          "text": "Developer role, because configuring log sinks is treated as an infrastructure task"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Audit Logs are a control-plane feature that spans the entire Temporal Cloud account, so only users with the Account Owner or Global Administrator role can view them in the UI, query them via API, or set up an Audit Log Integration with AWS Kinesis or GCP Pub/Sub. This restriction ensures that sensitive access records can only be reviewed by highly trusted administrators.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "temporal_cloud_med_001",
+      "category": "Temporal_Cloud",
+      "difficulty": "med",
+      "question": "A security team asks which Temporal Cloud events are captured by Audit Logs. Which of the following is TRUE about what Audit Logs do and do NOT capture?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Audit Logs capture both control plane operations (like creating a Namespace) and data plane events (like starting or terminating a Workflow)."
+        },
+        {
+          "key": "B",
+          "text": "Audit Logs capture only data plane events such as Workflow Start and Workflow Terminate, while control plane changes like Namespace creation must be tracked via the Export feature."
+        },
+        {
+          "key": "C",
+          "text": "Audit Logs capture only Workflow History data; administrative operations like user management are tracked separately through the Observability Endpoint."
+        },
+        {
+          "key": "D",
+          "text": "Audit Logs capture control plane operations such as Namespace creation, user management, and API key changes, but do NOT capture data plane events like Workflow Start or Terminate."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Audit Logs are explicitly limited to control plane operations — things like CreateNamespace, DeleteUser, CreateAPIKey, and UpdateNamespaceAPI. They do NOT capture data plane events such as Workflow Start or Terminate. For those, you would use the Export feature, which ships closed Workflow Histories to external storage like S3. Option A is wrong because data plane events are excluded. Option B has it exactly backwards. Option C is wrong because Audit Logs do cover administrative operations; the Observability Endpoint is for metrics, not audit trails.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "temporal_cloud_med_002",
+      "category": "Temporal_Cloud",
+      "difficulty": "med",
+      "question": "Your organization configures an AWS Kinesis Audit Log sink in Temporal Cloud. After setup, how long should you expect to wait before the first Audit Log entries begin flowing into the stream?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Logs begin flowing immediately upon clicking Save, with no observable delay after the sink is configured."
+        },
+        {
+          "key": "B",
+          "text": "Logs begin flowing within 10 minutes after the sink is configured, and Temporal retains Audit Log data for up to 30 days."
+        },
+        {
+          "key": "C",
+          "text": "Logs begin flowing within 1 hour and Temporal retains data for up to 7 days before the records are purged from the system."
+        },
+        {
+          "key": "D",
+          "text": "Logs begin flowing within 24 hours, and only a maximum of 1,000 total log entries are stored before older records are overwritten."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation states that you will see the first logs within 10 minutes after configuring the sink, and that Temporal retains Audit Log information for up to 30 days. Option A is incorrect — there is a brief propagation delay. Option C gets the retention period wrong (it's 30 days, not 7). Option D is incorrect on both the delay (24 hours is far too long) and the storage limit (the 1,000 cap applies to the UI download and API page size, not total retention).",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "temporal_cloud_med_003",
+      "category": "Temporal_Cloud",
+      "difficulty": "med",
+      "question": "When reviewing an Audit Log JSON entry, a developer notices both a `user_email` field and a `principal.name` field containing the same email address. What does the Temporal Cloud documentation say about this situation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`user_email` is the authoritative field going forward; `principal.name` is a legacy alias that will be removed in a future release."
+        },
+        {
+          "key": "B",
+          "text": "Both fields will always be present and kept in sync indefinitely, because they serve different purposes: `user_email` for human-readable display and `principal.name` for programmatic lookup."
+        },
+        {
+          "key": "C",
+          "text": "`user_email` is deprecated and planned for removal on or after April 1, 2026; `principal.name` is the preferred field for the principal's identity going forward."
+        },
+        {
+          "key": "D",
+          "text": "`user_email` only appears for service account principals, while `principal.name` is used exclusively for human user accounts created via the UI."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation includes a deprecation notice stating that `user_email` is duplicated by `principal.name` for user-type principals and is planned for removal on or after April 1, 2026. Consumers should migrate to reading `principal.name` (and `principal.type`) instead. Option A has the relationship backwards. Option B is incorrect — the deprecation notice explicitly calls out `user_email` for future removal. Option D is wrong; `user_email` applies to user-type principals, and there is no such exclusivity rule described.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "temporal_cloud_med_004",
+      "category": "Temporal_Cloud",
+      "difficulty": "med",
+      "question": "A platform team wants to set up Workflow History export from Temporal Cloud to AWS S3. They notice Temporal Cloud provisions multiple internal IAM roles rather than a single role for export operations. What is the PRIMARY reason for this design?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "AWS requires at least three IAM roles per CloudFormation stack, so Temporal provisions multiple roles purely to satisfy AWS infrastructure constraints."
+        },
+        {
+          "key": "B",
+          "text": "Multiple IAM roles are created so that each Temporal Cloud region can maintain its own isolated role, preventing cross-region permission overlap."
+        },
+        {
+          "key": "C",
+          "text": "Temporal provisions multiple IAM roles for cost optimization, since AWS bills per IAM role invocation and distributing calls reduces the per-namespace export cost."
+        },
+        {
+          "key": "D",
+          "text": "Multiple IAM roles provide security isolation, load distribution, warm standby availability, and resilience — so that if one role is compromised or throttled, others remain available for export operations."
+        }
+      ],
+      "answer": "D",
+      "explanation": "The documentation explicitly lists the reasons: security isolation (compromise of one role doesn't affect others), load distribution (avoids relying on a single role), warm standby (keeps multiple roles active to avoid throttling when switching), and reliability (resilience against cloud provider account-level issues). Option A is incorrect — this is not an AWS infrastructure constraint. Option B conflates IAM roles with regional separation, which is a different concern. Option C is fabricated; IAM role usage is not billed per invocation in the way described.",
+      "source_doc": "cloud_aws-export-s3.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "temporal_cloud_hard_001",
+      "category": "Temporal_Cloud",
+      "difficulty": "hard",
+      "question": "Your security team is reviewing Temporal Cloud Audit Logs to investigate whether a junior engineer deleted a namespace last Tuesday. They pull the logs and find the `DeleteNamespaceAPI` event, but they notice the `user_email` field is missing from some newer log entries. Why might this field be absent, and what field should they use instead?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`user_email` is only populated for operations performed via the Temporal Cloud UI, not the API; for API-initiated operations, the team should inspect the `request_id` field to identify the caller."
+        },
+        {
+          "key": "B",
+          "text": "`user_email` is deprecated and scheduled for removal on or after April 1, 2026; the team should use `principal.name` for user principals, since `user_email` was redundant with that field and is no longer guaranteed to be present."
+        },
+        {
+          "key": "C",
+          "text": "`user_email` is only emitted when the log `level` field is `LOG_LEVEL_INFO`; because newer delete operations produce `LOG_LEVEL_WARN`, the field is suppressed and they should fall back to `caller_ip_address`."
+        },
+        {
+          "key": "D",
+          "text": "`user_email` is omitted whenever the operation is performed by a service account rather than a human user; in that case the team should consult the `category` field to determine the principal type."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal Cloud documentation explicitly marks `user_email` as deprecated, noting it is duplicated by `principal.name` for principals of type `user` and that other principal types (e.g., service accounts) have no associated email at all. The field is planned for removal on or after April 1, 2026. Relying on `user_email` in long-lived audit pipelines is therefore risky. Similarly, `level`, `caller_ip_address`, `details`, and `category` are all deprecated in favour of `status`, `x_forwarded_for`, `raw_details`, and removal respectively. Teams building compliance tooling should migrate to the non-deprecated fields now rather than wait for the breaking change.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "temporal_cloud_hard_002",
+      "category": "Temporal_Cloud",
+      "difficulty": "hard",
+      "question": "A Platform team sets up an AWS Kinesis Audit Log sink for Temporal Cloud and notices that, during a large infrastructure automation run that creates dozens of namespaces and API keys in rapid succession, some audit events never arrive in their downstream SIEM. The Kinesis stream itself shows throttling errors. What is the most likely root cause and how should it be addressed?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal Cloud batches audit events and delivers them only once per hour during heavy load, so the SIEM will eventually receive the events without any stream-side changes needed."
+        },
+        {
+          "key": "B",
+          "text": "The Audit Log sink has a built-in 1,000-event buffer per namespace; exceeding this drops events permanently, and the team must open a support ticket to recover the lost entries from Temporal's 30-day retention store."
+        },
+        {
+          "key": "C",
+          "text": "Kinesis Data Streams enforces a rate limit of 1,000 messages per second and has quotas on both record count and record size; the team should increase the Kinesis shard count or request a quota increase to accommodate the burst write rate."
+        },
+        {
+          "key": "D",
+          "text": "The IAM role provisioned by the CloudFormation template only allows sequential writes; concurrent namespace creation operations exceed the role's single-thread write policy and the team must update the IAM policy to allow parallel puts."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Temporal Cloud documentation explicitly calls out that Kinesis has a rate limit of 1,000 messages per second, along with quotas on the number of records written and their size. When the control-plane automation fires many `CreateNamespaceAPI`, `CreateAPIKey`, and related events simultaneously, this limit can be saturated, causing Kinesis to throttle writes from Temporal. The correct remediation is to scale the Kinesis stream (add shards) or request a service quota increase from AWS — not to change anything on the Temporal side. Engineers who assume Temporal will retry indefinitely or buffer events locally will lose audit data. The 30-day retention window in Temporal Cloud can help recover some events after the fact via support ticket, but preventing throttling at the stream level is the proper operational fix.",
+      "source_doc": "cloud_audit-logs-aws.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "temporal_cloud_hard_003",
+      "category": "Temporal_Cloud",
+      "difficulty": "hard",
+      "question": "A compliance officer asks whether Temporal Cloud Audit Logs can be used to prove that a specific workflow was started by a particular user at a given time, to satisfy an SOC 2 audit requirement. Based on how Audit Logs work in Temporal Cloud, what is the correct answer?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Yes — Audit Logs capture all control-plane and data-plane events, including Workflow Start, so the compliance officer can filter by `operation: WorkflowStart` and the `principal` field to identify the initiating user."
+        },
+        {
+          "key": "B",
+          "text": "No — Audit Logs only cover control-plane operations such as namespace management, user changes, and API key lifecycle; data-plane events like Workflow Start are not captured, and the Export feature should be used instead to access closed Workflow Histories."
+        },
+        {
+          "key": "C",
+          "text": "No — Audit Logs capture Workflow Start events but strip the `principal` field for data-plane operations; the compliance officer should cross-reference the `request_id` with application-level logs to reconstruct the initiating identity."
+        },
+        {
+          "key": "D",
+          "text": "Yes — but only for namespaces that have an active Audit Log sink configured; without a Kinesis or Pub/Sub sink, Workflow Start events are discarded and unavailable for the 30-day retention window."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud Audit Logs explicitly do NOT capture data-plane events such as Workflow Start, Workflow Terminate, or Schedule Create. The documentation states this directly and points to the Export feature as the mechanism for sending closed Workflow Histories to external storage. The Audit Log feature is scoped to the control plane — who made administrative changes to Temporal Cloud resources (namespaces, users, API keys, Nexus endpoints, etc.). An engineer or compliance officer who tries to use Audit Logs for workflow-level forensics will find no matching events, not because of a misconfiguration, but because that data simply isn't there by design. The correct tool for workflow-level evidence is the Export feature, which delivers closed Workflow Histories to S3 or GCS.",
+      "source_doc": "cloud_audit-logs.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "temporal_cloud_hard_004",
+      "category": "Temporal_Cloud",
+      "difficulty": "hard",
+      "question": "A team migrates their Temporal Cloud Audit Log sink from AWS Kinesis to GCP Pub/Sub using the Terraform path. After completing the Terraform apply, they skip the prerequisite steps (creating a Pub/Sub topic and service account manually) because Terraform is supposed to handle deployment automatically. Thirty minutes later, no audit events appear in Pub/Sub. What went wrong?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The manual prerequisite steps — creating a Pub/Sub topic and service account — are only required when using the manual setup path; since they used Terraform, skipping those steps is correct and the 30-minute delay is simply the normal propagation window before the first events appear."
+        },
+        {
+          "key": "B",
+          "text": "Terraform provisioning requires a separate `tcld` command to activate the sink after apply; without running `tcld namespace audit-log enable`, Temporal Cloud treats the sink as inactive and holds events in an internal buffer for up to one hour."
+        },
+        {
+          "key": "C",
+          "text": "The Temporal Cloud UI Verify button must be clicked after any Terraform-based setup to validate the sink; skipping this step leaves the sink in an unverified state where Temporal withholds events until verification passes."
+        },
+        {
+          "key": "D",
+          "text": "When using Terraform for GCP Pub/Sub audit log setup, the Pub/Sub topic and service account do not need to be pre-created manually because Terraform handles provisioning them; however, the service account permissions must still be configured correctly, or Temporal cannot write to the topic."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The GCP Pub/Sub Audit Log documentation states explicitly: 'These steps are only required for manual setup. If you use Terraform for your deployment, you don't need to complete these prerequisites.' This means that when taking the Terraform path, skipping the manual creation of the Pub/Sub topic and service account is actually correct behaviour — Terraform handles that provisioning. The 30-minute wait is within the documented window: the docs note that audit logs will begin showing up in Pub/Sub within 10 minutes. The team should verify that their Terraform applied without errors and that permissions are correctly set, rather than assuming the missing events are due to skipping the prerequisites. This is a classic case where reading the conditional note in the docs prevents an unnecessary rollback.",
+      "source_doc": "cloud_audit-logs-gcp.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    }
+  ]
+}

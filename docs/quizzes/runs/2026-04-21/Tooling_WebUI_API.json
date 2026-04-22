@@ -1,0 +1,285 @@
+{
+  "category": "Tooling_WebUI_API",
+  "questions": [
+    {
+      "id": "tooling_webui_api_easy_001",
+      "category": "Tooling_WebUI_API",
+      "difficulty": "easy",
+      "question": "When you set the `TEMPORAL_API_KEY` environment variable to connect your Temporal Client, what additional behavior does this automatically trigger?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "TLS is enabled by default, securing the connection without any extra configuration"
+        },
+        {
+          "key": "B",
+          "text": "The client switches to a backup server address in case the primary is unavailable"
+        },
+        {
+          "key": "C",
+          "text": "All gRPC metadata headers are automatically stripped from outgoing requests"
+        },
+        {
+          "key": "D",
+          "text": "The client namespace is reset to the default value to prevent conflicts"
+        }
+      ],
+      "answer": "A",
+      "explanation": "According to the configuration reference, when an API key is present via `TEMPORAL_API_KEY`, TLS is enabled by default. This makes sense because API keys are credentials — transmitting them over an unencrypted connection would be a security risk. Temporal pairs authentication with encryption automatically so you don't accidentally expose credentials on a plain-text channel.",
+      "source_doc": "references_client-envrionment-configuration.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_webui_api_easy_002",
+      "category": "Tooling_WebUI_API",
+      "difficulty": "easy",
+      "question": "A Temporal operator notices the `no_poller_tasks` metric is rising steadily. What is the most likely cause of this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The persistence database is overloaded and rejecting write requests from the History Service"
+        },
+        {
+          "key": "B",
+          "text": "Too many Workflows are being continued-as-new, exhausting the task queue buffer"
+        },
+        {
+          "key": "C",
+          "text": "Tasks are being added to a Task Queue that no Worker is currently polling, often due to a Task Queue name mismatch"
+        },
+        {
+          "key": "D",
+          "text": "The Frontend Service is rate-limiting requests because the namespace quota has been exceeded"
+        }
+      ],
+      "answer": "C",
+      "explanation": "`no_poller_tasks` is emitted whenever a task is added to a Task Queue that has no active poller. The documentation explicitly calls this out as 'usually an indicator that either the Worker or the starter programs are using the wrong Task Queue.' This is a common misconfiguration — if the Workflow starter and the Worker register different Task Queue names, tasks pile up with nobody to process them. Monitoring this metric helps catch that mistake early.",
+      "source_doc": "references_cluster-metrics.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_webui_api_med_001",
+      "category": "Tooling_WebUI_API",
+      "difficulty": "med",
+      "question": "An operator sets the environment variable `TEMPORAL_API_KEY` to authenticate their Temporal Client. What additional effect does this have on the client's connection beyond authentication?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It automatically sets the `TEMPORAL_NAMESPACE` to the namespace associated with the API key, overriding any manually configured namespace value."
+        },
+        {
+          "key": "B",
+          "text": "It enables TLS by default, so the connection is encrypted even if `TEMPORAL_TLS` is not explicitly set to 'true'."
+        },
+        {
+          "key": "C",
+          "text": "It configures gRPC metadata headers automatically, appending the API key as a bearer token in all outbound request headers."
+        },
+        {
+          "key": "D",
+          "text": "It disables host verification by default so that the client skips validating the server's TLS certificate against the CA."
+        }
+      ],
+      "answer": "B",
+      "explanation": "According to the documentation, when `TEMPORAL_API_KEY` is present, TLS is enabled by default — you don't need to separately set `TEMPORAL_TLS=true`. This is important in production: if you're connecting to Temporal Cloud or a TLS-secured cluster using an API key, you get encrypted transport automatically. Option A is incorrect; the API key has no effect on namespace resolution. Option C is wrong; gRPC metadata is configured separately via `TEMPORAL_GRPC_META_*` variables. Option D is the opposite of what happens — TLS is enabled (not disabled) and host verification is not changed by the API key setting.",
+      "source_doc": "references_client-envrionment-configuration.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_webui_api_med_002",
+      "category": "Tooling_WebUI_API",
+      "difficulty": "med",
+      "question": "A Temporal operator notices that the `no_poller_tasks` Matching Service metric is consistently non-zero and increasing. What is the most likely root cause indicated by this metric?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Temporal History Service is creating Tasks faster than the persistence layer can store them, causing a backlog in the database write path."
+        },
+        {
+          "key": "B",
+          "text": "Workers or the workflow starter are misconfigured to use different Task Queue names, so tasks are being added to a queue that no Worker is polling."
+        },
+        {
+          "key": "C",
+          "text": "The Matching Service's poll timeout is set too low, causing Workers to disconnect before Tasks become available and triggering the counter."
+        },
+        {
+          "key": "D",
+          "text": "The rate limiting policy in the Namespace is throttling new Workflow starts, causing Tasks to be rejected before they reach a poller."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`no_poller_tasks` is emitted whenever a task is added to a Task Queue that has no active poller. The documentation explicitly states this is usually an indicator that either the Worker or the starter program is using the wrong Task Queue name. This is a very common misconfiguration in practice — for example, the worker registers on `my-task-queue` but the client starts workflows on `my_task_queue`. Option A describes a persistence issue, which would surface in `persistence_errors` or `task_errors`, not `no_poller_tasks`. Option C describes `poll_timeouts`, a different metric that fires when a Worker is polling correctly but finds no work. Option D describes schedule rate limiting, tracked by `schedule_rate_limited`.",
+      "source_doc": "references_cluster-metrics.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_webui_api_med_003",
+      "category": "Tooling_WebUI_API",
+      "difficulty": "med",
+      "question": "You want to override the hostname used during the TLS handshake when your Temporal Client connects to a server that is fronted by a proxy with a different CN than the actual server address. Which client environment setting should you use?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`TEMPORAL_TLS_DISABLE_HOST_VERIFICATION`, which skips verifying the server's hostname entirely so the proxy CN mismatch is ignored."
+        },
+        {
+          "key": "B",
+          "text": "`TEMPORAL_TLS_SERVER_CA_CERT_DATA`, which lets you supply a custom CA certificate that includes the proxy's hostname in its Subject Alternative Names."
+        },
+        {
+          "key": "C",
+          "text": "`TEMPORAL_TLS_SERVER_NAME`, which overrides the server name used for Server Name Indication (SNI) so the TLS handshake uses the expected hostname."
+        },
+        {
+          "key": "D",
+          "text": "`TEMPORAL_ADDRESS`, which should be set to the proxy's CN-matching hostname so TLS can derive the correct SNI from the connection address."
+        }
+      ],
+      "answer": "C",
+      "explanation": "`TEMPORAL_TLS_SERVER_NAME` is specifically designed to override the server name used in SNI during the TLS handshake. This is the right tool when your Temporal Frontend is behind a proxy or load balancer whose hostname differs from the certificate's CN/SAN — a common pattern in enterprise deployments. Option A (`TEMPORAL_TLS_DISABLE_HOST_VERIFICATION`) would work around the problem but is a security risk because it disables all hostname validation; the docs explicitly say to use it with caution. Option B is about trusting a custom CA, not about SNI overriding. Option D would change the actual network endpoint you connect to, not the SNI value presented in the handshake.",
+      "source_doc": "references_client-envrionment-configuration.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_webui_api_med_004",
+      "category": "Tooling_WebUI_API",
+      "difficulty": "med",
+      "question": "An operator observes that the `asyncmatch_latency` metric for the Matching Service has spiked significantly at the 95th percentile. What does this metric specifically measure, and what is the most actionable conclusion to draw?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It measures latency between History Service Task creation and persistence writes, suggesting the database is under high write pressure."
+        },
+        {
+          "key": "B",
+          "text": "It measures the time from Task creation to Task delivery to a Worker, suggesting that Workers are not polling fast enough to keep up with the incoming task rate."
+        },
+        {
+          "key": "C",
+          "text": "It measures the round-trip latency of gRPC calls between the Matching and Frontend Services, suggesting a network connectivity issue between these two components."
+        },
+        {
+          "key": "D",
+          "text": "It measures how long a Worker holds a poll connection open before receiving a Task, suggesting that Task generation is too infrequent relative to the number of Workers."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`asyncmatch_latency` measures the time from Task creation to Task delivery for async-matched Tasks. As the documentation states, 'the larger this latency, the longer Tasks are sitting in the queue waiting for your Workers to pick them up.' A high p95 on this metric means Tasks are accumulating in the queue, which points directly to insufficient Worker polling capacity — either too few Workers, Workers that are too slow, or Workers crashing. This is one of the most important metrics for diagnosing Worker throughput problems. Option A describes persistence latency, measured by `persistence_latency`. Option C confuses this with inter-service gRPC metrics like `client_errors`. Option D describes the inverse situation — that metric (`poll_timeouts`) fires when pollers are waiting and finding no work.",
+      "source_doc": "references_cluster-metrics.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_webui_api_hard_001",
+      "category": "Tooling_WebUI_API",
+      "difficulty": "hard",
+      "question": "Your team deploys a Temporal Client in a CI/CD pipeline that connects to Temporal Cloud using an API key stored in `TEMPORAL_API_KEY`. A junior engineer notices the connection works without explicitly setting `TEMPORAL_TLS=true` and files a bug report claiming TLS must be broken. What is actually happening, and what is the risk if the engineer disables TLS to 'fix' the issue?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "TLS is not actually active unless `TEMPORAL_TLS=true` is explicitly set; the API key is sent in plaintext and the connection appears to work because Temporal Cloud accepts unencrypted connections for legacy compatibility. Disabling TLS would have no observable effect."
+        },
+        {
+          "key": "B",
+          "text": "When `TEMPORAL_API_KEY` is present, TLS is enabled automatically by the client; no explicit flag is needed. Setting `TEMPORAL_TLS=false` (or `tls.disabled = true` in TOML) would override this default and send the API key over an unencrypted channel, exposing credentials."
+        },
+        {
+          "key": "C",
+          "text": "The client falls back to mTLS using any certificate files found on disk when an API key is present, so TLS is active but through a different mechanism. Disabling TLS would only remove the mTLS layer and leave API-key-based auth in place without encryption."
+        },
+        {
+          "key": "D",
+          "text": "Temporal Cloud enforces TLS server-side regardless of client configuration, so the client setting is purely informational. Whether or not the engineer disables the flag, traffic is always encrypted by the server."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Per the client environment configuration reference, when `TEMPORAL_API_KEY` is present, TLS is enabled by default — the engineer does not need to set an additional flag. The implicit TLS activation is a convenience so that credentials are never accidentally sent in cleartext. If someone then explicitly sets `TEMPORAL_TLS=false` (env) or `tls.disabled = true` (TOML), they would override this default and expose the API key over an unencrypted connection. This is a common operational mistake: assuming that because a setting was not explicitly configured it is not active, and then 'fixing' it in a way that removes a security default.",
+      "source_doc": "references_client-envrionment-configuration.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_webui_api_hard_002",
+      "category": "Tooling_WebUI_API",
+      "difficulty": "hard",
+      "question": "You are oncall and observe that `asyncmatch_latency` at the P95 is climbing steadily in your Grafana dashboard while `poll_timeouts` is also rising, but `poll_success` has dropped. CPU and memory on your Temporal hosts are normal. What is the most operationally correct interpretation of this combination of signals?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Temporal History Service is experiencing lock contention on Workflow state, which causes tasks to queue up in matching. The fix is to reduce the number of concurrent Activities per Workflow to lower `service_latency_userlatency`."
+        },
+        {
+          "key": "B",
+          "text": "The persistence layer is throttling writes, which prevents the Matching Service from acknowledging tasks. The primary signal to confirm this is `persistence_error_with_type` showing a throttle error_type alongside the latency spike."
+        },
+        {
+          "key": "C",
+          "text": "Workers are not polling fast enough or there are too few of them — tasks are accumulating in the task queue longer than pollers can drain them. The rising `poll_timeouts` confirms pollers are exhausting their poll window without finding work only because there are no tasks, which contradicts the latency rise."
+        },
+        {
+          "key": "D",
+          "text": "Tasks are sitting in the queue longer than expected because Workers are not polling quickly enough or there are insufficient pollers. Rising `poll_timeouts` means pollers wait out their timeout without a match, and high `asyncmatch_latency` confirms tasks wait a long time before delivery. The fix is to scale Workers or investigate why pollers are disconnecting."
+        }
+      ],
+      "answer": "D",
+      "explanation": "`asyncmatch_latency` measures the time from task creation to delivery, so a rising P95 means tasks are sitting in the queue. `poll_timeouts` fires when no task is available within the poll window — but here both metrics are rising simultaneously with `poll_success` dropping. The correct reading is that tasks ARE queued but pollers are failing to match them, which points to insufficient or unhealthy Workers. Option C reaches a contradictory conclusion (poll_timeouts usually indicates empty queues, but with high asyncmatch_latency we know tasks are present), meaning the pollers are timing out not because queues are empty but because there aren't enough of them. The `no_poller_tasks` metric would also spike if pollers were completely absent. Scaling Workers or investigating network connectivity for existing Workers is the right remediation.",
+      "source_doc": "references_cluster-metrics.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_webui_api_hard_003",
+      "category": "Tooling_WebUI_API",
+      "difficulty": "hard",
+      "question": "An operator needs to connect the Temporal CLI to an internal Temporal cluster whose TLS certificate is signed by a private CA, and the server's hostname in the certificate does not match the DNS name used to reach it internally. The operator sets `TEMPORAL_TLS_SERVER_CA_CERT_PATH` to the private CA bundle and `TEMPORAL_TLS_SERVER_NAME` to the CN in the certificate. The CLI still fails with a TLS handshake error. What environment variable should the operator evaluate next, and what is its operational risk?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`TEMPORAL_TLS_CLIENT_CERT_PATH` — without a client certificate the server cannot perform mutual TLS. The risk is that uploading a client cert to a shared environment exposes the private key to other users of that machine."
+        },
+        {
+          "key": "B",
+          "text": "`TEMPORAL_TLS_DISABLE_HOST_VERIFICATION` — setting this to true skips hostname verification entirely, which may resolve the mismatch if `TEMPORAL_TLS_SERVER_NAME` is not honored. The risk is that disabling host verification removes protection against man-in-the-middle attacks and is not supported by all SDKs."
+        },
+        {
+          "key": "C",
+          "text": "`TEMPORAL_TLS` — without this explicitly set to 'true', TLS negotiation never starts and the handshake error is actually a plaintext-to-TLS framing mismatch. Enabling it resolves the issue without any security tradeoff."
+        },
+        {
+          "key": "D",
+          "text": "`TEMPORAL_GRPC_META_AUTHORIZATION` — some private clusters require a bearer token passed as a gRPC metadata header before the TLS handshake completes. Adding this header resolves handshake failures on auth-gated clusters."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The operator has already provided the CA bundle (so certificate trust should be established) and set `TEMPORAL_TLS_SERVER_NAME` (to override SNI). If the handshake still fails, the next candidate is `TEMPORAL_TLS_DISABLE_HOST_VERIFICATION`, which bypasses hostname verification altogether. The documentation explicitly notes this should be used with caution and is not supported by all SDKs — making it a last resort for internal/dev clusters, not a production pattern. Option A (client cert) is relevant for mTLS but would manifest as a different error (certificate required by server), not a generic handshake failure. Option C is wrong because if the server is TLS-only, a plaintext connection would fail immediately, not produce a handshake error after CA and SNI configuration. Option D conflates gRPC metadata auth with TLS handshake mechanics.",
+      "source_doc": "references_client-envrionment-configuration.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    },
+    {
+      "id": "tooling_webui_api_hard_004",
+      "category": "Tooling_WebUI_API",
+      "difficulty": "hard",
+      "question": "Your Temporal Service's `schedule_missed_catchup_window` counter is incrementing after a 90-minute database maintenance window that caused the Temporal cluster to be unavailable. You also see `schedule_rate_limited` spiking immediately after recovery. What sequence of events explains both metrics, and what tuning would prevent missed catchups during future maintenance windows?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "During the outage, scheduled actions accumulated in the in-memory buffer and overflowed it, producing missed catchup events. After recovery, the buffer drains faster than the namespace rate limit allows, triggering `schedule_rate_limited`. Increasing `buffer_all` overlap policy size resolves both."
+        },
+        {
+          "key": "B",
+          "text": "The catchup window defines how far back the scheduler will replay missed actions after an outage. If the outage exceeds the catchup window, those actions are permanently skipped and `schedule_missed_catchup_window` increments. After recovery, the burst of replayed actions within the catchup window saturates namespace-level rate limits, causing `schedule_rate_limited` to spike. Extending the catchup window and/or raising the namespace rate limit prevents both."
+        },
+        {
+          "key": "C",
+          "text": "Missed catchup windows are caused by `schedule_buffer_overruns` during the outage, not by the outage duration itself. The rate limiting after recovery is unrelated and indicates the Workflow starter is misconfigured. Fixing the starter's retry policy resolves `schedule_rate_limited`."
+        },
+        {
+          "key": "D",
+          "text": "`schedule_missed_catchup_window` increments whenever Temporal cannot write a schedule record to persistence, so it is a persistence error indicator rather than an outage-duration indicator. Tuning persistence connection pools resolves it; `schedule_rate_limited` is an unrelated symptom of an undersized Frontend Service."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation states that `schedule_missed_catchup_window` tracks occurrences when the system fails to execute a Scheduled Action within the defined catchup window, and that missed catchup windows result from extended outages beyond the configured catchup period. A 90-minute outage that exceeds the catchup window means those schedule slots are simply skipped. After recovery, the scheduler attempts to replay all actions still within the catchup window in rapid succession, which can hit namespace-level rate limits — hence `schedule_rate_limited` spiking. The correct operational response is to extend the catchup window to cover realistic maintenance durations and/or raise the namespace rate limit to absorb the burst. Option A confuses `buffer_all` overlap policy (which prevents buffer overruns for long-running schedules) with the catchup window concept. Option C incorrectly claims buffer overruns cause missed catchup windows. Option D misidentifies the metric as a persistence error indicator.",
+      "source_doc": "references_cluster-metrics.html",
+      "generated_at": "2026-04-21T16:15:09Z"
+    }
+  ]
+}

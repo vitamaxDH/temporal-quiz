@@ -1,0 +1,369 @@
+{
+  "category": "Features_Messaging_and_Visibility",
+  "questions": [
+    {
+      "id": "features_messaging_and_visibility_easy_001",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "easy",
+      "question": "What is the main purpose of Dual Visibility in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To run two Workflow Executions at the same time for redundancy"
+        },
+        {
+          "key": "B",
+          "text": "To allow you to have a secondary Visibility store, useful for migrating your database or creating a backup"
+        },
+        {
+          "key": "C",
+          "text": "To let two different users query Workflow data simultaneously"
+        },
+        {
+          "key": "D",
+          "text": "To double the speed of Workflow Execution searches"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Dual Visibility lets you configure a secondary Visibility store alongside your primary one. This is useful when you want to migrate from one database to another (for example, moving from Cassandra to a SQL database) or simply keep a backup. During migration, you can write to both stores at the same time and gradually switch your reads over to the new one.",
+      "source_doc": "dual-visibility.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_easy_002",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "easy",
+      "question": "In Temporal, what is a Search Attribute used for?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Storing secret credentials needed by a Workflow"
+        },
+        {
+          "key": "B",
+          "text": "Defining the steps a Workflow should execute in order"
+        },
+        {
+          "key": "C",
+          "text": "Filtering and finding Workflow Executions based on indexed metadata"
+        },
+        {
+          "key": "D",
+          "text": "Sending messages between two running Workflows"
+        }
+      ],
+      "answer": "C",
+      "explanation": "A Search Attribute is a key-value piece of metadata attached to a Workflow Execution. Because it is indexed, you can use it in a List Filter to search for and filter Workflow Executions — for example, finding all Workflows with a certain status or that were started within a time range. Think of it like a tag you can query later.",
+      "source_doc": "search-attribute.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_easy_003",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "easy",
+      "question": "When a Workflow receives a Signal or Update message, what happens if the message handler has not finished running by the time the Workflow is about to complete?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal automatically pauses the Workflow until all handlers finish"
+        },
+        {
+          "key": "B",
+          "text": "The unfinished handler is silently ignored with no consequences"
+        },
+        {
+          "key": "C",
+          "text": "Temporal restarts the entire Workflow from the beginning"
+        },
+        {
+          "key": "D",
+          "text": "Clients waiting for an Update result may receive a 'Not Found' error, and warnings may be raised"
+        }
+      ],
+      "answer": "D",
+      "explanation": "Temporal recommends that all message handlers finish before a Workflow run completes. If a handler is still running when the Workflow ends, clients waiting for an Update response can receive a 'Not Found' error because the Update never completed. You can avoid this by explicitly waiting for all handlers to finish before your Workflow exits, or by setting a policy to suppress the warnings if you intentionally don't need the handler to complete.",
+      "source_doc": "handling-messages.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_med_001",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "med",
+      "question": "Your Workflow uses an Update handler that runs an Activity. Two Updates arrive almost simultaneously. What concurrency concern must you address and how should you handle it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "No concern exists because Temporal processes all messages on a single thread, so Updates are always fully sequential with no interleaving."
+        },
+        {
+          "key": "B",
+          "text": "The Update handlers can run interleaved with each other and with the main Workflow method because they yield control when waiting on the Activity, potentially causing race conditions that require concurrency primitives like SDK-provided mutexes or semaphores."
+        },
+        {
+          "key": "C",
+          "text": "Updates are automatically queued and processed one at a time by the server, so no special handling is needed in the Workflow code."
+        },
+        {
+          "key": "D",
+          "text": "You must convert the Updates to Signals to avoid concurrency issues, since Signals are guaranteed to be atomic."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Although Temporal runs Workflow code on a single thread, Update handlers that perform async operations (like executing an Activity) yield control back to the Workflow loop. This means multiple Update handlers can interleave with each other and the main Workflow method, creating race conditions. You should guard async handlers with SDK-provided concurrency primitives (mutexes/semaphores). Synchronous handlers that don't block are inherently atomic, but async ones are not.",
+      "source_doc": "handling-messages.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_med_002",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "med",
+      "question": "A Workflow receives a Signal inside a Signal handler and throws an Application Failure. What happens to the Workflow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Only the Signal handler fails; the Workflow continues running normally and the client is notified of the failure."
+        },
+        {
+          "key": "B",
+          "text": "The Workflow gets stuck in a Workflow Task Failure loop and retries the handler periodically until the exception is fixed."
+        },
+        {
+          "key": "C",
+          "text": "The entire Workflow fails because throwing an Application Failure in a Signal handler causes the Workflow itself to fail."
+        },
+        {
+          "key": "D",
+          "text": "The Signal is silently dropped and the Workflow continues, since Signals are fire-and-forget."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Unlike Update handlers where an Application Failure only fails the Update (and the Workflow continues), throwing an Application Failure in a Signal handler causes the entire Workflow to fail. This is why you should only throw Application Failures in Signal handlers for truly unrecoverable errors. Any other (non-Application Failure) exception causes a Workflow Task Failure, which makes the Workflow get stuck and retry periodically.",
+      "source_doc": "handling-messages.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_med_003",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "med",
+      "question": "You want to filter Workflow Executions in the Temporal Visibility store by a custom attribute called `OrderId` (type Keyword) where the ID starts with 'ORD-2024'. Which List Filter correctly achieves this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`OrderId = 'ORD-2024%'` using a SQL-style wildcard"
+        },
+        {
+          "key": "B",
+          "text": "`OrderId LIKE 'ORD-2024%'` using the LIKE operator"
+        },
+        {
+          "key": "C",
+          "text": "`OrderId STARTS_WITH 'ORD-2024'`"
+        },
+        {
+          "key": "D",
+          "text": "`OrderId CONTAINS 'ORD-2024'`"
+        }
+      ],
+      "answer": "C",
+      "explanation": "For Keyword type Search Attributes, Temporal List Filters support `STARTS_WITH` for prefix matching. There is no `LIKE`, `CONTAINS`, or wildcard (`%`) operator in Temporal's List Filter syntax. Note that `STARTS_WITH` is only available for Keyword Search Attributes, not Text type attributes. For suffix matching on Keywords, you would use the `BETWEEN` operator with an appropriate upper bound.",
+      "source_doc": "list-filter.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_med_004",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "med",
+      "question": "You are migrating your Temporal Service's Visibility store from Cassandra to Elasticsearch. You configure Elasticsearch as the `secondaryVisibilityStore`. During the migration, how does Dual Visibility handle reads and writes?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Reads are automatically load-balanced between primary and secondary stores; writes always go to both stores simultaneously."
+        },
+        {
+          "key": "B",
+          "text": "You can read from only one Visibility store at a time, but can configure writes to go to primary only, secondary only, or both stores."
+        },
+        {
+          "key": "C",
+          "text": "The secondary store is read-only and receives writes only after the primary store has committed them via replication."
+        },
+        {
+          "key": "D",
+          "text": "Both stores handle reads simultaneously, but writes always go to the primary store only until migration is complete."
+        }
+      ],
+      "answer": "B",
+      "explanation": "With Dual Visibility, reads can only come from one store at a time (you choose which). However, writes are flexible — you can configure the Temporal Service to write to primary only, secondary only, or both simultaneously. This flexibility is what makes gradual migration possible: you write to both stores to build up data in the new store, then switch reads to the secondary, and finally deprecate the primary. Dynamic configuration keys control this transition.",
+      "source_doc": "dual-visibility.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_hard_001",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "hard",
+      "question": "Your order-processing Workflow uses Signal-with-Start to kick off new orders. During a load spike, your Task Queue gets backlogged and Workers are delayed. You notice that Signal handlers are reading a `customerId` field that's sometimes null, even though the Workflow main method always sets it in its first line. What is the root cause and how should you fix it?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Signal-with-Start has a bug where it skips the Workflow constructor. You should avoid using Signal-with-Start and instead start the Workflow first, then send the Signal separately."
+        },
+        {
+          "key": "B",
+          "text": "Temporal processes messages before the first run of the Workflow main method, so Signal handlers can execute before `customerId` is assigned. You should initialize `customerId` (and all state) in a constructor or Workflow Initializer, not in the main method body."
+        },
+        {
+          "key": "C",
+          "text": "Task Queue backlogs cause Temporal to skip the Workflow main method entirely. You should add a retry policy to your Workflow to ensure it runs after the backlog clears."
+        },
+        {
+          "key": "D",
+          "text": "Signal handlers always run on a separate thread, so there is a parallelism issue. You should use a thread-safe variable like an AtomicReference for `customerId`."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's execution model processes incoming messages (Signals, Updates) before the first run of the Workflow main method in several scenarios: Signal-with-Start, Worker delays/Task Queue backlogs, and messages arriving right after Continue-As-New. If `customerId` is only set in the main method body, a Signal handler can run first and read an uninitialized null value. The fix is to initialize all Workflow state in a constructor or Workflow Initializer (annotated to run before handlers), not in the main method. Note that Workflows run on a single thread — there's no true parallelism — but handler interleaving with uninitialized state is a real concurrency hazard.",
+      "source_doc": "handling-messages.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_hard_002",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "hard",
+      "question": "Your team builds a payment Workflow that uses an Update handler to approve a transaction. The handler executes an Activity to charge a credit card. At Workflow completion, you observe that some clients waiting for Update results receive 'Not Found' errors. Your colleague suggests setting the Handler Unfinished Policy to Abandon to silence the warnings. What is the correct trade-off to understand here?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Setting Abandon is the recommended approach because Update handlers that are mid-Activity will automatically resume in the next Workflow run after Continue-As-New."
+        },
+        {
+          "key": "B",
+          "text": "Setting Abandon only silences warnings in the server logs but does not affect client behavior — clients will still receive results because Update state is persisted in the Visibility store."
+        },
+        {
+          "key": "C",
+          "text": "Setting Abandon suppresses warnings but means the Workflow run can complete before the handler finishes. Clients waiting for those Update results will receive 'Not Found' errors because the Update never completed before the Workflow run ended."
+        },
+        {
+          "key": "D",
+          "text": "The 'Not Found' errors are caused by a misconfigured Update ID. Setting a custom UUID as the Update ID will ensure clients can always retrieve the result even after the Workflow completes."
+        }
+      ],
+      "answer": "C",
+      "explanation": "When a Workflow run completes (or continues as new) with an in-progress Update handler, clients waiting for that Update receive a 'Not Found' error because the Update never reached the Completed state within that run. The Handler Unfinished Policy of Abandon simply suppresses the server-side warning — it does not fix the client-facing error. The correct pattern is to await an 'All Handlers Finished' condition at the end of your Workflow, ensuring all Update handlers complete before the Workflow run exits. Only use Abandon for fire-and-forget Signals where clients aren't blocking on a result.",
+      "source_doc": "handling-messages.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_hard_003",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "hard",
+      "question": "You are migrating your self-hosted Temporal cluster's Visibility store from Cassandra to Elasticsearch. You configure Elasticsearch as the `secondaryVisibilityStore` and plan to cut over once data migration is complete. During the migration window, your ops team asks: can we read from Elasticsearch for some queries while still writing to Cassandra for durability? How does Dual Visibility actually work?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Yes, Dual Visibility supports reading from both stores simultaneously and merging the results, so you can query either store at any time during migration."
+        },
+        {
+          "key": "B",
+          "text": "No, Dual Visibility allows writing to primary only, secondary only, or both stores simultaneously, but you can only read from one Visibility store at a time. You control the active read store via dynamic configuration keys."
+        },
+        {
+          "key": "C",
+          "text": "No, Dual Visibility is read-only — it creates a replica of your primary store for disaster recovery but does not support writes to the secondary store until after full cutover."
+        },
+        {
+          "key": "D",
+          "text": "Yes, but only when both stores are Advanced Visibility (SQL or Elasticsearch). When one store is Standard Visibility (Cassandra), reads are always served from the primary regardless of configuration."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Dual Visibility is specifically designed to facilitate zero-downtime Visibility store migrations. It is flexible on writes — you can write to primary only, secondary only, or both at the same time. However, it only allows reading from one store at a time, controlled by dynamic configuration keys. This design lets you warm up the secondary store by dual-writing, verify data integrity, then switch reads to the secondary — all without downtime. It does not support merged reads from both stores simultaneously.",
+      "source_doc": "dual-visibility.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_hard_004",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "hard",
+      "question": "Your team adds a custom Search Attribute named `SchedulePaused` (type Bool) to your Namespace to track a business-specific paused state. Several weeks later, a team member writes a List Filter `SchedulePaused = true` expecting to query the built-in Temporal scheduler's paused state, but gets unexpected results showing only your business Workflows. What is happening and how should they query the system attribute?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The List Filter syntax is wrong. The correct syntax for system attributes is `system.SchedulePaused = true` to distinguish them from custom attributes."
+        },
+        {
+          "key": "B",
+          "text": "Custom Search Attributes take precedence over default Search Attribute aliases. Since `SchedulePaused` is now defined as a custom attribute, it shadows the system alias. To query the default system attribute, the team member must use `TemporalSchedulePaused = true`."
+        },
+        {
+          "key": "C",
+          "text": "This is a Temporal bug. Custom Search Attributes should never be allowed to share a name with any default Search Attribute alias, and the Temporal server should have rejected the custom attribute registration."
+        },
+        {
+          "key": "D",
+          "text": "Both `SchedulePaused` and `TemporalSchedulePaused` will return the same results because Temporal merges custom and default attributes with the same logical name into a single index."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal resolves Search Attribute names in List Filters by checking custom Search Attributes defined in the current Namespace first, then falling back to default Search Attributes. The default system attribute `TemporalSchedulePaused` has an alias `SchedulePaused` (without the prefix). But if you register a custom attribute with that same alias name, the custom attribute wins and the alias no longer points to the system attribute. The system attribute is still queryable, but only via its fully-prefixed name `TemporalSchedulePaused`. This is an important naming hygiene concern: choose custom Search Attribute names that don't collide with default attribute aliases to avoid silent misdirection in your List Filters.",
+      "source_doc": "list-filter.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_nightmare_001",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "nightmare",
+      "question": "A Python-based order processing workflow uses Update handlers to accept and process payment adjustments. The workflow runs for months and frequently uses Continue-As-New to manage history size. Each payment adjustment Update is sent with a client-generated UUID as the Update ID. During a production incident, your team discovers that some payment adjustments are being applied twice after Continue-As-New events. An engineer proposes fixing this by letting Temporal's server-side Update deduplication handle it, since Update IDs are already UUIDs. Why will this NOT solve the double-application problem?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal does not deduplicate Updates at the server level at all; deduplication must always be implemented in application code regardless of Continue-As-New usage."
+        },
+        {
+          "key": "B",
+          "text": "Server-side Update ID deduplication is scoped per Workflow run, not per Workflow execution. After Continue-As-New creates a new run, the server has no memory of Update IDs from the previous run, so a re-delivered Update with the same ID will be processed again."
+        },
+        {
+          "key": "C",
+          "text": "UUID-based Update IDs are not supported by Temporal's deduplication system; only sequentially-generated integer IDs are deduplicated correctly at the server."
+        },
+        {
+          "key": "D",
+          "text": "Continue-As-New causes all pending Update handlers to be abandoned by default, so the updates are not re-delivered — the double application must be caused by the client sending duplicate requests, not by Continue-As-New itself."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is a subtle but critical correctness trap in long-running workflows. Temporal's server-side Update deduplication is per Workflow run, not per Workflow execution (the entire chain of runs linked by Continue-As-New). When Continue-As-New fires, it creates a brand-new run with a fresh history. The new run's server-side deduplication state is empty — it knows nothing about Update IDs that were accepted in prior runs. If a client retries an Update delivery (which can happen due to network issues, SDK retry logic, or a client that hasn't received confirmation), and that retry arrives after Continue-As-New, the server sees it as a new, never-seen Update ID within the new run and processes it again. The fix, as the documentation explicitly states, is to implement deduplication in your Workflow code when using Updates with Continue-As-New — for example, by maintaining a set of processed Update IDs in your workflow state that carries over across Continue-As-New boundaries. This is architecturally analogous to why Signals require application-level idempotency keys: the server's automatic mechanisms are bounded to the lifetime of a single run. The broader design principle: any server-side 'memory' about a workflow (deduplication state, timer state, etc.) that is not explicitly encoded into your workflow's persistent state will be lost across Continue-As-New boundaries. Treat Continue-As-New as a clean-slate restart from the server's perspective, and design your deduplication, initialization guards, and handler completion checks accordingly.",
+      "source_doc": "handling-messages.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "features_messaging_and_visibility_nightmare_002",
+      "category": "Features_Messaging_and_Visibility",
+      "difficulty": "nightmare",
+      "question": "Your team operates a high-throughput Temporal deployment and has defined a custom Search Attribute named `SchedulePaused` (type: Bool) to track a business-level paused state on certain workflow executions. A new engineer writes a monitoring dashboard that uses the List Filter `SchedulePaused = true` to find paused workflows. After upgrading the Temporal Server to v1.30, the dashboard starts returning unexpected results — it now shows workflows that are paused at the Temporal Schedule level but NOT paused according to your application's custom logic. The custom Search Attribute `SchedulePaused` was not removed or modified. What is the most precise explanation for this behavior change?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal Server v1.30 changed the storage format for Bool Search Attributes, causing existing custom `SchedulePaused` values to be reindexed incorrectly against the system's Schedule paused state."
+        },
+        {
+          "key": "B",
+          "text": "In Temporal Server v1.30+, Search Attribute aliasing was introduced. The default system attribute `TemporalSchedulePaused` gained the alias `SchedulePaused`. Since custom Search Attributes take precedence over aliases in resolution order, the query should still use the custom attribute — meaning the bug is actually in the dashboard's assumption, not the resolution order."
+        },
+        {
+          "key": "C",
+          "text": "In Temporal Server v1.30+, Search Attribute aliasing was introduced so that `SchedulePaused` became an alias for the default system attribute `TemporalSchedulePaused`. When Temporal resolves `SchedulePaused` in a List Filter, it checks custom Search Attributes first, so the custom attribute SHOULD still win — but if the custom attribute was not properly registered in the namespace after the upgrade, the alias silently falls through to the system attribute, causing the dashboard to query the wrong data source."
+        },
+        {
+          "key": "D",
+          "text": "Temporal Server v1.30+ resolves List Filter Search Attribute names by checking default system attributes before custom attributes. Since `SchedulePaused` is now a recognized system alias, it overrides the custom attribute entirely, and the only way to query the custom attribute is to rename it."
+        }
+      ],
+      "answer": "C",
+      "explanation": "This question tests the interaction between Search Attribute aliasing (introduced in v1.30) and the namespace-scoped custom attribute resolution order — a combination that can create a subtle, hard-to-diagnose production bug. Here's the precise behavior: Temporal's List Filter resolution checks for custom Search Attributes defined in the current Namespace FIRST, then falls back to default Search Attributes (including their aliases). So if `SchedulePaused` is properly registered as a custom attribute in the namespace, it will correctly shadow the `TemporalSchedulePaused` alias, and `SchedulePaused = true` continues to query your custom data. However, the bug scenario in answer C describes a realistic failure mode: if the custom attribute registration was somehow lost, corrupted, or was never present in a newly created namespace after migration, Temporal's resolution falls through to the system alias, silently querying `TemporalSchedulePaused` instead. This is a nightmare to debug because the query syntax didn't change, the attribute name didn't change, and the system returns results without error — just wrong results. Answer D is a common wrong belief (that system attributes take precedence), but the documentation is explicit that custom attributes win. The key production insight is: after any Temporal Server upgrade that introduces aliasing, audit your namespaces to verify custom Search Attribute registrations are intact, and write explicit integration tests that confirm `SchedulePaused = true` returns workflows where YOUR application set the value, not workflows paused by the Temporal scheduler. The safe defensive practice is to always use the `Temporal`-prefixed name (`TemporalSchedulePaused`) when you intend to query the system attribute, never relying on the alias when a same-named custom attribute could exist.",
+      "source_doc": "list-filter.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    }
+  ]
+}

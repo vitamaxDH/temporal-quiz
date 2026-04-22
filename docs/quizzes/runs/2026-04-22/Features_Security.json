@@ -1,0 +1,509 @@
+{
+  "category": "Features_Security",
+  "questions": [
+    {
+      "id": "features_security_easy_001",
+      "category": "Features_Security",
+      "difficulty": "easy",
+      "question": "Temporal Cloud is described as orchestrating encrypted workflows 'without ever accessing your sensitive data.' What does this mean for you as a user?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal Cloud decrypts your workflow payloads to run them, but deletes the data immediately after."
+        },
+        {
+          "key": "B",
+          "text": "Your workflow logic and data remain encrypted end-to-end, so Temporal's infrastructure cannot read your business data even while executing your workflows."
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud only encrypts data at rest, leaving it readable during workflow execution for performance reasons."
+        },
+        {
+          "key": "D",
+          "text": "Sensitive data is stored in a separate region chosen by Temporal, ensuring physical isolation from other tenants."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal Cloud is designed so that the orchestration layer never has access to the actual content of your workflow payloads. End-to-end encryption means your business data stays opaque to Temporal's systems throughout execution. This 'provable security by design' is a key value proposition for regulated industries handling sensitive information.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_easy_002",
+      "category": "Features_Security",
+      "difficulty": "easy",
+      "question": "Which security protocol is specifically highlighted as a feature of Temporal Cloud's SaaS offering?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "SSH tunneling for all client connections to the Temporal frontend service"
+        },
+        {
+          "key": "B",
+          "text": "OAuth 2.0 token exchange as the sole method for authenticating workers"
+        },
+        {
+          "key": "C",
+          "text": "Mutual TLS (mTLS), where both the client and server verify each other's identity during connection"
+        },
+        {
+          "key": "D",
+          "text": "VPN-only access, requiring all workers to connect through a private network gateway"
+        }
+      ],
+      "answer": "C",
+      "explanation": "mTLS (mutual Transport Layer Security) is explicitly called out as a Temporal Cloud security feature. Unlike standard TLS where only the server proves its identity, mTLS requires both parties — your worker and the Temporal Cloud server — to present certificates. This two-way verification prevents unauthorized clients from connecting to your namespace.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_easy_003",
+      "category": "Features_Security",
+      "difficulty": "easy",
+      "question": "What is the main difference between 'Temporal Cloud Security' and 'Self-Hosted Security' as categories in the documentation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal Cloud Security covers Temporal's managed SaaS platform, while Self-Hosted Security covers securing infrastructure you deploy and operate yourself."
+        },
+        {
+          "key": "B",
+          "text": "Temporal Cloud Security applies only to enterprise customers, while Self-Hosted Security is for open-source users with no support agreement."
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud Security focuses on network-level controls, while Self-Hosted Security focuses exclusively on encrypting workflow payloads."
+        },
+        {
+          "key": "D",
+          "text": "Temporal Cloud Security is for production environments, while Self-Hosted Security is intended only for local development and testing."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The distinction is straightforward: if Temporal runs and manages the cluster for you (SaaS), you use Temporal Cloud Security guidance. If you run your own Temporal cluster on your own infrastructure, you follow Self-Hosted Security guidance. This matters because self-hosting shifts responsibility for things like TLS configuration, database security, and network policies to your own team.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_easy_004",
+      "category": "Features_Security",
+      "difficulty": "easy",
+      "question": "Why would an operator running a self-hosted Temporal cluster need to consult different security guidance than someone using Temporal Cloud?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Self-hosted clusters use a completely different workflow execution model that requires custom security plugins unavailable in Temporal Cloud."
+        },
+        {
+          "key": "B",
+          "text": "Self-hosted operators must configure and maintain their own TLS, network security, and infrastructure controls, since Temporal does not manage those layers for them."
+        },
+        {
+          "key": "C",
+          "text": "Temporal Cloud automatically disables all security features for self-hosted users to simplify the developer experience during onboarding."
+        },
+        {
+          "key": "D",
+          "text": "Self-hosted security guidance only applies when running Temporal in a public cloud like AWS or GCP, not in on-premises data centers."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When you self-host Temporal, you own the full infrastructure stack. That means you are responsible for setting up TLS between components, securing the visibility store (database), managing certificates, and following production-ready best practices. With Temporal Cloud, those layers are handled for you. Understanding this split of responsibility is essential for operators choosing a deployment model.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_easy_005",
+      "category": "Features_Security",
+      "difficulty": "easy",
+      "question": "Where would you look to find information about Temporal Technologies' compliance certifications and organizational security practices — things like SOC 2 or ISO certifications?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Self-Hosted Security guide, which documents all certifications earned by the open-source project maintainers."
+        },
+        {
+          "key": "B",
+          "text": "The Temporal Cloud Security Whitepaper, which focuses solely on encryption algorithms used in workflow payloads."
+        },
+        {
+          "key": "C",
+          "text": "The Company Security section at trust.temporal.io, which covers Temporal Technologies' general security posture and compliance programs."
+        },
+        {
+          "key": "D",
+          "text": "The Temporal SDK changelog, where compliance updates are announced alongside new feature releases."
+        }
+      ],
+      "answer": "C",
+      "explanation": "trust.temporal.io is Temporal's dedicated trust and security portal, covering company-level security practices, compliance certifications, and organizational measures. This is separate from product-specific security docs. Enterprises evaluating Temporal for regulated industries will often start here to verify that Temporal as a company meets their vendor security requirements.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_easy_006",
+      "category": "Features_Security",
+      "difficulty": "easy",
+      "question": "A developer wants to understand how Temporal Cloud can guarantee that even Temporal's own employees cannot read the business data inside their workflows. Which resource is best suited to explain this architectural guarantee?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Self-Hosted Security guide, which explains how to configure on-premises encryption before migrating to Temporal Cloud."
+        },
+        {
+          "key": "B",
+          "text": "The Temporal Cloud Security Whitepaper, which explains how the system is designed to orchestrate workflows without accessing sensitive payload data."
+        },
+        {
+          "key": "C",
+          "text": "The Company Security page, which lists the background check policies applied to all Temporal employees with cluster access."
+        },
+        {
+          "key": "D",
+          "text": "The SDK documentation for the Data Converter, which shows code samples for enabling client-side encryption in each language."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal Cloud Security Whitepaper is specifically described as explaining 'provable security by design — orchestrating encrypted workflows without ever accessing your sensitive data.' It is the right resource for understanding the architectural guarantees around data confidentiality, as opposed to operational guides or SDK-level encryption configuration.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_med_001",
+      "category": "Features_Security",
+      "difficulty": "med",
+      "question": "Temporal Cloud uses mTLS for client authentication. Which of the following correctly describes how mTLS differs from standard TLS in the context of a Temporal Worker connecting to Temporal Cloud?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "mTLS encrypts the payload of workflow events, while standard TLS only encrypts the transport channel between the Worker and the frontend service."
+        },
+        {
+          "key": "B",
+          "text": "mTLS requires both the server and the client to present certificates, so Temporal Cloud can verify the Worker's identity in addition to the Worker verifying the server's identity."
+        },
+        {
+          "key": "C",
+          "text": "mTLS allows multiple Workers to share a single TLS session, reducing handshake overhead, whereas standard TLS requires a new handshake per Worker connection."
+        },
+        {
+          "key": "D",
+          "text": "mTLS is only used for the initial connection setup; subsequent gRPC calls fall back to standard TLS to reduce CPU overhead on the Worker side."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Mutual TLS (mTLS) extends standard TLS by requiring certificate presentation from *both* sides of a connection. In standard TLS the client verifies the server's certificate, but the server does not authenticate the client cryptographically. With mTLS, Temporal Cloud verifies the Worker's client certificate before allowing any gRPC calls to succeed, providing strong identity assurance at the transport layer. Option A conflates transport security with payload/data encryption — those are separate concerns in Temporal (handled by a custom Data Converter). Option C describes connection multiplexing, which is a gRPC/HTTP2 feature unrelated to mTLS. Option D is incorrect; mTLS applies to every connection, not just the handshake.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_med_002",
+      "category": "Features_Security",
+      "difficulty": "med",
+      "question": "A company wants to ensure that Temporal Cloud operators — including Temporal's own employees — cannot read sensitive data inside workflow payloads. Which Temporal feature is designed to address this requirement?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Enabling mTLS on the Temporal Cloud namespace so that all traffic is encrypted in transit between Workers and the frontend service."
+        },
+        {
+          "key": "B",
+          "text": "Configuring a private connectivity option such as AWS PrivateLink so that workflow data never traverses the public internet."
+        },
+        {
+          "key": "C",
+          "text": "Implementing a custom Data Converter with payload encryption so that workflow inputs, outputs, and event history are encrypted before leaving the Worker process."
+        },
+        {
+          "key": "D",
+          "text": "Using namespace-level RBAC roles to restrict which Temporal Cloud accounts can query or signal running workflows."
+        }
+      ],
+      "answer": "C",
+      "explanation": "A custom Data Converter with encryption ensures that payloads are encrypted *inside the Worker process* before they are sent to Temporal Cloud. This means the encrypted blobs are stored in event history, and Temporal (including its employees) cannot decrypt them without access to your keys. mTLS (A) protects data in transit but Temporal still sees plaintext payloads at the service layer. PrivateLink (B) keeps traffic on private networks but does not prevent Temporal from reading unencrypted payload content. RBAC (D) controls who can interact with workflows via the API but does not prevent Temporal's infrastructure from accessing stored payload data. The encryption-at-source model is precisely what the security whitepaper describes as 'orchestrating encrypted workflows without ever accessing your sensitive data.'",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_med_003",
+      "category": "Features_Security",
+      "difficulty": "med",
+      "question": "When self-hosting Temporal, which component is responsible for enforcing authorization on inbound API calls, and what is the recommended integration point for adding custom authorization logic?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Temporal Worker process, which should validate a JWT token before registering workflow and activity functions with the task queue."
+        },
+        {
+          "key": "B",
+          "text": "The Temporal frontend service, which supports a pluggable Authorizer and ClaimMapper interface so operators can integrate their own identity provider or policy engine."
+        },
+        {
+          "key": "C",
+          "text": "The Temporal history service, which validates caller credentials before replaying workflow event history during task dispatch."
+        },
+        {
+          "key": "D",
+          "text": "The Temporal Web UI (temporal-ui), which acts as a reverse proxy and can reject unauthenticated requests before they reach the gRPC frontend."
+        }
+      ],
+      "answer": "B",
+      "explanation": "In a self-hosted Temporal deployment, the *frontend service* is the single entry point for all external gRPC and HTTP API calls. Temporal's server code exposes an `Authorizer` interface and a `ClaimMapper` interface that operators can implement to integrate with any identity provider (e.g., an OIDC provider). This allows fine-grained control over which callers can start workflows, signal them, or access namespace data. Workers (A) are clients of the frontend and do not sit in the auth path for inbound API calls. The history service (C) is an internal service not directly exposed to external callers. The Web UI (D) is a separate presentation layer; routing auth through it would leave direct gRPC access unprotected.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_med_004",
+      "category": "Features_Security",
+      "difficulty": "med",
+      "question": "A security review requires your team to document encryption in transit for a self-hosted Temporal cluster. Which inter-service communication paths should be covered by TLS in a production deployment?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Only the path between external clients (Workers and the Web UI) and the frontend service, because internal service-to-service calls within the cluster are on a private network and do not require TLS."
+        },
+        {
+          "key": "B",
+          "text": "Only the path between the frontend service and the persistence layer (database), because that is where workflow event history is stored in plaintext."
+        },
+        {
+          "key": "C",
+          "text": "Both client-to-frontend TLS and internode TLS between internal Temporal services (frontend, history, matching, worker), so that all traffic within the cluster is encrypted end-to-end."
+        },
+        {
+          "key": "D",
+          "text": "Only the path between the Temporal Web UI and the frontend service, because all Worker SDK connections use gRPC which is encrypted by default without additional configuration."
+        }
+      ],
+      "answer": "C",
+      "explanation": "A production-grade self-hosted deployment should encrypt both external (client → frontend) and internal (service ↔ service) traffic. Temporal supports TLS configuration for internode communication, meaning the frontend, history, matching, and internal worker services can all be configured to use TLS when calling each other. Assuming a private network is sufficient (A) violates defense-in-depth principles and leaves lateral movement paths open. Encrypting only the DB path (B) protects persistence but not in-flight event data between services. gRPC does *not* encrypt by default (D) — it runs over plain HTTP/2 unless TLS is explicitly configured.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_med_005",
+      "category": "Features_Security",
+      "difficulty": "med",
+      "question": "Temporal Cloud namespaces support two primary connectivity models for private networking. Which of the following best describes the benefit of using a private connectivity option like AWS PrivateLink over connecting via the public internet endpoint?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "PrivateLink enables payload-level encryption that is stronger than mTLS, making a custom Data Converter unnecessary for sensitive workloads."
+        },
+        {
+          "key": "B",
+          "text": "PrivateLink allows Workers to skip certificate-based authentication entirely, simplifying connection setup in environments without a PKI infrastructure."
+        },
+        {
+          "key": "C",
+          "text": "PrivateLink keeps Worker traffic within the cloud provider's backbone network, so workflow event data never traverses the public internet, reducing exposure to external network threats."
+        },
+        {
+          "key": "D",
+          "text": "PrivateLink automatically rate-limits inbound connections from untrusted sources, providing DDoS protection that is not available on the standard public endpoint."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Private connectivity options like AWS PrivateLink establish a network path that stays entirely within the cloud provider's private backbone. This means gRPC calls from your Workers to Temporal Cloud do not route over the public internet, reducing the attack surface to external network adversaries and satisfying compliance requirements that prohibit public internet exposure for sensitive traffic. PrivateLink is a *network-layer* control — it does not replace payload encryption (A) or remove the need for mTLS certificate authentication (B); both remain required. PrivateLink is also not a DDoS mitigation product (D); that concern is separate.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_med_006",
+      "category": "Features_Security",
+      "difficulty": "med",
+      "question": "In Temporal Cloud, which RBAC role should be assigned to a service account that only needs to start and signal workflows but must NOT be able to create or delete namespaces?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Account Owner, because it has the broadest permissions and guarantees the service account will never be blocked by missing grants."
+        },
+        {
+          "key": "B",
+          "text": "Namespace Admin, because admin-level access is required for any service account that initiates workflow executions."
+        },
+        {
+          "key": "C",
+          "text": "Read-Only, because read-only accounts can inspect workflow state and trigger signals as a side effect of the query mechanism."
+        },
+        {
+          "key": "D",
+          "text": "Namespace Developer (or Writer), because this role permits starting and signaling workflows within a namespace without granting namespace management or account-level privileges."
+        }
+      ],
+      "answer": "D",
+      "explanation": "Temporal Cloud's RBAC model includes namespace-scoped roles. The Developer (Writer) role is designed for service accounts that need to interact with workflows — starting them, sending signals, issuing queries, and reading history — without having the ability to manage namespace configuration or touch account-level resources. Assigning Account Owner (A) violates least-privilege; a compromised credential would have blast radius across the entire account. Namespace Admin (B) includes namespace configuration rights that the service account does not need. Read-Only (C) does not permit write operations like starting workflows or sending signals — signals are state-mutating operations.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_med_007",
+      "category": "Features_Security",
+      "difficulty": "med",
+      "question": "A developer is implementing a custom Data Converter to encrypt Temporal workflow payloads. The encryption logic runs inside the Worker process. What happens when a user opens Temporal Web UI or uses `tctl` to inspect a workflow's input and output after this Data Converter is deployed?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Web UI automatically detects the custom codec and decrypts payloads on the server side before displaying them, because Temporal Cloud stores the codec configuration alongside the namespace metadata."
+        },
+        {
+          "key": "B",
+          "text": "Payloads appear as opaque, encoded blobs (e.g., base64 or binary) unless a Codec Server is deployed that the Web UI can call to decode payloads on behalf of the viewer."
+        },
+        {
+          "key": "C",
+          "text": "The Web UI falls back to displaying raw JSON event history without payloads, stripping the encoded fields to avoid exposing unreadable binary data to the user."
+        },
+        {
+          "key": "D",
+          "text": "Workflow execution is blocked until the Data Converter is registered with the Temporal Cloud control plane so that all services can deserialize the payloads correctly."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When a custom Data Converter encrypts payloads, those encrypted blobs are stored as-is in event history. The Temporal Web UI and CLI tools do not have access to your encryption keys, so they display the raw encoded payload. To restore human-readable inspection, Temporal supports a *Codec Server* — a small HTTP service you operate that holds decryption keys. The Web UI can be configured to call your Codec Server to decode payloads before rendering them, without Temporal ever seeing the keys or plaintext. Option A is incorrect; Temporal Cloud does not store codec logic or keys. Option C is incorrect; the UI shows the encoded blob, not a stripped view. Option D is incorrect; workflow execution is not blocked — encoding/decoding is purely a client-side concern.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_med_008",
+      "category": "Features_Security",
+      "difficulty": "med",
+      "question": "When configuring mTLS for a self-hosted Temporal cluster, an operator generates separate TLS certificates for the frontend service and for inter-service (internode) communication. What is the primary operational reason for using distinct certificates for these two paths rather than a single shared certificate?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal's gRPC library requires different cipher suites for client-facing and internode connections, and separate certificates allow each path to negotiate its preferred suite independently."
+        },
+        {
+          "key": "B",
+          "text": "Using separate certificates limits the blast radius of a compromised certificate: a leaked client-facing cert cannot be used to impersonate internal Temporal services, and rotation of one set does not force immediate rotation of the other."
+        },
+        {
+          "key": "C",
+          "text": "Temporal's frontend service will reject any connection that presents a certificate also trusted by the internode CA, so separate certificates are required to prevent connection errors."
+        },
+        {
+          "key": "D",
+          "text": "Separate certificates are needed because Temporal internally validates certificate serial numbers against a hardcoded allowlist that distinguishes frontend from internode traffic."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Using separate certificates (and ideally separate CAs) for external client traffic and internal internode traffic is a defense-in-depth practice. If a client-facing certificate is compromised — for example, by a leaked Worker secret — it cannot be used to impersonate internal Temporal services (history, matching, etc.) because those services trust only the internode CA. Similarly, certificate rotation for client credentials does not require simultaneously rotating internode certs, reducing operational risk. Option A is a fabrication; the cipher suite negotiation does not require separate certificates. Option C is also fabricated; Temporal does not reject certs that appear in both trust stores by default. Option D is incorrect; Temporal does not maintain a hardcoded serial-number allowlist.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_nightmare_001",
+      "category": "Features_Security",
+      "difficulty": "nightmare",
+      "question": "A platform team deploys Temporal Cloud with mTLS client certificates for worker authentication and also implements a custom PayloadCodec that encrypts workflow payloads using a KMS-backed key. During a KMS outage, workers fail to decode activity inputs and begin DLQing tasks. A junior engineer proposes that since Temporal Cloud itself uses mTLS and 'end-to-end encryption,' the PayloadCodec is redundant and should be removed to eliminate the KMS dependency. Which statement most accurately characterizes the trust boundary relationship between mTLS and a custom PayloadCodec in this architecture?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The engineer is correct: Temporal Cloud's mTLS guarantees that payload data is encrypted in transit between all parties, so a PayloadCodec adds only marginal security and creates an unnecessary operational dependency on external KMS availability."
+        },
+        {
+          "key": "B",
+          "text": "mTLS secures the transport channel between workers and the Temporal Cloud frontend, but Temporal Cloud's servers still handle plaintext payload bytes during scheduling and persistence. A PayloadCodec encrypts payloads before they leave the SDK, ensuring Temporal's infrastructure never sees plaintext — the two controls operate at completely different trust boundaries."
+        },
+        {
+          "key": "C",
+          "text": "A PayloadCodec and mTLS are mutually exclusive: Temporal Cloud's TLS layer terminates at the frontend and re-encrypts payloads for storage, so a PayloadCodec would double-encrypt data and cause deserialization failures during replay unless workers are explicitly configured to skip the codec on retry."
+        },
+        {
+          "key": "D",
+          "text": "Both controls protect the same boundary — the gRPC channel from SDK to server — so they provide defense-in-depth at the transport layer only. Removing the PayloadCodec would not change the confidentiality posture for data at rest inside Temporal's persistence layer."
+        }
+      ],
+      "answer": "B",
+      "explanation": "mTLS authenticates and encrypts the gRPC transport channel between the SDK (workers/clients) and the Temporal Cloud frontend service. However, once traffic arrives at the frontend, Temporal's servers process and persist the payload bytes — Temporal Cloud's storage layer holds whatever bytes the SDK sent. A custom PayloadCodec (part of the DataConverter pipeline) encrypts payloads *inside the SDK* before they are serialized into gRPC messages, so Temporal's infrastructure only ever stores opaque ciphertext. This is the 'provable security by design' principle Temporal Cloud's whitepaper describes: Temporal orchestrates workflows without accessing your sensitive data. The two controls operate at entirely different trust boundaries: mTLS protects data in transit between SDK and server, while the PayloadCodec protects data at rest inside Temporal's persistence and visibility layers. Removing the PayloadCodec would expose plaintext workflow arguments and results to Temporal Cloud infrastructure. The KMS dependency is a real operational concern, but the solution is KMS HA design, not removing the codec. Engineers who conflate transport encryption with application-layer payload encryption routinely make this mistake — understanding the distinction is critical before designing a compliance-grade Temporal deployment.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_nightmare_002",
+      "category": "Features_Security",
+      "difficulty": "nightmare",
+      "question": "A self-hosted Temporal cluster uses mTLS with client certificates to authenticate workers connecting to the frontend service. The ops team is rotating CA certificates and issues new worker client certs signed by the new CA before the old CA expires. During the rollout window, both old and new CAs are in the server's trusted CA pool. A workflow that was mid-execution during cert rotation later attempts to replay its history. Which of the following correctly describes the interaction between mTLS cert rotation and workflow history replay in this scenario?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Workflow history replay is sensitive to the TLS certificate identity that was active when each history event was recorded. If the worker replaying history presents a cert from the new CA, the Temporal server will reject the replay connection because it cannot match the cert to the original execution's authentication context stored in the event history."
+        },
+        {
+          "key": "B",
+          "text": "mTLS certificate identity is not recorded in workflow history events. Replay is purely a deterministic re-execution of workflow code against the recorded event sequence; the TLS layer is stateless per-connection and has no effect on whether a workflow can be replayed, regardless of which CA signed the worker's cert during original execution."
+        },
+        {
+          "key": "C",
+          "text": "Replay will succeed only if the worker presents the exact same certificate serial number used during the original workflow task completion, because the Temporal server stores certificate fingerprints as part of sticky task queue metadata used to route replay tasks back to the original worker."
+        },
+        {
+          "key": "D",
+          "text": "The Temporal server caches the CA trust chain at workflow start time. Introducing a new CA mid-execution causes a trust chain mismatch for any workflow that began under the old CA, requiring those workflows to be terminated and restarted under the new CA to avoid replay authentication failures."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's history-based replay model is entirely decoupled from transport-layer authentication. Workflow history events record things like activity inputs/outputs, timer firings, signals, and SDK-generated commands — not TLS handshake metadata. When a worker replays a workflow, it makes a fresh authenticated gRPC connection to the frontend using whatever client certificate it currently holds. The server validates that connection against its current trusted CA pool (which, during rotation, includes both old and new CAs). If the cert is valid in the current trust pool, the connection is accepted and the server dispatches workflow tasks normally. The replay itself is a deterministic code re-execution against the stored event sequence — the cert that was active during original execution is completely irrelevant. This is why CA rotation can be done safely with a trust pool overlap window: old workers with old certs and new workers with new certs can coexist transparently. Engineers sometimes assume Temporal tracks 'who' ran each task for replay routing purposes, but the sticky task queue mechanism only uses worker identity for *scheduling* optimization — it degrades gracefully when the original worker is gone, rescheduling to any healthy worker. Understanding this decoupling prevents unnecessary operational ceremony around cert rotation affecting in-flight workflows.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_nightmare_003",
+      "category": "Features_Security",
+      "difficulty": "nightmare",
+      "question": "A team running Temporal Cloud configures a Nexus endpoint to allow a caller namespace in region `us-east-1` to invoke operations in a handler namespace in `eu-west-1`. Both namespaces use the same Temporal Cloud account and mTLS is configured per namespace. During a compliance review, a security auditor asks whether Nexus cross-namespace calls bypass the PayloadCodec encryption of either namespace, since the routing goes through Temporal Cloud's internal infrastructure. Which answer correctly characterizes how PayloadCodec encryption interacts with Nexus cross-namespace calls?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Nexus routes operation inputs and outputs through Temporal Cloud's relay infrastructure, which must transcode payloads between namespace codec configurations. If the caller and handler namespaces use different PayloadCodec keys, Temporal Cloud automatically decrypts and re-encrypts payloads at the Nexus routing layer using the account-level master key."
+        },
+        {
+          "key": "B",
+          "text": "PayloadCodec encryption is applied by the caller's SDK before the Nexus operation input leaves the calling worker, and decryption is performed by the handler's SDK when the operation is received. Temporal Cloud's Nexus routing layer only sees the already-encrypted payload bytes and never accesses plaintext, regardless of whether the two namespaces share a codec configuration."
+        },
+        {
+          "key": "C",
+          "text": "Cross-namespace Nexus calls bypass PayloadCodec processing entirely in the caller namespace because Nexus inputs are serialized as NexusOperationInput proto messages, which are not processed by the DataConverter pipeline. Encryption must be applied manually inside the Nexus operation handler's activity code."
+        },
+        {
+          "key": "D",
+          "text": "Since both namespaces share the same Temporal Cloud account, all cross-namespace Nexus payloads are protected by the account-level TLS session, making per-namespace PayloadCodec encryption redundant for Nexus traffic while remaining useful for intra-namespace workflow-to-activity data."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's PayloadCodec runs inside the SDK's DataConverter pipeline on the worker process. When a Nexus operation is invoked, the calling worker's SDK encodes and (if configured) encrypts the operation input payload through the DataConverter before the bytes are sent over gRPC to Temporal Cloud. Temporal Cloud's Nexus routing layer receives opaque payload bytes and routes them to the handler namespace's task queue without inspecting or transforming payload content. The handler worker's SDK then receives those bytes and passes them through its own DataConverter (including its PayloadCodec) for decryption and deserialization. This means: (1) Temporal Cloud never sees plaintext if both namespaces use a PayloadCodec, (2) if the two namespaces use *different* codec configurations or keys, the handler worker will fail to decrypt the payload — this is a real operational concern teams must address by using shared keys or a codec server that handles both namespaces. There is no Temporal-managed transcoding at the Nexus layer. This architecture preserves the 'Temporal never touches your data' invariant across cross-namespace Nexus calls, but it places responsibility on operators to ensure codec compatibility between caller and handler. Understanding this prevents a subtle production failure where cross-namespace Nexus calls silently deliver undecipherable payloads to handlers.",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_security_nightmare_004",
+      "category": "Features_Security",
+      "difficulty": "nightmare",
+      "question": "A self-hosted Temporal deployment uses a custom authorization plugin implementing the `Authorizer` interface to enforce RBAC on API calls. The team also uses namespace-level retention policies and has enabled Elasticsearch-backed advanced visibility. A developer notices that a low-privilege service account (authorized only to `StartWorkflow` and `SignalWorkflow`) can successfully query workflow history via `ListWorkflowExecutions` with a complex search attribute filter, returning sensitive data from workflows it should not be able to read. Which architectural explanation best describes why this gap exists and how the controls interact?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `Authorizer` plugin grants per-API-method authorization. `ListWorkflowExecutions` is a visibility API that queries the Elasticsearch index, which is populated with workflow metadata and search attributes by the server's internal indexer. If the Authorizer grants access to `ListWorkflowExecutions` implicitly (e.g., via a default-allow on visibility APIs), the query executes against all open and closed workflows regardless of workflow-level ACLs, because Temporal has no per-workflow read ACL model in the standard authorization framework."
+        },
+        {
+          "key": "B",
+          "text": "The visibility store and the workflow execution API share the same authorization path in Temporal's frontend service. A service account authorized for `StartWorkflow` automatically inherits read access to the execution store because workflow start requires reading the current execution state, and the Authorizer cannot differentiate between read and write access paths once a namespace-level grant is issued."
+        },
+        {
+          "key": "C",
+          "text": "Elasticsearch advanced visibility bypasses Temporal's frontend `Authorizer` plugin entirely, because search queries are sent directly from the SDK to Elasticsearch without proxying through the Temporal frontend. Any service account with network access to Elasticsearch can query workflow visibility data regardless of Temporal RBAC configuration."
+        },
+        {
+          "key": "D",
+          "text": "The retention policy for the namespace controls which closed workflows appear in `ListWorkflowExecutions` results. A misconfigured retention window can cause workflows to remain visible beyond their intended access window, but the Authorizer correctly restricts open workflow data. This is a retention policy misconfiguration, not an authorization gap."
+        }
+      ],
+      "answer": "A",
+      "explanation": "Temporal's `Authorizer` interface operates at the gRPC API method level — it can allow or deny calls like `StartWorkflowExecution`, `SignalWorkflowExecution`, `ListWorkflowExecutions`, etc., optionally taking into account the namespace and caller identity. However, Temporal does not implement a per-workflow-execution ACL model in its standard authorization framework. If the `Authorizer` allows `ListWorkflowExecutions` for a given identity (even by omission in a permissive default policy), that caller can list *all* workflows in the namespace that are indexed in the visibility store — there is no built-in mechanism to scope `ListWorkflowExecutions` results to only workflows that the caller started or is otherwise associated with. The Elasticsearch-backed advanced visibility stores workflow metadata (including search attributes, workflow type, status) and responds to the queries Temporal's frontend issues on behalf of the API caller — the visibility store is queried *through* the frontend, not bypassed. This means the gap is: (1) the Authorizer grants too broad an allow on the visibility API, or (2) the team assumed authorization would be scoped to workflows the service account created. The correct mitigation is to either deny `ListWorkflowExecutions` for low-privilege accounts entirely, or implement a custom `Authorizer` that injects caller identity as a mandatory search attribute filter, or ensure sensitive data is not stored in search attributes. PayloadCodec encryption of actual workflow payloads would also ensure that even if visibility metadata leaks, workflow arguments and results are opaque. This is a critical gap operators hit when they assume 'API-level RBAC' implies 'data-level isolation.'",
+      "source_doc": "security.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    }
+  ]
+}

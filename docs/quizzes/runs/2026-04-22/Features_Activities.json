@@ -1,0 +1,705 @@
+{
+  "category": "Features_Activities",
+  "questions": [
+    {
+      "id": "features_activities_easy_001",
+      "category": "Features_Activities",
+      "difficulty": "easy",
+      "question": "What is the primary purpose of an Activity in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To store the entire state of a Workflow so it can be replayed after a crash"
+        },
+        {
+          "key": "B",
+          "text": "To execute a single, well-defined action such as calling an API, querying a database, or processing a file"
+        },
+        {
+          "key": "C",
+          "text": "To schedule other Workflows to run at a specific time in the future"
+        },
+        {
+          "key": "D",
+          "text": "To define the retry logic that controls how many times a Workflow can restart"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Activities are the workers that do real-world work — talking to databases, calling APIs, sending emails, and so on. Workflows orchestrate Activities but deliberately avoid doing that work themselves, keeping Workflow logic deterministic and replayable. This separation is what lets Temporal automatically retry a failed API call without re-running your entire business process.",
+      "source_doc": "basics.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_easy_002",
+      "category": "Features_Activities",
+      "difficulty": "easy",
+      "question": "Why is it important for Activity implementation code to be idempotent?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Because Temporal may execute the same Activity more than once due to retries, so running it multiple times should produce the same result"
+        },
+        {
+          "key": "B",
+          "text": "Because Workflows are not allowed to call the same Activity twice in a single run"
+        },
+        {
+          "key": "C",
+          "text": "Because idempotent code runs faster and reduces the load on the Task Queue"
+        },
+        {
+          "key": "D",
+          "text": "Because the Temporal SDK will automatically skip duplicate Activities if they are not idempotent"
+        }
+      ],
+      "answer": "A",
+      "explanation": "When an Activity fails or times out, Temporal retries it automatically. If the Activity is not idempotent — for example, it charges a credit card without checking for a prior charge — a retry could cause unintended side effects. Writing idempotent Activities ensures that retrying a failed step is always safe, which is a cornerstone of Temporal's durable execution model.",
+      "source_doc": "execution.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_easy_003",
+      "category": "Features_Activities",
+      "difficulty": "easy",
+      "question": "What is a 'benign' Activity error in Temporal, and why would you mark an error that way?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "An error that permanently stops the Activity and prevents any future retries from being scheduled"
+        },
+        {
+          "key": "B",
+          "text": "An error that is expected during normal operations, marked so it does not pollute logs, metrics, or traces with false alarms"
+        },
+        {
+          "key": "C",
+          "text": "An error that is automatically resolved by Temporal without surfacing it to the Workflow"
+        },
+        {
+          "key": "D",
+          "text": "An error that skips the current retry attempt and jumps straight to the maximum retry count"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Some failures are routine — for instance, polling an external service that isn't ready yet. Without the benign flag, every such failure would appear as an error in your observability dashboards, making it hard to spot real problems. Marking these errors as benign downgrades their log level and suppresses error metrics, letting you keep your alerting clean while still handling the situation correctly in Workflow logic.",
+      "source_doc": "benign-exceptions.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_easy_004",
+      "category": "Features_Activities",
+      "difficulty": "easy",
+      "question": "What is a Standalone Activity in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "An Activity that is triggered directly from a Temporal Client instead of being orchestrated by a Workflow"
+        },
+        {
+          "key": "B",
+          "text": "An Activity that runs on a dedicated Worker and cannot be shared with other Activities"
+        },
+        {
+          "key": "C",
+          "text": "An Activity that automatically retries forever without a configured Retry Policy"
+        },
+        {
+          "key": "D",
+          "text": "An Activity that bypasses the Task Queue and executes synchronously inside the calling process"
+        }
+      ],
+      "answer": "A",
+      "explanation": "Most Activities are started from within a Workflow Definition. A Standalone Activity is a pre-release feature that lets you start an Activity directly from a Temporal Client, without any parent Workflow. The Activity code itself is written and registered exactly the same way — the difference is only in how it is invoked. This makes it useful for simpler jobs where full Workflow orchestration is not needed.",
+      "source_doc": "standalone-activities.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_easy_005",
+      "category": "Features_Activities",
+      "difficulty": "easy",
+      "question": "What is the purpose of Asynchronous Activity Completion in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It allows a Workflow to run multiple Activities at the same time by launching them in parallel threads"
+        },
+        {
+          "key": "B",
+          "text": "It lets an Activity function return early while the actual completion is reported later by an external system holding a task token"
+        },
+        {
+          "key": "C",
+          "text": "It configures the Temporal server to automatically complete the Activity after a fixed delay without any worker involvement"
+        },
+        {
+          "key": "D",
+          "text": "It enables an Activity to call back into the Workflow to update its state before the Activity finishes"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Some work cannot finish within a single function call — for example, waiting for a human to approve a document or for an external batch job to finish. Asynchronous Activity Completion lets the Activity hand off a task token to that external system and return immediately, freeing the worker thread. The external system later calls back into Temporal with the token to mark the Activity complete, fail, or heartbeat progress. This is how Temporal models long-running human-in-the-loop processes.",
+      "source_doc": "asynchronous-activity.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_easy_006",
+      "category": "Features_Activities",
+      "difficulty": "easy",
+      "question": "What does a Dynamic Activity do that a regular Activity does not?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It can accept any Activity name at runtime, acting as a catch-all handler when no specifically named Activity matches the request"
+        },
+        {
+          "key": "B",
+          "text": "It automatically selects the fastest available Worker to minimize latency for high-priority tasks"
+        },
+        {
+          "key": "C",
+          "text": "It retries with a different retry policy each time it fails, adapting dynamically to the error type"
+        },
+        {
+          "key": "D",
+          "text": "It runs outside the normal Task Queue so that it can be invoked directly by the Temporal server on a schedule"
+        }
+      ],
+      "answer": "A",
+      "explanation": "A regular Activity is registered under a specific name, and the Workflow must call it by that name. A Dynamic Activity acts as a fallback: if Temporal receives a request to run an Activity name that no registered Activity matches, it routes the call to the Dynamic Activity instead. Only one Dynamic Activity can exist on a Worker at a time. This pattern is useful for plugin-style systems or routing Activity calls whose names are not known at compile time.",
+      "source_doc": "dynamic-activity.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_med_001",
+      "category": "Features_Activities",
+      "difficulty": "med",
+      "question": "In the Temporal .NET SDK, which timeout is REQUIRED when spawning an Activity Execution with `ExecuteActivityAsync`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "HeartbeatTimeout — Temporal requires periodic heartbeats so the server knows the Activity is still alive."
+        },
+        {
+          "key": "B",
+          "text": "ScheduleToStartTimeout — Temporal requires a bound on how long the Activity can wait in the Task Queue before a Worker picks it up."
+        },
+        {
+          "key": "C",
+          "text": "Either a ScheduleToCloseTimeout or a StartToCloseTimeout — at least one of these two must be set in the Activity options."
+        },
+        {
+          "key": "D",
+          "text": "RetryPolicy.MaximumAttempts — Temporal requires an explicit retry limit to prevent unbounded Activity retries."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation states: 'The only required value that needs to be set is either a Schedule-To-Close Timeout or a Start-To-Close Timeout.' ScheduleToCloseTimeout caps the total lifetime of the Activity Execution (including retries), while StartToCloseTimeout caps a single attempt. HeartbeatTimeout is optional and only relevant for long-running Activities that need to report progress. ScheduleToStartTimeout is optional and governs queue wait time. RetryPolicy is entirely optional — Temporal has sensible defaults.",
+      "source_doc": "develop_dotnet_activities_execution.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_med_002",
+      "category": "Features_Activities",
+      "difficulty": "med",
+      "question": "A Temporal .NET Activity needs to delegate work to an external system and complete only after that system reports back hours later. Which pattern should be used?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Throw a `TimeoutException` inside the Activity so Temporal schedules a retry after the external system is expected to finish."
+        },
+        {
+          "key": "B",
+          "text": "Use asynchronous Activity completion: capture the Task Token, throw `CompleteAsyncException`, then call `CompleteAsync` on the handle retrieved via `GetAsyncActivityHandle` when the external system reports back."
+        },
+        {
+          "key": "C",
+          "text": "Set a very long `StartToCloseTimeout` and block the Activity thread until the external system responds via a polling loop."
+        },
+        {
+          "key": "D",
+          "text": "Return a placeholder result immediately, then send a Signal to the parent Workflow once the external system finishes so the Workflow can reconcile state."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Asynchronous Activity Completion is the correct pattern here. The Activity captures its Task Token, throws `CompleteAsyncException` (which tells Temporal the Activity is intentionally incomplete), and later an external process uses `GetAsyncActivityHandle(token)` to heartbeat or call `CompleteAsync`. Blocking a thread wastes a Worker slot for hours and risks missing heartbeat deadlines. Retrying via TimeoutException wastes resources and restarts work unnecessarily. Signaling the Workflow is a workaround that bypasses Temporal's built-in activity completion lifecycle and complicates error handling.",
+      "source_doc": "develop_dotnet_activities_asynchronous-activity.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_med_003",
+      "category": "Features_Activities",
+      "difficulty": "med",
+      "question": "You observe that a specific Activity in your .NET Workflow throws an expected error frequently during normal polling operations, generating noisy failure metrics and ERROR-level traces. What is the most targeted fix?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Catch the exception inside the Activity and return a special sentinel value instead, shifting error-handling logic into the Workflow Definition."
+        },
+        {
+          "key": "B",
+          "text": "Set `RetryPolicy.MaximumAttempts = 1` on the Activity to suppress retries and prevent repeated failure emissions."
+        },
+        {
+          "key": "C",
+          "text": "Wrap the exception in `ApplicationFailureException` with `NonRetryable = true` to stop retries and reduce log volume."
+        },
+        {
+          "key": "D",
+          "text": "Throw an `ApplicationFailureException` with `category: ApplicationErrorCategory.Benign` to downgrade failure logs to DEBUG and suppress failure metrics and OpenTelemetry ERROR status."
+        }
+      ],
+      "answer": "D",
+      "explanation": "The `.NET` SDK's benign exception feature is designed exactly for this scenario. Setting `ApplicationErrorCategory.Benign` downgrades Activity failure logs to DEBUG level, suppresses Activity failure metrics, and prevents the OpenTelemetry failure status from being set to ERROR. Returning a sentinel value leaks error semantics into the Workflow and breaks separation of concerns. Setting `MaximumAttempts = 1` stops retries but doesn't reduce observability noise from the failure itself. `NonRetryable = true` also stops retries but still emits full ERROR-level telemetry.",
+      "source_doc": "develop_dotnet_activities_benign-exceptions.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_med_004",
+      "category": "Features_Activities",
+      "difficulty": "med",
+      "question": "In the .NET SDK, how does a Dynamic Activity differ from a regular Activity, and when would you register one?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A Dynamic Activity runs on a separate Worker process and is registered to handle activities that exceed a configurable timeout threshold."
+        },
+        {
+          "key": "B",
+          "text": "A Dynamic Activity is invoked when no other registered Activity matches the requested name. It accepts `IRawValue[]` as its argument and is declared with `[Activity(Dynamic = true)]`."
+        },
+        {
+          "key": "C",
+          "text": "A Dynamic Activity automatically retries with exponential backoff and bypasses the normal Retry Policy settings configured in Activity Options."
+        },
+        {
+          "key": "D",
+          "text": "A Dynamic Activity is an Activity registered at runtime after the Worker has already started, allowing hot-reloading of Activity implementations."
+        }
+      ],
+      "answer": "B",
+      "explanation": "A Dynamic Activity acts as a catch-all: if a Workflow schedules an Activity whose name doesn't match any registered Activity, Temporal routes it to the Dynamic Activity. You declare it with `[Activity(Dynamic = true)]` and it must accept `IRawValue[]` so it can deserialize arbitrary payloads using `ActivityExecutionContext.Current.PayloadConverter`. Only one Dynamic Activity can be registered per Worker. It has nothing to do with timeouts, retry policy bypassing, or runtime hot-reloading.",
+      "source_doc": "develop_dotnet_activities_dynamic-activity.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_med_005",
+      "category": "Features_Activities",
+      "difficulty": "med",
+      "question": "Why does Temporal strongly recommend passing a single object parameter to an Activity rather than multiple individual parameters?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Temporal gRPC transport only serializes the first argument when multiple parameters are provided, silently dropping the rest."
+        },
+        {
+          "key": "B",
+          "text": "The Activity scheduler scores Activities by parameter count and deprioritizes those with more than two arguments in the Task Queue."
+        },
+        {
+          "key": "C",
+          "text": "Using a single wrapper object lets you add or remove fields without breaking the Activity method signature, making the interface more evolvable over time."
+        },
+        {
+          "key": "D",
+          "text": "Multiple parameters are encoded as separate gRPC messages, each incurring an independent 4 MB limit, whereas a single object avoids that overhead."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation explicitly recommends a single parameter wrapping all input fields 'so that you can change what data is passed to the Activity without breaking a method signature.' If you add a new field later, you update the wrapper object's definition rather than changing the method signature everywhere it's called. Multiple parameters are technically supported but create backward-compatibility headaches. The 4 MB gRPC limit applies to the total message size regardless of parameter count, and there is no Task Queue scoring based on argument count.",
+      "source_doc": "develop_dotnet_activities_basics.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_med_006",
+      "category": "Features_Activities",
+      "difficulty": "med",
+      "question": "What distinguishes a Standalone Activity from a Workflow Activity in the Temporal .NET SDK?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Standalone Activities require a different `[StandaloneActivity]` attribute and cannot share code with Workflow Activities."
+        },
+        {
+          "key": "B",
+          "text": "Standalone Activities bypass the Task Queue and are executed synchronously inside the Temporal Client process without a Worker."
+        },
+        {
+          "key": "C",
+          "text": "Standalone Activities are executed directly from a Temporal Client without being orchestrated by a Workflow, but the Activity definition and Worker registration are identical to Workflow Activities."
+        },
+        {
+          "key": "D",
+          "text": "Standalone Activities run in a separate Namespace and cannot be monitored through the standard Temporal Web UI."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation states: 'The way you write the Activity and register it with a Worker is identical to Workflow Activities. The only difference is that you execute a Standalone Activity directly from your Temporal Client.' This means the same `[Activity]`-decorated method and the same Worker setup work for both modes. There is no separate attribute, they still go through a Worker and Task Queue, and they are visible in the standard Web UI (there's even a dedicated nav bar item for them).",
+      "source_doc": "develop_dotnet_activities_standalone-activities.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_med_007",
+      "category": "Features_Activities",
+      "difficulty": "med",
+      "question": "When an Activity Execution is spawned inside a Workflow Definition, which Command does Temporal generate, and what events appear in the Workflow Execution Event History?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A `StartActivity` Command is generated, producing a single `ActivityExecutionStarted` event once the Worker picks up the task."
+        },
+        {
+          "key": "B",
+          "text": "A `ScheduleActivityTask` Command is generated, producing three events: `ActivityTaskScheduled`, `ActivityTaskStarted`, and an `ActivityTaskClosed` variant."
+        },
+        {
+          "key": "C",
+          "text": "A `DispatchActivity` Command is generated, producing `ActivityDispatched` and `ActivityCompleted` events in the history."
+        },
+        {
+          "key": "D",
+          "text": "A `RequestActivityExecution` Command is generated, producing `ActivityQueued` and `ActivityFinished` events once the Activity completes."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation is precise: calling `ExecuteActivityAsync` generates the `ScheduleActivityTask` Command, which results in three Activity Task related events: `ActivityTaskScheduled` (when scheduled), `ActivityTaskStarted` (when a Worker picks it up), and an `ActivityTask[Closed]` variant (e.g., `ActivityTaskCompleted` or `ActivityTaskFailed`). Understanding this event history structure matters for debugging — you can inspect these events in the Web UI or `tctl` to understand exactly where an Activity is in its lifecycle.",
+      "source_doc": "develop_dotnet_activities_execution.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_med_008",
+      "category": "Features_Activities",
+      "difficulty": "med",
+      "question": "A large Activity is returning a 10 MB result back to the Workflow. The code works in unit tests but causes degraded performance in production. What is the most likely cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Temporal server rate-limits Activities returning more than 5 MB, causing them to be throttled and re-queued repeatedly."
+        },
+        {
+          "key": "B",
+          "text": "Activity return values are recorded in the Workflow Execution Event History, so a 10 MB result bloats the history transferred to every Worker during Workflow replay, degrading performance."
+        },
+        {
+          "key": "C",
+          "text": "The .NET SDK compresses Activity results above 2 MB by default, and the decompression overhead on the Worker causes the slowdown."
+        },
+        {
+          "key": "D",
+          "text": "Large Activity results trigger automatic checkpointing, which pauses the Workflow until the checkpoint is fully persisted to the visibility store."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation warns: 'The entire Execution history is transferred from the Temporal service to Workflow Workers when a Workflow state needs to recover. A large Execution history can thus adversely impact the performance of your Workflow.' Activity parameters and return values are persisted in Event History. A 10 MB result adds 10 MB to every history transfer during replay or recovery. The recommended pattern is to store large payloads externally (e.g., S3, a database) and pass only a reference through Temporal. There is no automatic compression, no rate-limiting based on result size, and no visibility store checkpointing triggered by result size.",
+      "source_doc": "develop_dotnet_activities_execution.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_hard_001",
+      "category": "Features_Activities",
+      "difficulty": "hard",
+      "question": "Your team deploys a new version of an Activity that fixes a critical bug. Within minutes, you see in Temporal Web UI that existing in-flight Activity Executions are failing with 'ApplicationFailureException' and the retries are generating a flood of ERROR-level logs and metrics alerts — even though the failure is an expected transient state you intend to retry through. What change to your Activity code would suppress the observability noise without stopping the retry behavior?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Catch the exception and return a sentinel value instead of throwing, then check for that value in the Workflow to decide whether to reschedule the Activity manually."
+        },
+        {
+          "key": "B",
+          "text": "Throw the ApplicationFailureException with category set to ApplicationErrorCategory.Benign, which downgrades the failure log to DEBUG level and suppresses failure metrics while still allowing the retry policy to reschedule the Activity."
+        },
+        {
+          "key": "C",
+          "text": "Set the Activity's retry policy MaxAttempts to 1 so that the retries stop generating log entries, then implement your own external retry loop in the Workflow using a timer."
+        },
+        {
+          "key": "D",
+          "text": "Register the Activity as dynamic by setting Dynamic = true on the [Activity] attribute so that Temporal treats it as a lower-priority execution and suppresses its error metrics automatically."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal .NET SDK's ApplicationErrorCategory.Benign flag tells the platform that this failure is expected and non-severe. It downgrades Activity failure logs from ERROR to DEBUG, disables Activity failure metrics emission, and does not set the OpenTelemetry span status to ERROR — but it does NOT prevent retries. The retry policy still fires normally. Option A breaks the Activity's contract by swallowing errors, requiring fragile Workflow-level logic. Option C destroys the retry behavior entirely. Option D is about dispatching unknown activity names and has no effect on log levels or metrics.",
+      "source_doc": "develop_dotnet_activities_benign-exceptions.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_hard_002",
+      "category": "Features_Activities",
+      "difficulty": "hard",
+      "question": "A Workflow calls an Activity that performs a long-running file transcoding job. The Activity offloads the work to an external media processing cluster and needs to wait hours for the cluster to call back with the result. If the Activity function returns normally and the Worker restarts, the Activity will be rescheduled and the job will be double-submitted. What is the correct Temporal pattern to prevent this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Set a very large Start-To-Close Timeout (e.g., 24 hours) so the Activity function can block on an internal polling loop without timing out, keeping the Worker occupied for the full duration."
+        },
+        {
+          "key": "B",
+          "text": "Have the Activity record its own completion in a database, then at the start of each retry check the database to skip re-submitting; Temporal has no built-in mechanism for external completion."
+        },
+        {
+          "key": "C",
+          "text": "Use asynchronous Activity completion: capture the Task Token inside the Activity, throw CompleteAsyncException to signal the Activity is waiting externally, and later call CompleteAsync on the handle using the Task Token when the cluster responds."
+        },
+        {
+          "key": "D",
+          "text": "Spawn a Child Workflow from within the Activity that polls the external cluster on a timer, so the polling state is durable inside the Child Workflow's event history rather than inside the long-lived Activity."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Asynchronous Activity Completion is the purpose-built Temporal mechanism for exactly this scenario. The Activity captures its Task Token (or Namespace + Workflow Id + Activity Id), throws CompleteAsyncException to tell the SDK the Activity will be completed externally, and the function returns immediately — so the Worker slot is freed and no retry is triggered. The external system later calls CompleteAsync (or FailAsync) on the handle. Option A keeps a Worker thread blocked for hours, wasting concurrency and risking the Worker restarting anyway. Option B is a manual workaround that Temporal's own protocol replaces. Option D misuses Child Workflows for what is fundamentally an Activity concern and adds unnecessary history.",
+      "source_doc": "develop_dotnet_activities_asynchronous-activity.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_hard_003",
+      "category": "Features_Activities",
+      "difficulty": "hard",
+      "question": "An engineer notices that after increasing the payload passed to an Activity — adding a 3 MB binary blob as one of the Activity parameters — Workflow replay on their Worker slows down significantly, even for Workflows that don't call that Activity. Why does a large Activity parameter affect Workers processing completely different Workflows?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal routes all Workflow Tasks for a Namespace through a single shared gRPC stream, so large payloads in one Workflow's history create backpressure that delays Task delivery to all Workers on that Namespace."
+        },
+        {
+          "key": "B",
+          "text": "Activity parameters are stored in the Workflow Execution Event History, and the entire Event History is transferred to a Worker whenever a Workflow Task needs to be processed — so bloated histories from any Workflow in the queue increase transfer and deserialization cost across all Workers polling that Task Queue."
+        },
+        {
+          "key": "C",
+          "text": "The Temporal Server compresses all Event Histories together into a single namespace-level snapshot, so a large payload in one Workflow increases the snapshot size that every Worker must download to verify its cache."
+        },
+        {
+          "key": "D",
+          "text": "Large Activity parameters cause the ScheduleActivityTask Command to exceed the 4 MB gRPC message limit, which forces Temporal to fragment the message across multiple Workflow Tasks, each of which must be processed separately by Workers."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Every value passed to or returned from an Activity is recorded in the Workflow Execution Event History as Payload data. When a Workflow Task fires — for any reason, including signals, timers, or child workflow completions — the Temporal service transfers the entire Event History to the Worker processing that task. If Activity parameters are large, the history grows large, increasing the gRPC transfer size and deserialization time for every subsequent Workflow Task in that Workflow. While the effect is per-Workflow rather than cross-Workflow, heavy histories degrade the overall throughput of Workers polling the same task queue. The documentation explicitly warns that large Event Histories 'can adversely impact the performance of your Workflow' because 'the entire Event History could be transferred to a Worker Process with a Workflow Task.' Single arguments are limited to 2 MB and total gRPC messages to 4 MB.",
+      "source_doc": "develop_dotnet_activities_basics.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_hard_004",
+      "category": "Features_Activities",
+      "difficulty": "hard",
+      "question": "A team registers a Dynamic Activity on their Worker alongside several named Activities. A month later they try to add a second Dynamic Activity to handle a new category of unknown activity names. The Worker fails to start with a registration error. What is the constraint they violated, and what is the correct approach?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Dynamic Activities cannot coexist with named Activities on the same Worker; the team must move all named Activities to a separate Worker and leave only the Dynamic Activity on the original Worker."
+        },
+        {
+          "key": "B",
+          "text": "Only one Dynamic Activity can be registered per Worker. To handle different categories of unknown activity names, the single Dynamic Activity must inspect the activity name at runtime and dispatch accordingly."
+        },
+        {
+          "key": "C",
+          "text": "Dynamic Activities require a dedicated Task Queue separate from named Activities; the team violated the Task Queue isolation rule and must register each Dynamic Activity on its own Task Queue."
+        },
+        {
+          "key": "D",
+          "text": "The second Dynamic Activity conflicts because both accept IRawValue[] arguments; they must use different parameter types to disambiguate, after which multiple Dynamic Activities can be registered on the same Worker."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation is explicit: 'Only one Dynamic Activity can be present on a Worker.' A Dynamic Activity is invoked when no named Activity matches the incoming activity name, acting as a catch-all. Because there can only be one catch-all per Worker, adding a second Dynamic Activity is a registration conflict. The correct design is to have a single Dynamic Activity that reads the activity name from the ActivityExecutionContext and implements its own internal routing. Options A, C, and D reflect common misconceptions about Worker isolation and parameter typing that are not how Temporal Dynamic Activities work.",
+      "source_doc": "develop_dotnet_activities_dynamic-activity.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_hard_005",
+      "category": "Features_Activities",
+      "difficulty": "hard",
+      "question": "Your Workflow calls an Activity with only a ScheduleToStartTimeout of 30 seconds and no other timeout set. The Task Queue is backlogged and the Activity Task sits in the queue for 45 seconds before a Worker picks it up. What happens, and what would you change to ensure the Activity can still complete successfully when the queue is slow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity fails immediately with a timeout error after 45 seconds because ScheduleToStartTimeout expired; you should set a StartToCloseTimeout instead, which is the only required timeout and covers the full execution window."
+        },
+        {
+          "key": "B",
+          "text": "Temporal silently ignores ScheduleToStartTimeout violations and the Activity runs normally; no change is needed because the timeout only controls retry eligibility, not scheduling."
+        },
+        {
+          "key": "C",
+          "text": "The Activity is rescheduled automatically to a less-busy Worker after the timeout fires; you should increase ScheduleToStartTimeout to match your expected queue depth."
+        },
+        {
+          "key": "D",
+          "text": "The Activity completes successfully because ScheduleToStartTimeout is optional and defaults to the ScheduleToCloseTimeout value when not explicitly set alongside another timeout."
+        }
+      ],
+      "answer": "A",
+      "explanation": "ScheduleToStartTimeout measures the time between when the Activity Task is scheduled and when a Worker picks it up. If the Task Queue is backlogged and the Activity sits for 45 seconds against a 30-second ScheduleToStartTimeout, the Activity fails with a timeout error. Critically, the documentation states that the only *required* timeout is either a ScheduleToCloseTimeout or a StartToCloseTimeout — ScheduleToStartTimeout alone is not sufficient. For a queue-backlog scenario, you should configure a StartToCloseTimeout (or ScheduleToCloseTimeout) to ensure the Activity has time to execute once started, and tune ScheduleToStartTimeout to reflect acceptable wait times. Options B and C misrepresent how Temporal enforces timeouts. Option D is incorrect because ScheduleToStartTimeout is a separate, independent timeout.",
+      "source_doc": "develop_dotnet_activities_execution.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_hard_006",
+      "category": "Features_Activities",
+      "difficulty": "hard",
+      "question": "A Standalone Activity is started via the Temporal Client without any associated Workflow. The team wants to observe its progress in Temporal Web UI and cancel it early if needed. Which statement accurately describes the operational difference between a Standalone Activity and a Workflow-orchestrated Activity from an operator's perspective?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Standalone Activities appear in the Workflow list under a synthetic Workflow ID generated by the Temporal Server, so operators can cancel them the same way they cancel Workflows from the Workflows tab."
+        },
+        {
+          "key": "B",
+          "text": "Standalone Activities run directly on the Worker without any Temporal Server involvement, so they cannot be observed in the Web UI or cancelled remotely — they must be terminated by killing the Worker process."
+        },
+        {
+          "key": "C",
+          "text": "Standalone Activities are surfaced in a dedicated Standalone Activities section of the Web UI and can be cancelled via the Temporal Client using a handle obtained from the activity's task token or ID — independent of any Workflow execution."
+        },
+        {
+          "key": "D",
+          "text": "Standalone Activities are identical to Workflow-orchestrated Activities at the server level; the only difference is that the calling code uses a Client method instead of ExecuteActivityAsync inside a Workflow Definition."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The documentation describes Standalone Activities as appearing in a dedicated nav bar item in the Temporal Web UI — separate from the Workflows tab — and explicitly shows that the Temporal Client can obtain a handle to an existing Standalone Activity (GetAsyncActivityHandle) to heartbeat, complete, fail, or cancel it. This makes them independently observable and controllable without any parent Workflow. Option A is incorrect because there is no synthetic Workflow ID — they appear in their own section. Option B is wrong because Temporal Server is fully involved in tracking the activity. Option D is subtly wrong because at the server level, Standalone Activities have a different execution context and visibility path from Workflow-orchestrated ones.",
+      "source_doc": "develop_dotnet_activities_standalone-activities.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_hard_007",
+      "category": "Features_Activities",
+      "difficulty": "hard",
+      "question": "A Workflow executes an Activity using ExecuteActivityAsync. The Activity occasionally throws a transient IOException. The team sets a retry policy with BackoffCoefficient = 2, InitialInterval = 1s, MaxInterval = 100s, and MaxAttempts = 10. After a deploy, they notice the total time before the Activity gives up is much longer than they expected from a simple calculation of 10 attempts × average wait. What interaction between the retry policy and Activity timeouts is most likely causing the discrepancy?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The BackoffCoefficient applies to the StartToCloseTimeout on each attempt as well as the interval, so both the backoff delay and the per-attempt execution window grow exponentially, multiplying the total elapsed time."
+        },
+        {
+          "key": "B",
+          "text": "Each retry attempt resets the ScheduleToCloseTimeout clock, so with 10 attempts the effective total timeout is 10 times the configured ScheduleToCloseTimeout — a common misconfiguration when both MaxAttempts and ScheduleToCloseTimeout are set."
+        },
+        {
+          "key": "C",
+          "text": "The exponential backoff intervals compound: 1s, 2s, 4s, 8s, 16s, 32s, 64s, 100s, 100s … plus the actual execution time of each attempt and any Task Queue wait time, making the total wall-clock time substantially longer than a linear estimate based on MaxAttempts alone."
+        },
+        {
+          "key": "D",
+          "text": "Temporal adds a fixed 30-second jitter to each retry interval by default to prevent thundering herd problems, so each of the 10 intervals is extended by up to 30 seconds beyond the calculated backoff value."
+        }
+      ],
+      "answer": "C",
+      "explanation": "With BackoffCoefficient = 2 and InitialInterval = 1s (capped at MaxInterval = 100s), the backoff sequence is 1s, 2s, 4s, 8s, 16s, 32s, 64s, 100s, 100s for 9 gaps between 10 attempts — totaling ~327 seconds of pure wait time, before adding the actual Activity execution time on each attempt and any Task Queue scheduling latency. The retry simulator in the documentation is designed precisely to make this visible: 'Use the Activity Timeouts and Retry Policy settings to see how they impact the success or failure of an Activity Execution' and 'The Task Time in Queue simulates the time the Activity Task might be waiting in the Task Queue.' Option A is wrong — BackoffCoefficient only affects intervals. Option B is wrong — ScheduleToCloseTimeout spans all attempts, it does not reset. Option D is wrong — Temporal does not add a fixed 30-second jitter by default.",
+      "source_doc": "activity-retry-simulator (develop_activity-retry-simulator.html)",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_hard_008",
+      "category": "Features_Activities",
+      "difficulty": "hard",
+      "question": "A team refactors their Activity class from instance methods to static methods, and also changes an Activity's registration name using the [Activity(\"custom-name\")] attribute parameter. After deploying the new Worker alongside old Workers still processing in-flight Workflow Executions, some Activities scheduled under the old name start timing out. What is the root cause, and how do the naming and static/instance distinctions interact with this failure?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Static Activity methods cannot be registered on the same Worker as instance methods; the Worker silently drops all static Activities during registration, causing tasks for those Activities to find no handler and time out."
+        },
+        {
+          "key": "B",
+          "text": "Changing from instance to static methods changes the Activity's inferred name because the .NET SDK derives the default name from the declaring type and method name — so existing Workflow Executions dispatching to the old name find no matching Activity on the updated Worker."
+        },
+        {
+          "key": "C",
+          "text": "The explicit [Activity(\"custom-name\")] attribute overrides any SDK-inferred name, so the static/instance change is irrelevant; in-flight Activities time out because old Workers are draining and the new name doesn't match what the Workflow Execution recorded when it scheduled the task."
+        },
+        {
+          "key": "D",
+          "text": "A single instance of the Activity implementation is shared across concurrent invocations, so switching to static methods introduces a thread-safety issue that causes the Worker to reject incoming Activity Tasks, which then time out waiting for acknowledgment."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The [Activity(\"custom-name\")] attribute explicitly sets the Activity's registration name, overriding the SDK's default inference (which uses the unqualified method name, stripping an 'Async' suffix for async methods). The static vs. instance distinction does NOT change the registered name and both are fully supported — the documentation states 'Activities can be asynchronous or synchronous' and shows both patterns. The real problem is the name change: in-flight Workflow Executions have already recorded the old activity name in their event history. When they schedule retries or new Activity Tasks, they dispatch to the old name. If no Worker polling that Task Queue has the old name registered, the task will sit until ScheduleToStartTimeout or ScheduleToCloseTimeout fires. Option D describes a real concern (shared instance, idempotency) but is not the cause of the timeout in this scenario.",
+      "source_doc": "develop_dotnet_activities_basics.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_nightmare_001",
+      "category": "Features_Activities",
+      "difficulty": "nightmare",
+      "question": "A .NET team is building a polling activity that checks whether a third-party batch job has finished. The job typically takes 5–30 minutes, and the activity polls every 30 seconds. They want to avoid alert fatigue from expected \"not ready yet\" errors flooding their metrics and APM dashboards, while still retrying on schedule. They write the following:\n\n```csharp\n[Activity]\npublic async Task\u003cstring\u003e PollJobStatusAsync(string jobId)\n{\n    var status = await _client.GetJobStatusAsync(jobId);\n    if (status == \"pending\")\n        throw new ApplicationFailureException(\n            \"Job not ready\",\n            category: ApplicationErrorCategory.Benign);\n    return status;\n}\n```\n\nTheir retry policy sets `MaximumAttempts = 0` (unlimited) with `InitialInterval = 30s` and `BackoffCoefficient = 1.0`. A Schedule-To-Close Timeout of 45 minutes is set. After deploying, they notice that even though `ApplicationErrorCategory.Benign` suppresses metrics and downgrades logs, their Workflow history is growing extremely large. What is the PRIMARY architectural reason for the history bloat, and what is the correct fix?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Benign exceptions bypass the retry policy entirely and schedule a new ActivityTaskScheduled event each time, so every poll attempt generates a new triplet of events (Scheduled, Started, Closed). The fix is to use `ApplicationErrorCategory.NonRetryable` instead, which terminates the activity and uses a timer in the workflow to reschedule it."
+        },
+        {
+          "key": "B",
+          "text": "Each retry of the activity appends an ActivityTaskFailed event to the workflow history, so 90 retries over 45 minutes produces 90+ history events from this single activity alone. The correct fix is to move the polling loop inside the activity itself using a regular loop with `Task.Delay`, heartbeating periodically, so only one set of activity events appears in the workflow history regardless of how many poll iterations occur."
+        },
+        {
+          "key": "C",
+          "text": "The `ApplicationErrorCategory.Benign` flag causes Temporal to record additional debug-level metadata payloads in each history event, inflating event sizes beyond normal. The fix is to throw a plain `ApplicationFailureException` without the category flag and filter noise at the observability layer using metric labels rather than in the SDK."
+        },
+        {
+          "key": "D",
+          "text": "Because `BackoffCoefficient = 1.0` with a 30-second interval disables jitter, all workers retry simultaneously, flooding the task queue with ActivityTaskStarted events that are all written to history. Adding jitter via `MaximumJitter` on the retry policy reduces collision and therefore the history event rate."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The core issue is that every activity retry—whether the exception is benign or not—writes events to the workflow execution history. A benign `ApplicationFailureException` suppresses logs, metrics, and OTel error status, but it is still a failure from Temporal's perspective: it triggers a retry, which appends `ActivityTaskFailed` (and subsequent `ActivityTaskScheduled`, `ActivityTaskStarted`) events to the history. With 90 retries over 45 minutes, you get hundreds of history events from a single logical 'poll' operation.\n\nThe correct architectural pattern for polling inside a long-running activity is to keep the loop *inside* the activity, using `Task.Delay` between poll iterations and calling `ActivityExecutionContext.Current.Heartbeat()` regularly. This means the Temporal server sees only a single `ActivityTaskScheduled → ActivityTaskStarted → ActivityTaskCompleted` triplet regardless of how many poll iterations occurred internally. Heartbeating also enables the server to detect worker failures mid-poll and allows graceful cancellation.\n\nThe broader design principle: activities are the right unit for 'do a thing that may take time,' and the retry mechanism is designed for handling *unexpected* failures between attempts—not for implementing internal polling loops. Overusing retries as a polling mechanism conflates the retry backoff mechanism with application-level looping, and the history cost is a direct consequence. Benign exceptions are useful for *expected* transient errors that are truly external failures (e.g., a service not being deployed yet), not for controlling internal activity iteration.",
+      "source_doc": "develop_dotnet_activities_benign-exceptions.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_nightmare_002",
+      "category": "Features_Activities",
+      "difficulty": "nightmare",
+      "question": "A team is using asynchronous activity completion in .NET to integrate with a legacy approval system. The activity captures its task token, throws `CompleteAsyncException`, and stores the token in a database. An external webhook handler later calls `handle.CompleteAsync(result)`. During a production incident, they discover that some approvals are being applied twice—the approval state is updated, and then `CompleteAsync` is called a second time by a retry in the webhook handler. Which statement BEST describes the behavior and how to prevent duplicate completions?\n\n```csharp\n// In activity:\ncapturedToken = ActivityExecutionContext.Current.Info.TaskToken;\nthrow new CompleteAsyncException();\n\n// In webhook handler:\nvar handle = myClient.GetAsyncActivityHandle(capturedToken);\nawait handle.CompleteAsync(approvalResult);\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal's server is fully idempotent for `CompleteAsync` calls: calling it twice with the same task token and payload is a no-op, so the duplicate webhook delivery causes no harm at the Temporal layer. The double state update is a bug in the webhook handler's own logic and must be fixed there with a database-level idempotency check before calling `CompleteAsync`."
+        },
+        {
+          "key": "B",
+          "text": "The task token encodes the activity's scheduled event ID and is invalidated after the first `CompleteAsync`. A second call will return a `NotFound` or `InvalidArgument` error from the server because the activity is no longer in a startable state. The webhook handler must catch this error class and treat it as a success, while the external state mutation must be made idempotent using a separate mechanism such as conditional writes or a deduplication key."
+        },
+        {
+          "key": "C",
+          "text": "Task tokens are rotated by the server every 60 seconds as a security measure, so the second `CompleteAsync` uses a stale token and is silently dropped. The team should use Workflow ID + Activity ID + Namespace as the external reference instead of the task token to get a stable identifier that never rotates."
+        },
+        {
+          "key": "D",
+          "text": "Calling `CompleteAsync` twice causes the workflow to receive two `ActivityTaskCompleted` events, and because the Temporal workflow engine replays history deterministically, this will cause a non-determinism error on the next workflow replay. The fix is to use `FailAsync` on the second call to cancel the duplicate result before it is written to history."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Task tokens are opaque identifiers that encode the specific scheduled attempt of an activity (including the scheduled event ID and attempt number). Once an activity is completed, failed, or timed out, that task token is no longer valid. A second `CompleteAsync` call with the same token will receive an error from the Temporal server—typically a `NotFound` error class because the activity task is no longer in a pending state—not a silent success or a duplicate history event.\n\nThis means the Temporal layer is inherently protected against duplicate completions: the server will reject the second call. However, the problem described is that the *external state mutation* (the approval state update) happens *before* `CompleteAsync`, so a duplicate webhook delivery can trigger the state change twice even though the second `CompleteAsync` fails.\n\nThe correct pattern for async activity completion with external side effects is: (1) make the external mutation idempotent using a deduplication key or conditional write, (2) only then call `CompleteAsync`, and (3) treat the server's error on a duplicate `CompleteAsync` as evidence that the first delivery already succeeded.\n\nThis is a classic at-least-once delivery problem. The task token mechanism protects Temporal's own history, but it cannot protect arbitrary external systems. Understanding the boundary between 'Temporal guarantees' and 'your external side-effects' is critical for correctly designing async activity completion patterns in production.",
+      "source_doc": "develop_dotnet_activities_asynchronous-activity.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    },
+    {
+      "id": "features_activities_nightmare_003",
+      "category": "Features_Activities",
+      "difficulty": "nightmare",
+      "question": "A platform team registers a Dynamic Activity in their .NET worker to handle legacy activity type names forwarded from an older namespace. They also register 15 typed activities in the same worker. During load testing, they observe that some invocations meant for the typed activities are being routed to the dynamic activity instead. Examining the worker registration code:\n\n```csharp\nvar workerOptions = new TemporalWorkerOptions(taskQueue)\n    .AddActivity(typeof(LegacyDynamicActivities))  // contains [Activity(Dynamic = true)]\n    .AddActivity(typeof(NewTypedActivities));       // contains [Activity] methods\n```\n\nWhat is the MOST LIKELY cause, and how should it be diagnosed and fixed?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Dynamic activities take precedence over typed activities in .NET SDK worker dispatch when both are registered on the same worker. The fix is to always register the dynamic activity last in the options chain so typed activities are matched first by the worker's internal activity name resolution order."
+        },
+        {
+          "key": "B",
+          "text": "One or more methods in `NewTypedActivities` likely has an `[Activity]` attribute but was named with an \"Async\" suffix (e.g., `ProcessOrderAsync`), and the callers are using the full name including \"Async\" as the activity type. Because the .NET SDK strips the \"Async\" suffix from activity names by default, the server-side type name doesn't match any registered typed activity, so the dynamic activity handles it as a fallback. The fix is to audit activity type name registration against what the workflow is passing to `ExecuteActivityAsync`."
+        },
+        {
+          "key": "C",
+          "text": "Only one Dynamic Activity can be registered per worker, and the framework silently deregisters all other typed activities once a dynamic activity is added to the options. The fix is to place typed activities on a separate worker with a dedicated task queue and route legacy traffic to the dynamic activity worker via a different task queue."
+        },
+        {
+          "key": "D",
+          "text": "The `IRawValue[]` signature required by the dynamic activity causes the .NET SDK to treat all multi-parameter activity invocations as a match for the dynamic handler, because typed activities with more than one parameter also resolve to an array representation at the payload level. Refactoring all typed activities to use a single wrapper parameter object will prevent the ambiguous dispatch."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The .NET SDK applies a naming convention: when an activity method name ends with `Async` (e.g., `ProcessOrderAsync`), the SDK automatically strips the `Async` suffix and registers the activity type as `ProcessOrder`. If the calling workflow was written—or generated code was used—before this convention was understood, the caller might reference `ProcessOrderAsync` as the activity type string in the workflow history. Because no typed activity is registered under that name (the worker registered it as `ProcessOrder`), the server routes the task to the Dynamic Activity as a fallback.\n\nThis is a subtle naming contract issue between the activity producer (worker registration) and the activity consumer (workflow definition calling `ExecuteActivityAsync`). The strongly-typed lambda form of `ExecuteActivityAsync` in .NET handles this correctly by deriving the type name at compile time using the same SDK convention. But if any path uses a string-based activity type name (e.g., dynamic invocation from another language, or a workflow written before refactoring), the mismatch surfaces silently.\n\nThe Dynamic Activity as a 'catch-all' fallback is both its power and its danger: it will happily accept invocations that were supposed to go elsewhere. In production, the diagnostic step is to compare the `activityType` field in the `ActivityTaskScheduled` history event against the registered names visible in worker startup logs. This broader principle—that naming contracts between workflow and activity must be explicit and audited, especially during SDK migrations—is a common source of subtle production routing bugs.",
+      "source_doc": "develop_dotnet_activities_dynamic-activity.html",
+      "generated_at": "2026-04-22T17:00:55Z"
+    }
+  ]
+}

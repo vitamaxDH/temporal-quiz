@@ -1,0 +1,173 @@
+{
+  "category": "Miscellaneous",
+  "questions": [
+    {
+      "id": "miscellaneous_easy_001",
+      "category": "Miscellaneous",
+      "difficulty": "easy",
+      "question": "Which of the following programming languages does Temporal NOT currently offer an official SDK for?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Python"
+        },
+        {
+          "key": "B",
+          "text": "Rust"
+        },
+        {
+          "key": "C",
+          "text": "TypeScript"
+        },
+        {
+          "key": "D",
+          "text": "Go"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal provides official SDKs for .NET, Go, Java, PHP, Python, Ruby, and TypeScript. Rust is not on that list. Having SDKs for multiple popular languages means developers can build Temporal applications using the language they already know, without having to learn a new one just to use Temporal.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "miscellaneous_easy_002",
+      "category": "Miscellaneous",
+      "difficulty": "easy",
+      "question": "What is the main purpose of a Temporal SDK?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To host the Temporal server on your own machine"
+        },
+        {
+          "key": "B",
+          "text": "To monitor and display logs from your Temporal workflows"
+        },
+        {
+          "key": "C",
+          "text": "To help you build Temporal applications in your preferred programming language"
+        },
+        {
+          "key": "D",
+          "text": "To replace your existing database with Temporal storage"
+        }
+      ],
+      "answer": "C",
+      "explanation": "An SDK (Software Development Kit) is a set of tools and libraries that makes it easier to build applications. Temporal SDKs let developers write workflows and activities using languages like Python, Go, or Java, so they can integrate Temporal's reliability features into their apps without starting from scratch.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "miscellaneous_med_001",
+      "category": "Miscellaneous",
+      "difficulty": "med",
+      "question": "Which of the following programming languages does Temporal NOT currently offer an officially supported SDK for?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Ruby"
+        },
+        {
+          "key": "B",
+          "text": "Rust"
+        },
+        {
+          "key": "C",
+          "text": "PHP"
+        },
+        {
+          "key": "D",
+          "text": "TypeScript"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal offers officially supported SDKs for .NET, Go, Java, PHP, Python, Ruby, and TypeScript. Rust does not have an official Temporal SDK. When choosing a language for a new Temporal project, you can select from these seven supported options, each with its own getting-started guide at learn.temporal.io.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "miscellaneous_med_002",
+      "category": "Miscellaneous",
+      "difficulty": "med",
+      "question": "A team is building a Temporal application and wants to use a statically typed language that compiles to native binaries and is commonly used for high-performance backend services. Which SDK should they choose?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "TypeScript SDK"
+        },
+        {
+          "key": "B",
+          "text": "PHP SDK"
+        },
+        {
+          "key": "C",
+          "text": "Go SDK"
+        },
+        {
+          "key": "D",
+          "text": "Ruby SDK"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Go SDK is designed for a statically typed, compiled language well-suited for high-performance backend services. TypeScript is also statically typed but runs on Node.js and is not compiled to native binaries. PHP and Ruby are dynamically typed interpreted languages. The Go SDK is one of the most mature Temporal SDKs and is widely used in production environments.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "miscellaneous_nightmare_001",
+      "category": "Miscellaneous",
+      "difficulty": "nightmare",
+      "question": "In a Go-based order processing system, you have a parent workflow that spawns 50 child workflows using `workflow.ExecuteChildWorkflow`. Each child workflow processes an order and may run for up to 30 minutes. The parent workflow uses `workflow.WithChildOptions` to set `WorkflowExecutionTimeout: 25 * time.Minute`. After deploying, you notice that under high load, some child workflows are being terminated before completing legitimate work. A colleague suggests switching to `WorkflowRunTimeout` instead of `WorkflowExecutionTimeout`. Another suggests using `ScheduleToCloseTimeout` on the activities inside the child workflows instead. A third suggests the parent should use `workflow.GetChildWorkflowExecution` futures to detect and retry timed-out children. Which statement MOST accurately describes the behavioral difference between these timeout types and the correct remediation strategy?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`WorkflowExecutionTimeout` and `WorkflowRunTimeout` are functionally identical for child workflows because child workflows cannot use Continue-As-New; the real fix is increasing `ScheduleToCloseTimeout` on activities so the child workflow has more time to complete its work."
+        },
+        {
+          "key": "B",
+          "text": "`WorkflowExecutionTimeout` caps the total wall-clock time across ALL runs including Continue-As-New continuations and cannot be reset; `WorkflowRunTimeout` caps a single run and resets on Continue-As-New. If child workflows use Continue-As-New, a tight `WorkflowExecutionTimeout` will terminate them even if each individual run completes normally. The fix is to set `WorkflowRunTimeout` for per-run limits and only use `WorkflowExecutionTimeout` when you need a hard lifetime cap across continuations."
+        },
+        {
+          "key": "C",
+          "text": "Child workflows inherit the parent's `WorkflowExecutionTimeout` minus elapsed parent time, so the 25-minute timeout is actually shorter than expected for children started late in the parent's lifecycle. The fix is to always set an explicit `WorkflowExecutionTimeout` on child options that is independent of the parent clock."
+        },
+        {
+          "key": "D",
+          "text": "The correct fix is to catch the `temporal.TimeoutError` in the parent and use `workflow.SignalExternalWorkflow` to resume the timed-out child, because child workflow timeouts are soft by default and the workflow history is preserved for signal delivery."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question targets a subtle but production-critical distinction between `WorkflowExecutionTimeout` and `WorkflowRunTimeout`.\n\n**The Core Distinction:**\n- `WorkflowRunTimeout`: Limits a *single execution run*. When a workflow calls `workflow.NewContinueAsNewError()`, a new run begins and this timer resets.\n- `WorkflowExecutionTimeout`: Limits the *entire workflow lifetime* — it starts ticking when the workflow first starts and is NEVER reset by Continue-As-New. It represents a hard outer boundary on how long that workflow ID can remain open.\n\n**Why this causes production incidents:** Engineers building long-running child workflows often use Continue-As-New to manage history size (a best practice). They set `WorkflowExecutionTimeout` thinking it's equivalent to `WorkflowRunTimeout` for workflows that don't use Continue-As-New. But as the system evolves and someone adds Continue-As-New to control history growth, suddenly workflows that ran fine for months start getting hard-terminated. The `WorkflowExecutionTimeout` clock never reset, so after enough accumulated wall time (across all runs), Temporal forcefully terminates the workflow.\n\n**Why C is wrong:** Child workflows do NOT inherit the parent's timeout clock. Each child workflow gets its own independent timeout clock starting from when the child was scheduled. This is a common misconception — Temporal's child workflows are fully independent execution units with their own timers.\n\n**Why A is wrong:** Child workflows absolutely CAN use Continue-As-New; in fact it is recommended for long-running child workflows to prevent unbounded history growth. Activity timeouts (`ScheduleToCloseTimeout`) govern activity execution within a workflow, not the workflow's own lifetime.\n\n**Why D is wrong:** `TimeoutError` from a `WorkflowExecutionTimeout` means the workflow was *terminated* — it is closed and no signals can be delivered to it. Signals require a running workflow. This is a dangerous misconception that would cause silent signal drops in production.\n\n**The Production Insight:** Always be intentional about which timeout you set. Use `WorkflowRunTimeout` as your operational safety valve for individual runs. Reserve `WorkflowExecutionTimeout` for business-level SLAs where you genuinely need to guarantee a workflow cannot live beyond a wall-clock deadline regardless of continuations. If you're not sure, `WorkflowRunTimeout` is almost always the safer default for child workflows.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "miscellaneous_nightmare_002",
+      "category": "Miscellaneous",
+      "difficulty": "nightmare",
+      "question": "Your team is migrating a Python-based data pipeline from SDK version 1.x to 2.x. The pipeline uses a long-running workflow that processes millions of records using Continue-As-New to manage history size. The workflow also accepts signals to pause/resume processing. During the migration, you deploy new workers with updated workflow code alongside old workers (blue-green deploy). You use `workflow.patched()` (the Python equivalent of `GetVersion`) to gate new code paths. Three days into the migration, you observe that some workflow executions are failing with nondeterminism errors, but ONLY for workflows that received a signal AND continued-as-new before the new workers were fully rolled out. Which explanation MOST accurately identifies the root cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Signals always cause a new workflow task to be scheduled on whichever worker polls first; if a new worker replays an execution where a signal was handled by an old worker that did NOT have the `workflow.patched()` call, the replay will see the patch marker in the history and take the new code path, while the original execution took the old code path — creating a determinism violation."
+        },
+        {
+          "key": "B",
+          "text": "Continue-As-New creates a new workflow run with a fresh history, effectively resetting the workflow's versioning state. If the first task of the new run is picked up by a new worker, `workflow.patched()` returns True and the new code path executes. But if that run's subsequent tasks (including signal handling) are replayed by an old worker during failover, the old worker has no knowledge of the patch and executes the original code path — the mismatch between the patched new-run history and the old worker's replay causes nondeterminism."
+        },
+        {
+          "key": "C",
+          "text": "The root cause is that `workflow.patched()` patch IDs are scoped to a workflow run, not a workflow execution. After Continue-As-New, the new run starts with no patch markers in history. During replay of the new run, `workflow.patched()` returns False (using deprecated path) on old workers but True (using new path) on new workers. Since both worker versions may handle tasks for the same run during blue-green deployment, the commands generated differ, causing nondeterminism errors."
+        },
+        {
+          "key": "D",
+          "text": "This is a known SDK limitation: `workflow.patched()` cannot be used in workflows that use Continue-As-New because the patch marker written in run N is not carried forward to run N+1. The correct migration pattern is to use a workflow ID-based feature flag stored in an activity result instead of SDK-level patching."
+        }
+      ],
+      "answer": "C",
+      "explanation": "This question exposes one of the most dangerous interaction patterns in Temporal: the intersection of versioning (`GetVersion`/`patched`), Continue-As-New, and blue-green deployments.\n\n**The Core Mechanism:**\n`workflow.patched()` (Python) / `workflow.GetVersion()` (Go) works by writing a *marker event* into the workflow history on first execution. During replay, the SDK reads this marker to determine which code path was originally taken. This is how determinism is maintained across worker restarts.\n\n**Why Continue-As-New breaks naive patching assumptions:**\nContinue-As-New starts a *brand new run with an empty history*. The patch markers from the previous run are gone. The new run's history starts fresh. This means:\n- If a NEW worker picks up the first task of the new run: `workflow.patched()` returns `True`, writes a patch marker, executes new code path.\n- If an OLD worker then picks up a subsequent task (or replay during failover): it has no concept of `workflow.patched()` for that ID, so it executes the original code path — but the history shows commands consistent with the new code path. Nondeterminism error.\n- The inverse is equally dangerous: old worker starts the new run (no patch marker written), new worker replays it and calls `workflow.patched()` which finds no marker and must decide: in 'patched' mode without a marker in replay, it returns False (treats as pre-patch), but the new worker's logic may have diverged.\n\n**Why signals compound this:** Signals inject tasks mid-execution. During a blue-green deploy, the worker that handles a signal task may differ from the worker that handled previous tasks in the same run. If versioning state is inconsistent between these workers' replays, the signal handling code path diverges.\n\n**Why A is wrong:** The scenario described in A is backwards — the issue isn't that a new worker replays old-worker history and sees unexpected patch markers. Patch markers are written by new workers; old workers don't write them. Old workers replaying new-worker history is the problem.\n\n**Why B is partially correct but wrong:** B correctly identifies that Continue-As-New resets history, but misidentifies the direction of the problem. The issue isn't old workers failing to understand markers written by new workers in a new run — it's the inconsistency of whether the marker gets written at all during the new run's first task.\n\n**Why D is wrong:** `workflow.patched()` CAN be used with Continue-As-New, but you must be deliberate. The correct pattern is: after full migration (all old workers drained), use `workflow.deprecate_patch()` to stop writing markers. For workflows that span Continue-As-New boundaries during migration, you may need to pass the 'which version am I' information explicitly as workflow input to the new run, or use a different versioning strategy.\n\n**The Production Insight:** During blue-green deployments of workflows using Continue-As-New, you must ensure that ALL tasks for a given run are handled by workers of the SAME code version, or that your patching strategy accounts for the fresh-history nature of new runs. One safe pattern: complete migration (drain old workers) before new runs can begin. Another: pass explicit version information as Continue-As-New input parameters rather than relying solely on `patched()` markers that don't survive run boundaries.",
+      "source_doc": "getting-started.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    }
+  ]
+}

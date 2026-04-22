@@ -1,0 +1,369 @@
+{
+  "category": "Features_Workflows",
+  "questions": [
+    {
+      "id": "features_workflows_easy_001",
+      "category": "Features_Workflows",
+      "difficulty": "easy",
+      "question": "A Parent Workflow finishes while a Child Workflow is still running. What determines what happens to the Child Workflow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Child Workflow always keeps running no matter what"
+        },
+        {
+          "key": "B",
+          "text": "The Parent Close Policy set on the Child Workflow determines what happens"
+        },
+        {
+          "key": "C",
+          "text": "The Child Workflow is always immediately stopped"
+        },
+        {
+          "key": "D",
+          "text": "The Child Workflow finishes its current task, then pauses until a new Parent is assigned"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When a Parent Workflow closes (completes, fails, or times out), Temporal checks the Parent Close Policy that was set on each Child Workflow. This policy has three options: Abandon (the child keeps running independently), Request Cancel (a cancellation is sent to the child), or Terminate (the child is forcefully stopped, which is the default). This gives you control over how child workflows behave when their parent is gone.",
+      "source_doc": "parent-close-policy.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_easy_002",
+      "category": "Features_Workflows",
+      "difficulty": "easy",
+      "question": "What is the main reason Temporal uses 'Sticky Execution' for Workflow Tasks?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To ensure that only one Worker ever runs a particular type of Workflow"
+        },
+        {
+          "key": "B",
+          "text": "To prevent two Workers from processing the same Workflow at the same time"
+        },
+        {
+          "key": "C",
+          "text": "To improve performance by sending tasks back to the same Worker that already has the Workflow state cached in memory"
+        },
+        {
+          "key": "D",
+          "text": "To guarantee that Workflows always complete in the correct order"
+        }
+      ],
+      "answer": "C",
+      "explanation": "When a Worker processes a Workflow Task, it caches the Workflow's current state in memory. Sticky Execution takes advantage of this by routing future tasks for that same Workflow back to the same Worker. This avoids the overhead of rebuilding the Workflow state from its full history every time a new task arrives, making execution faster — especially for latency-sensitive Workflows.",
+      "source_doc": "sticky-execution.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_easy_003",
+      "category": "Features_Workflows",
+      "difficulty": "easy",
+      "question": "You need to run a Workflow automatically every day at the same time. Which Temporal feature is designed for this purpose?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A Child Workflow that calls itself repeatedly"
+        },
+        {
+          "key": "B",
+          "text": "A Temporal Cron Job, which runs a Workflow on a repeating schedule"
+        },
+        {
+          "key": "C",
+          "text": "A Dynamic Handler that listens for a timer signal"
+        },
+        {
+          "key": "D",
+          "text": "A Parent Close Policy set to 'Abandon' so the Workflow restarts itself"
+        }
+      ],
+      "answer": "B",
+      "explanation": "A Temporal Cron Job lets you attach a schedule (like 'every day at 8 AM') to a Workflow when you start it. Temporal then automatically triggers a new run of that Workflow according to the schedule, similar to how a unix cron job works. Each run is independent but inherits the same settings as the original. Note that Temporal now recommends using Schedules instead of Cron Jobs, as Schedules offer more features and flexibility.",
+      "source_doc": "cron-job.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_med_001",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "A Parent Workflow spawns a Child Workflow to manage a long-running background process. The Parent Workflow should complete independently, but the Child should keep running even after the Parent finishes. Which Parent Close Policy should be used?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Terminate (default) — the Child is forcefully stopped when the Parent closes"
+        },
+        {
+          "key": "B",
+          "text": "Abandon — the Child Workflow Execution is not affected when the Parent closes"
+        },
+        {
+          "key": "C",
+          "text": "Request Cancel — a cancellation request is sent to the Child when the Parent closes"
+        },
+        {
+          "key": "D",
+          "text": "No policy is needed; Child Workflows always outlive their Parents by default"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Abandon Parent Close Policy means the Child Workflow Execution continues running unaffected when the Parent reaches a Closed status. The default policy is Terminate, which would forcefully stop the Child. Request Cancel sends a cancellation signal but does not guarantee the Child keeps running. Use Abandon when spawning fire-and-forget or long-lived Child Workflows that should be independent of the Parent's lifecycle.",
+      "source_doc": "parent-close-policy.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_med_002",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "You need to process 500,000 items using Temporal. You start a single Workflow and try to spawn one Activity per item, but you're concerned about hitting Event History limits. What is the recommended architectural approach?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Use a single Workflow with Continue-As-New to reset the Event History after each batch of Activities"
+        },
+        {
+          "key": "B",
+          "text": "Spawn up to 500 Child Workflow Executions, each processing 1,000 items via Activities, staying within the recommended limit of Child Workflows per Parent"
+        },
+        {
+          "key": "C",
+          "text": "Spawn 500,000 Child Workflow Executions, one per item, since each has its own Event History"
+        },
+        {
+          "key": "D",
+          "text": "Use Dynamic Handlers to route Activity calls and bypass Event History limits"
+        }
+      ],
+      "answer": "B",
+      "explanation": "A single Parent Workflow should not spawn more than 1,000 Child Workflow Executions because the Parent's Event History records events for each Child. By spawning ~500 Child Workflows each handling ~1,000 Activities, you stay well within recommended limits. Spawning 500,000 Children from a single Parent would overflow the Parent's own Event History. Continue-As-New does not carry over Child Workflows and is not the right tool here.",
+      "source_doc": "child-workflows.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_med_003",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "Your team sends a Cancellation Request to a running Temporal Cron Job because a bad deployment caused incorrect runs. What is the actual effect of this cancellation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The entire Cron Job is stopped and no further Runs will be spawned"
+        },
+        {
+          "key": "B",
+          "text": "The current Run is cancelled and the Cron Job is paused until manually resumed"
+        },
+        {
+          "key": "C",
+          "text": "Only the current Run is affected; the Cron Job continues to spawn future Runs on schedule"
+        },
+        {
+          "key": "D",
+          "text": "All pending and future Runs are cancelled, but the current Run completes normally"
+        }
+      ],
+      "answer": "C",
+      "explanation": "A Cancellation Request on a Temporal Cron Job only affects the current Run — the Cron Job itself will continue spawning new Runs according to its schedule. To fully stop a Cron Job from spawning further Runs, you must Terminate the Workflow Execution or wait for the Workflow Execution Timeout to be reached. This is a common misconception: developers expect cancellation to stop the entire series, but it only impacts the in-progress Run.",
+      "source_doc": "cron-job.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_med_004",
+      "category": "Features_Workflows",
+      "difficulty": "med",
+      "question": "A Worker picks up a Workflow Task and begins executing a Workflow. Assuming Sticky Execution is working as expected, where will subsequent Workflow Tasks for this same Workflow Execution be scheduled?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Back to the original Task Queue so any available Worker can pick them up for load balancing"
+        },
+        {
+          "key": "B",
+          "text": "Into a Sticky Queue specific to the Worker that processed the first task, so the same Worker handles subsequent tasks"
+        },
+        {
+          "key": "C",
+          "text": "Into a new Task Queue created per Workflow Execution to isolate its tasks from other Workflows"
+        },
+        {
+          "key": "D",
+          "text": "Distributed across all Workers in a round-robin fashion to maximize throughput"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Sticky Execution directs subsequent Workflow Tasks to a Worker-specific Sticky Queue known only to the Worker that previously processed tasks for that Workflow Execution. This allows the Worker to use its in-memory cached Workflow state instead of reconstructing it from Event History each time, improving performance. If the Worker fails to pick up the task within ~5 seconds, the Temporal Service disables stickiness and reschedules the task on the original queue for any Worker to handle.",
+      "source_doc": "sticky-execution.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_hard_001",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "Your team runs a Parent Workflow that spawns 500 long-running Child Workflows to manage host upgrades across your fleet. The Parent Workflow uses Continue-As-New every 100 events to keep its history manageable. After the Parent continues-as-new, your on-call engineer notices that all 500 Child Workflows have stopped receiving new tasks. What is the most likely cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Continue-As-New resets the Parent's Workflow ID, causing the Temporal Service to lose track of the Child Workflows"
+        },
+        {
+          "key": "B",
+          "text": "Child Workflows are not carried over when a Parent uses Continue-As-New, so the new Parent instance has no awareness of the previously spawned Children"
+        },
+        {
+          "key": "C",
+          "text": "The default Parent Close Policy (Terminate) was applied when the old Parent Run completed, terminating all 500 Child Workflows"
+        },
+        {
+          "key": "D",
+          "text": "Continue-As-New pauses all Child Workflows until the new Parent Run explicitly re-registers them via Signal"
+        }
+      ],
+      "answer": "C",
+      "explanation": "When a Parent Workflow uses Continue-As-New, the old Run reaches a Closed status (Completed). The default Parent Close Policy is TERMINATE, which means the Temporal Service will forcefully terminate all Child Workflow Executions when the Parent closes. The new continued instance has no knowledge of the old Children. To avoid this, you must set the Parent Close Policy to ABANDON on each Child Workflow before the Parent continues-as-new, allowing Children to outlive the Parent Run. This is a critical production gotcha: Continue-As-New is not transparent to Child Workflows the way it is to external observers.",
+      "source_doc": "parent-close-policy.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_hard_002",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "Your team has a nightly data pipeline implemented as a Temporal Cron Job with the schedule `CRON_TZ=America/New_York 0 2 * * *` (run at 2 AM New York time). On the night that Daylight Saving Time ends in the US (clocks 'fall back' from 2 AM to 1 AM), your monitoring shows the pipeline executed twice. A colleague proposes switching to a Schedule instead of a Cron Job. Another proposes simply changing to UTC. Which explanation best describes why this happened and what the right fix is?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Temporal Server has a retry bug during DST transitions; switching to Schedules automatically handles DST correctly"
+        },
+        {
+          "key": "B",
+          "text": "The cron library Temporal uses does not handle DST transitions specially, so 2 AM occurs twice when clocks fall back, causing two executions; using UTC eliminates this ambiguity entirely"
+        },
+        {
+          "key": "C",
+          "text": "The Workflow Execution Timeout was set too short, causing a retry that coincided with the clock change; increasing the timeout will prevent double execution"
+        },
+        {
+          "key": "D",
+          "text": "The `firstWorkflowTaskBackoff` was recalculated incorrectly after the DST transition; pinning the tzdata version in your Docker image resolves it"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's cron library does not apply any special DST handling. When clocks 'fall back,' the 1 AM hour repeats, meaning 2 AM as specified by the local time zone effectively occurs twice. The cron schedule fires for both occurrences. The Temporal documentation explicitly warns: 'if a Temporal Cron Job is scheduled around the time when daylight saving time begins or ends, it might run zero, one, or two times in a day.' The recommended production fix is to specify Cron Schedules in UTC (the default), which has no DST transitions. Switching to Schedules does not automatically fix DST issues — the underlying time zone math is the same problem.",
+      "source_doc": "cron-job.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_hard_003",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "You're designing a system that needs to process 2,000,000 records. An engineer proposes: one Parent Workflow spawns 2,000 Child Workflows, each processing 1,000 records via Activities. A second engineer says this will hit Temporal's limits and proposes instead: one Parent spawns 1,000 Children, each spawning 1,000 Activities. Which design is correct, and why does the first proposal fail?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Both designs are equivalent; Temporal has no practical limit on Child Workflows per Parent"
+        },
+        {
+          "key": "B",
+          "text": "The first design fails because a single Parent Workflow Execution should not spawn more than 1,000 Child Workflows, as the Parent's own Event History records status events for each Child and will approach its size limit"
+        },
+        {
+          "key": "C",
+          "text": "The first design fails because Child Workflows cannot themselves execute Activities; Activities must be run directly from the top-level Parent"
+        },
+        {
+          "key": "D",
+          "text": "The second design fails because a single Workflow Execution cannot spawn 1,000 Activities; the Event History limit applies per Activity, not per Workflow"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The Temporal documentation explicitly states: 'a single Parent should not spawn more than 1,000 Child Workflow Executions.' This is because the Parent's own Event History contains events corresponding to each Child's lifecycle (started, completed, failed, etc.). With 2,000 Children, the Parent's Event History would accumulate enough events to approach the history size limit. The correct design is the second approach: 1,000 Children × 1,000 Activities = 1,000,000 Activity Executions, within safe bounds. Note that Child Workflows record more total events across all histories than equivalent Activities would — another reason to prefer Activities when Children aren't needed.",
+      "source_doc": "child-workflows.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_hard_004",
+      "category": "Features_Workflows",
+      "difficulty": "hard",
+      "question": "A Worker in your fleet is processing a critical, latency-sensitive Workflow. Sticky Execution is enabled (the default). The Worker crashes mid-execution. A new Worker picks up the next Workflow Task. Which of the following accurately describes what happens to performance and correctness?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Workflow Execution is lost because the cached state was only in the crashed Worker's memory and cannot be reconstructed"
+        },
+        {
+          "key": "B",
+          "text": "The Temporal Service detects the crash within 5 seconds, then reschedules the Workflow Task to the Sticky Queue of a different Worker automatically"
+        },
+        {
+          "key": "C",
+          "text": "After the sticky timeout (default 5 seconds), stickiness is disabled for that Workflow, the Task is rescheduled to the original Task Queue, a new Worker replays the Event History to reconstruct state, and execution continues correctly but with a latency penalty"
+        },
+        {
+          "key": "D",
+          "text": "Sticky Execution guarantees the crashed Worker restarts and reclaims the Workflow Task before any other Worker can process it"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Sticky Execution is a performance optimization, not a correctness guarantee. When the sticky Worker crashes, the Temporal Service waits for the sticky schedule-to-start timeout (default 5 seconds). If the Task isn't picked up from the Sticky Queue in time, stickiness is disabled and the Task is rescheduled to the original Task Queue. Any Worker can then pick it up and replay the Event History to reconstruct the Workflow state — this is exactly why Workflows must be deterministic. The replay is correct but slower than a cache hit. The key insight is that Temporal's durability comes from the Event History stored server-side, not from the Worker's in-memory cache, which is only an optimization.",
+      "source_doc": "sticky-execution.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_nightmare_001",
+      "category": "Features_Workflows",
+      "difficulty": "nightmare",
+      "question": "A platform team builds a long-running 'OrchestratorWorkflow' in Go that manages thousands of hosts. For each host, it spawns a Child Workflow with a unique hostname as the Workflow ID and `ParentClosePolicy = ABANDON`. After processing ~800 hosts, the Orchestrator's Event History grows large, so they implement Continue-As-New, passing the list of remaining hosts as the new input. After deploying, engineers notice that the already-running Child Workflow Executions for the first 800 hosts are still running (good), but the Orchestrator has lost all ability to track or react to their completion — it can no longer receive results from them or correlate their status. What is the root cause of this production issue?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Continue-As-New resets the Workflow Execution Timeout, causing the Server to recalculate deadlines and orphan the existing Child Workflows from any timeout propagation."
+        },
+        {
+          "key": "B",
+          "text": "Continue-As-New starts a brand-new Workflow Execution chain; Child Workflows spawned in prior Runs are not carried over into the new Run, so the new Orchestrator instance has no record of them and cannot await their futures or receive their results."
+        },
+        {
+          "key": "C",
+          "text": "Because ABANDON policy was set, the Server actively severs the parent-child link at Continue-As-New time, preventing any future signal or result propagation even if the new Run tries to re-attach by Workflow ID."
+        },
+        {
+          "key": "D",
+          "text": "The Event History limit was already exceeded before Continue-As-New fired, causing the Server to silently drop Child Workflow completion events and leaving the Orchestrator with stale state."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When a Parent Workflow Execution uses Continue-As-New, the Temporal documentation explicitly states: 'Child Workflows do not carry over when the Parent uses Continue-As-New.' The new Run is a fresh Workflow Execution — it has no futures, no pending child handles, and no Event History entries corresponding to those previously spawned Children. From the new Run's perspective, those Child Workflows are completely unknown strangers running independently in the namespace. The ABANDON policy (option C) is actually what PREVENTS the Children from being terminated when the old Run closed — it's a separate mechanism that correctly keeps them alive, but it does nothing to re-establish a tracking relationship with the new Run. Option A is wrong because Continue-As-New doesn't reset Execution Timeouts in a way that affects children. Option D is wrong because the team used Continue-As-New specifically to avoid hitting the limit.\n\nThe deeper design principle here is that a Workflow Execution's identity is bound to a specific Run chain. Continue-As-New closes the current Run and opens a new one. The SDK's child workflow handles are in-memory objects tied to the current execution's coroutine context — they cannot be serialized and deserialized across Continue-As-New boundaries. The only durable link between parent and child is recorded in the Event History of each Run. Once you CAN, that history is closed.\n\nThe production-safe pattern for this use case is: before calling Continue-As-New, the Orchestrator must ensure all children it wants to track in the next run are either (a) already complete, (b) tracked externally (e.g., in a database keyed by hostname), or (c) re-discoverable via Query to the child by Workflow ID in the new Run. Many teams adopt a 'pagination' approach where each Run only spawns a bounded batch of children, awaits ALL of them, then Continue-As-New with the next batch — preserving the invariant that no cross-Run child futures are needed.",
+      "source_doc": "child-workflows.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "features_workflows_nightmare_002",
+      "category": "Features_Workflows",
+      "difficulty": "nightmare",
+      "question": "A team runs a nightly data pipeline using a Temporal Cron Job with the schedule `CRON_TZ=America/New_York 0 2 * * *` (2:00 AM New York time every day). They also configure a Retry Policy with up to 3 retries and a 30-minute retry interval, and a Workflow Run Timeout of 90 minutes. On a Sunday in March when the US 'springs forward' for Daylight Saving Time (clocks jump from 1:59 AM directly to 3:00 AM), what is the most operationally dangerous combination of behaviors that could occur?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Workflow Run Timeout of 90 minutes will conflict with the Retry Policy, causing the Server to exhaust all retries simultaneously rather than sequentially, producing duplicate pipeline executions."
+        },
+        {
+          "key": "B",
+          "text": "The 2:00 AM scheduled run is entirely skipped because that wall-clock time does not exist in the America/New_York timezone on DST transition day, AND if a prior run from Saturday is still retrying when Sunday's slot would have fired, the Server will schedule Sunday's run only after the retrying run fully completes — potentially delaying it by hours past the intended schedule."
+        },
+        {
+          "key": "C",
+          "text": "The Cron library will detect the DST gap and automatically reschedule the missed 2:00 AM run at 3:00 AM, but the Retry Policy will interfere by treating this rescheduling as a retry attempt, consuming one of the 3 available retries."
+        },
+        {
+          "key": "D",
+          "text": "A Cancellation Request sent to stop the pipeline will terminate the entire Cron Job series including all future runs, preventing any recovery after the DST-skipped execution."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question combines two separate but compounding Temporal Cron behaviors that both bite in production.\n\n**First hazard — DST skip:** The documentation explicitly warns: 'If a Temporal Cron Job is scheduled around the time when daylight saving time (DST) begins or ends, it might run zero, one, or two times in a day.' When clocks spring forward, 2:00 AM simply doesn't exist in America/New_York — the clock goes from 1:59 to 3:00. The cron library Temporal uses (robfig/cron) does NO special DST handling, so the 2:00 AM run is silently skipped. There is no compensating reschedule at 3:00 AM (option C is fabricated behavior).\n\n**Second hazard — retry interaction with next run scheduling:** The documentation states: 'The Temporal Server spawns the next Run only after the current Run has Completed, Failed, or has reached the Workflow Run Timeout' and 'if a Retry Policy has also been provided, and a Run Fails or reaches the Workflow Run Timeout, the Run will first be retried per the Retry Policy until the Run Completes or the Retry Policy has been exhausted. If the next Run, per the Cron Schedule, is due to spawn while the current Run is still Open (including retries), the Server automatically starts the new Run after the current Run completes.' This means: if Saturday night's run fails and is on retry attempt 2 (using the 30-min interval), and the Sunday 2 AM slot arrives, the Sunday run is queued but blocked until Saturday's retry chain finishes. With 3 retries × 30 minutes = up to 90 minutes of retry time, Sunday's run could be delayed until well past 3:30 AM even on a non-DST day.\n\n**Option D** is wrong because the documentation clarifies: 'A Cancellation Request affects only the current Run' — it does NOT stop future cron runs. To stop the whole series you must Terminate the Workflow or let the Execution Timeout expire.\n\n**The production lesson:** Cron jobs near DST transition windows + retry policies create a dangerous combination where runs can be skipped OR significantly delayed. The documentation's advice is clear: 'If at all possible, we recommend specifying Cron Schedules in UTC' — and better yet, use Temporal Schedules (the modern replacement for Cron Jobs) which offer more predictable behavior and explicit skip/overlap policies.",
+      "source_doc": "cron-job.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    }
+  ]
+}

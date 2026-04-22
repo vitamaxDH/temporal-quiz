@@ -1,0 +1,733 @@
+{
+  "category": "Features_WorkerVersioning",
+  "questions": [
+    {
+      "id": "features_workerversioning_easy_001",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "easy",
+      "question": "Why does Temporal require special versioning steps when you change Workflow code that is already running?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Because Temporal charges extra fees for running multiple versions of the same Workflow simultaneously"
+        },
+        {
+          "key": "B",
+          "text": "Because Workflow code must be deterministic, so replaying history with changed code can cause nondeterminism errors"
+        },
+        {
+          "key": "C",
+          "text": "Because Workers can only register one Workflow type at a time, preventing multiple versions from coexisting"
+        },
+        {
+          "key": "D",
+          "text": "Because Temporal deletes Workflow history after every code deployment to free up storage space"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal replays a Workflow's event history to reconstruct its state after a crash or restart. If your code has changed in a way that would produce different steps than what was originally recorded, the replay fails with a nondeterminism error. Versioning tools like Patching and Worker Versioning let old executions keep running their original logic while new ones use the updated code — preserving the durable execution guarantee that makes Temporal valuable.",
+      "source_doc": "develop_go_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_easy_002",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "easy",
+      "question": "What is the main purpose of Patching in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To roll back a failed deployment to the previous Worker binary automatically"
+        },
+        {
+          "key": "B",
+          "text": "To add a logical branch in Workflow code so new executions run updated logic while in-progress executions stay on the original path"
+        },
+        {
+          "key": "C",
+          "text": "To compress Workflow history so long-running Workflows consume less storage on the server"
+        },
+        {
+          "key": "D",
+          "text": "To split a single long-running Workflow into several shorter child Workflows automatically"
+        }
+      ],
+      "answer": "B",
+      "explanation": "A patch acts like a feature flag inside your Workflow code. New Workflow Executions take the new code branch, while existing ones — whose history was recorded without the patch — continue on the original branch. This lets you ship code changes safely without breaking replay for already-running Workflows, which is essential when Workflows can live for months or years.",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_easy_003",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "easy",
+      "question": "What are the two primary versioning methods Temporal offers for updating running Workflows?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Blue-green deployments and canary releases"
+        },
+        {
+          "key": "B",
+          "text": "Workflow cutover and Activity retry policies"
+        },
+        {
+          "key": "C",
+          "text": "Worker Versioning (tagged deployments) and Versioning with Patching (code branches)"
+        },
+        {
+          "key": "D",
+          "text": "Namespace migration and Task Queue rerouting"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal provides two built-in versioning strategies. Worker Versioning lets you tag Workers so old Workers serve old Workflow code and new Workers serve new code, pinning executions to specific deployment versions. Patching adds conditional branches directly inside your Workflow code so both old and new paths can coexist in the same binary. Together, they cover most upgrade scenarios without breaking durable execution.",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_easy_004",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "easy",
+      "question": "In Temporal's Patching approach, what happens when you call the patch function (e.g., 'Patched' or 'GetVersion') inside a Workflow?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It immediately stops all in-progress Workflow Executions and restarts them with the new code"
+        },
+        {
+          "key": "B",
+          "text": "It writes a marker into the Workflow's event history so future replays know which code branch was originally taken"
+        },
+        {
+          "key": "C",
+          "text": "It sends a Signal to the Workflow to notify it that an update is available for installation"
+        },
+        {
+          "key": "D",
+          "text": "It creates a new child Workflow that runs the updated code while the parent keeps running the old code"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When a patch function is first called during a live execution, Temporal records a marker in the Workflow's event history. On any future replay, the Worker reads that marker and knows it must follow the same code branch that was taken originally. This is what keeps replay deterministic — the history itself records which version of the logic ran, so the right branch is always chosen consistently.",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_easy_005",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "easy",
+      "question": "What is a Build ID in the context of Temporal's (legacy) Worker Versioning feature?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "A unique identifier assigned to each Workflow Execution when it starts on a Task Queue"
+        },
+        {
+          "key": "B",
+          "text": "An internal server token used to authenticate Workers when they connect to a Temporal Cluster"
+        },
+        {
+          "key": "C",
+          "text": "A label attached to a Worker deployment — often a Git hash or timestamp — that associates the Worker with a specific version of code"
+        },
+        {
+          "key": "D",
+          "text": "A counter that increments each time an Activity is retried within a single Workflow Execution"
+        }
+      ],
+      "answer": "C",
+      "explanation": "A Build ID is just a string that identifies which version of your code a Worker is running — the docs suggest using a Git SHA combined with a human-readable timestamp. By tagging Workers with Build IDs and registering them with Task Queues, Temporal can route tasks to Workers running the correct version of your code. This avoids the nondeterminism problems that arise when a Workflow's history is replayed by a Worker running incompatible code.",
+      "source_doc": "develop_go_worker-versioning-legacy.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_easy_006",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "easy",
+      "question": "Why is the 'Workflow cutover' approach — duplicating a Workflow under a new name — considered impractical for long-term use?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal's server rejects Workflow types whose names differ only by a version suffix like 'V2' or 'V3'"
+        },
+        {
+          "key": "B",
+          "text": "It forces you to duplicate code and update every command that starts the Workflow, and it cannot version still-running executions of the old type"
+        },
+        {
+          "key": "C",
+          "text": "Workers can only register up to two Workflow types at once, so adding more versions eventually exceeds the limit"
+        },
+        {
+          "key": "D",
+          "text": "Each duplicated Workflow type requires its own dedicated Task Queue, multiplying infrastructure costs over time"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Creating a brand-new Workflow type (e.g., SayHelloWorkflowV2) is essentially just a cutover — new starts go to the new type, but you must update every caller, maintain parallel code, and you still have no way to migrate in-progress executions of the old type to the new logic. Patching solves this by letting both code paths live inside the same Workflow type, keeping callers unchanged and allowing gradual rollover without code duplication.",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_med_001",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "med",
+      "question": "You have a long-running Go Workflow that executes `ActivityA`. You want to replace it with `ActivityC` without breaking existing Workflow Executions. Which code correctly introduces this change using patching?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Deploy the new code directly, replacing `ActivityA` with `ActivityC`. Temporal will automatically detect the change and replay old histories using the closest matching code path."
+        },
+        {
+          "key": "B",
+          "text": "Use `workflow.GetVersion(ctx, \"Step1\", workflow.DefaultVersion, 1)` and branch on the returned version: run `ActivityA` if it equals `DefaultVersion`, and `ActivityC` otherwise."
+        },
+        {
+          "key": "C",
+          "text": "Use `workflow.GetVersion(ctx, \"Step1\", 1, 1)` so that both old and new Workflows return version 1, then always execute `ActivityC`."
+        },
+        {
+          "key": "D",
+          "text": "Duplicate the Workflow Definition under a new name (e.g. `YourWorkflowV2`), register both with the Worker, and route new starts to the V2 name while old executions finish on V1."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The correct pattern is `workflow.GetVersion(ctx, \"Step1\", workflow.DefaultVersion, 1)`. For brand-new executions, this records a marker in Event History and returns `1`. For existing executions that never saw this call, it returns `DefaultVersion`. You branch on the returned value to run the old or new Activity accordingly. Option A would cause a nondeterminism error when old histories are replayed against the new code. Option C uses `minSupported=1`, which would immediately fail any pre-patch execution that returns `DefaultVersion`. Option D (workflow cutover) works but doesn't handle still-running executions of the original type, and duplicating code becomes impractical over time.",
+      "source_doc": "develop_go_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_med_002",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "med",
+      "question": "After deploying a patch with `workflow.GetVersion` (maxSupported=1), you later make a second change replacing `ActivityC` with `ActivityD`. What must you change in the `GetVersion` call to accommodate all three possible execution states?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Add a second `GetVersion` call with a new change ID (e.g. `\"Step2\"`) to independently version the second change, leaving the first call untouched."
+        },
+        {
+          "key": "B",
+          "text": "Change `maxSupported` to 2 in the existing `GetVersion` call and add a branch for `v == 2` to run `ActivityD`, while keeping `v == 1` for `ActivityC` and `DefaultVersion` for `ActivityA`."
+        },
+        {
+          "key": "C",
+          "text": "Remove the old `GetVersion` call entirely and use `workflow.GetVersion(ctx, \"Step1\", workflow.DefaultVersion, 2)` with only two branches: DefaultVersion and 2."
+        },
+        {
+          "key": "D",
+          "text": "Call `workflow.GetVersion` twice with the same change ID but different `maxSupported` values, and use the higher of the two returned versions to pick the right activity."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When you extend an existing patch, you increment `maxSupported` on the same change ID and add a new branch for the latest version. Executions that ran before the first patch return `DefaultVersion` (run `ActivityA`), those patched with v=1 return `1` (run `ActivityC`), and new executions return `2` (run `ActivityD`). Option A would work for a completely independent code change, but using a new change ID for what is an evolution of the same branch is semantically incorrect and would leave the original change ID branch unresolved. Option C drops the DefaultVersion branch, breaking replays of executions that predate the first patch. Option D is invalid — calling `GetVersion` twice with the same ID doesn't stack results.",
+      "source_doc": "develop_go_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_med_003",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "med",
+      "question": "In the .NET SDK, what is the correct three-step sequence for safely removing a patch once old Workflow Executions have fully drained?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "1) Deploy `Workflow.Patched` with both branches. 2) Once old executions drain, remove all patch code and deploy the clean new code immediately. 3) Update the Task Queue assignment rules."
+        },
+        {
+          "key": "B",
+          "text": "1) Deploy `Workflow.Patched` with old and new branches. 2) After old executions leave retention, replace `Workflow.Patched` with `Workflow.DeprecatePatch`. 3) After all `DeprecatePatch` executions also leave retention, remove the patch call entirely."
+        },
+        {
+          "key": "C",
+          "text": "1) Deploy `Workflow.Patched` with both branches. 2) Replace with `Workflow.DeprecatePatch` as soon as the new code is confirmed working. 3) Delete the Workflow history records to complete cleanup."
+        },
+        {
+          "key": "D",
+          "text": "1) Deploy `Workflow.Patched` with both branches. 2) Immediately deploy `Workflow.DeprecatePatch` in the same release. 3) Remove `DeprecatePatch` once there are no more running Workers on the old build."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The correct sequence is: first, use `Workflow.Patched` to run new and old code side-by-side; second, once all pre-patch executions have left retention, switch to `Workflow.DeprecatePatch` — this still inserts a history marker but won't cause a replay failure if an old Worker picks up the history; third, once all executions that used `DeprecatePatch` have also left retention, remove the patch call entirely and deploy the clean code. Option A skips the `DeprecatePatch` bridge step, risking a replay failure if any old Workers are still running. Option C incorrectly ties the step to code validation rather than retention, and you cannot delete Workflow history records manually. Option D conflates steps 1 and 2 and ties step 3 to Workers rather than execution retention.",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_med_004",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "med",
+      "question": "What is the behavioral difference between `Workflow.Patched(\"my-patch\")` and `Workflow.DeprecatePatch(\"my-patch\")` in the .NET SDK during replay?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`Patched` always returns `true` during replay, while `DeprecatePatch` always returns `false`, letting you use the same `if` branch for both calls without changing logic."
+        },
+        {
+          "key": "B",
+          "text": "`Patched` records a marker and will fail the Workflow task on replay if the marker is absent from history. `DeprecatePatch` also records a marker but will NOT cause a replay failure if the code does not produce the marker."
+        },
+        {
+          "key": "C",
+          "text": "Both record a marker to history, and both will fail on replay if the marker is missing. The only difference is that `DeprecatePatch` also removes older incompatible markers from the history."
+        },
+        {
+          "key": "D",
+          "text": "`Patched` only affects new Workflow Executions; `DeprecatePatch` only affects Workflow Executions that were started before the patch was introduced, preventing them from using the new code path."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`Workflow.Patched` inserts a marker into Workflow History. During replay, if a Worker encounters history with that marker but the Workflow code no longer produces the corresponding patch call, the replay will fail — ensuring determinism is enforced. `Workflow.DeprecatePatch` also inserts a marker, but the absence of a matching marker during replay does not cause a failure. This makes `DeprecatePatch` a safe bridge: old Workers running pre-patch code can still safely pick up histories that contain the marker without crashing. Option A is incorrect — the return values aren't simplified that way. Option C is wrong because `DeprecatePatch` does not fail on missing markers. Option D inverts the actual behavior of both calls.",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_med_005",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "med",
+      "question": "In the deprecated Go Worker Versioning API, a new Worker is configured with `UseBuildIDForVersioning: true` and a new Build ID. Immediately after starting this Worker, what happens to tasks on the Task Queue?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Worker begins receiving all tasks from the Task Queue immediately, since registering a Build ID automatically creates a default assignment rule for it."
+        },
+        {
+          "key": "B",
+          "text": "The Worker receives only tasks from Workflows that were explicitly started with the matching Build ID specified in their start options."
+        },
+        {
+          "key": "C",
+          "text": "The Worker receives no tasks until assignment rules are configured for the Task Queue, because Build ID alone does not route tasks without those rules."
+        },
+        {
+          "key": "D",
+          "text": "The Worker receives tasks only from Workflows that have been paused and are waiting to be resumed, since new Workflows still route to the previous default Build ID."
+        }
+      ],
+      "answer": "C",
+      "explanation": "According to the documentation, setting `UseBuildIDForVersioning: true` and providing a Build ID on the Worker opts the Worker into versioned task routing, but the Worker won't receive any tasks until assignment rules are configured on the Task Queue (e.g., via `UpdateWorkerBuildIdCompatibility`). This is a common operational pitfall: engineers spin up a versioned Worker and wonder why it's idle. Option A is wrong — registering a Build ID on the Worker does not automatically configure the Task Queue. Option B is wrong — Workflow start options don't include a Build ID selector in this model. Option D is a fabricated concept not found in the documentation.",
+      "source_doc": "develop_go_worker-versioning-legacy.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_med_006",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "med",
+      "question": "In the deprecated Go Worker Versioning API, you call `UpdateWorkerBuildIdCompatibility` with `BuildIDOpAddNewCompatibleVersion` using Build ID `\"deadbeef\"` and `ExistingCompatibleBuildId: \"abc123\"`. What is the result?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`\"deadbeef\"` is added as a new independent default version set, and `\"abc123\"` is left unchanged in its own separate set."
+        },
+        {
+          "key": "B",
+          "text": "`\"deadbeef\"` is added to the existing compatible set that contains `\"abc123\"` and becomes the new default Build ID for that set."
+        },
+        {
+          "key": "C",
+          "text": "`\"abc123\"` is removed from its set and replaced by `\"deadbeef\"`, which becomes the sole member of a new default set."
+        },
+        {
+          "key": "D",
+          "text": "`\"deadbeef\"` is added to the Task Queue globally as the new overall default, overriding all existing compatible sets."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`BuildIDOpAddNewCompatibleVersion` places the new Build ID into the same compatibility set as the specified existing Build ID and promotes it to be the default for that set. This is used when the new code is backward-compatible with the old — Workers running either Build ID can safely process the same Workflow histories. Option A describes `BuildIDOpAddNewIDInNewDefaultSet`, which creates a brand-new independent set. Option C is incorrect — old Build IDs are never removed; they remain in the set as non-default members. Option D is also incorrect; this operation is scoped to the compatible set, not the entire Task Queue.",
+      "source_doc": "develop_go_worker-versioning-legacy.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_med_007",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "med",
+      "question": "In the deprecated Go Worker Versioning API, what is the default behavior for an Activity scheduled by a Workflow when both run on the same Task Queue?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity always uses the current default assignment rules for the Task Queue, ignoring which Build ID the parent Workflow is pinned to."
+        },
+        {
+          "key": "B",
+          "text": "The Activity is dispatched to the Build ID of the Workflow that created it, inheriting its parent's Build ID rather than using the Task Queue's current default."
+        },
+        {
+          "key": "C",
+          "text": "The Activity uses the latest Build ID that has been registered with `UpdateWorkerBuildIdCompatibility`, regardless of the parent Workflow's Build ID."
+        },
+        {
+          "key": "D",
+          "text": "The Activity's Build ID is selected randomly from compatible Build IDs in the same set, distributing load across old and new Workers simultaneously."
+        }
+      ],
+      "answer": "B",
+      "explanation": "By default, Activities, Child Workflows, and Continue-as-New Workflows are run on the same Build ID as the Workflow that created them — provided they are on the same Task Queue. This ensures that the Workflow and its Activities remain pinned together on a compatible Worker. If you want to override this and use the current Task Queue assignment rules instead, you can set `VersioningIntent: VersioningIntentUseAssignmentRules` on the `ActivityOptions`. Option A describes what happens only after you explicitly override the intent. Option C is wrong — it does not use the latest registered Build ID automatically. Option D is a fabricated behavior not described in Temporal's versioning model.",
+      "source_doc": "develop_go_worker-versioning-legacy.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_med_008",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "med",
+      "question": "A team creates a new Workflow type called `SayHelloWorkflowV2` alongside the original `SayHelloWorkflow` and registers both with their Workers. What is the primary limitation of this workflow cutover approach compared to using `Workflow.Patched`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The cutover approach cannot be used when the new and old Workflows share the same Task Queue; they must be on separate Task Queues for routing to work correctly."
+        },
+        {
+          "key": "B",
+          "text": "Registering two Workflow types on the same Worker is not supported; each Workflow type requires its own dedicated Worker process."
+        },
+        {
+          "key": "C",
+          "text": "The cutover approach requires duplicating code and updating all callers to use the new Workflow name, and it provides no mechanism to migrate still-running executions of the original type to the new logic."
+        },
+        {
+          "key": "D",
+          "text": "Temporal will automatically merge the two Workflow histories after the cutover, causing unexpected nondeterminism errors on both Workflow types."
+        }
+      ],
+      "answer": "C",
+      "explanation": "The workflow cutover approach works for net-new executions — you just start calling the new Workflow name — but it has two key drawbacks the documentation calls out explicitly: (1) it requires duplicating the Workflow code and updating every place that starts the Workflow to use the new name, which grows unwieldy over time; and (2) it does not help in-progress executions of the original type adopt the new logic. Those executions continue running on the old code until they complete naturally. Patching, by contrast, lets the same Workflow type branch on version at runtime. Option A is wrong — both types can share a Task Queue. Option B is wrong — multiple Workflow types can and routinely do run on the same Worker. Option D is fabricated; Temporal never merges separate Workflow histories.",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_hard_001",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "hard",
+      "question": "Your team deploys a new version of a long-running Go Workflow that replaces ActivityA with ActivityC. Within minutes, you see nondeterminism errors in the Temporal Web UI on existing Workflow Executions. A colleague suggests using `workflow.GetVersion(ctx, \"Step1\", workflow.DefaultVersion, 1)` to fix it. After deploying this fix, some executions still fail replay with 'minimum supported version' errors. What is the most likely cause?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The `GetVersion` call was placed after the activity invocation in the code, so replaying executions see the activity scheduled event before the marker event, causing the version check to be skipped."
+        },
+        {
+          "key": "B",
+          "text": "The patch marker for 'Step1' was never written to histories that completed the `GetVersion` call on the older unpatched code, so those executions return `DefaultVersion` but the `minSupported` parameter was later raised to 1, causing replay to fail when it encounters those old histories."
+        },
+        {
+          "key": "C",
+          "text": "Worker Versioning Build IDs are mismatched across the task queue, so old Workers are picking up tasks meant for new Workers, resulting in incompatible replay attempts."
+        },
+        {
+          "key": "D",
+          "text": "The `maxSupported` version was set too high, causing new Workflows to record a version marker that old Workers cannot interpret, forcing all replays to fail regardless of which version they were started on."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When `GetVersion` is introduced into code that previously had no version check, executions that already ran through that code path before the patch was deployed have no marker in their Event History. On replay they return `DefaultVersion`. If you subsequently raise `minSupported` from `DefaultVersion` to `1` (to clean up old code branches), those un-marked executions will fail replay because the server's stored version is below the new minimum. The correct cleanup sequence is: first confirm ALL executions that ran without the marker have left retention, then raise `minSupported`. Placing the call in the wrong position (A) is a real mistake but produces a different class of error. Build ID mismatches (C) are a Worker Versioning concern unrelated to `GetVersion` markers. Raising `maxSupported` too high (D) does not by itself cause replay failures for old executions—those executions simply return the version recorded in their own history.",
+      "source_doc": "develop_go_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_hard_002",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "hard",
+      "question": "You are managing a .NET Temporal service where Workflows can run for up to 18 months. You deployed `Workflow.Patched(\"order-v2\")` six months ago and all workers now run the patched code. Your retention period is 30 days. An engineer proposes skipping `DeprecatePatch` and going directly to removing the patch entirely. What is the operational risk of doing so?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Removing the patch directly is safe because the 30-day retention period guarantees no pre-patch Workflow histories remain accessible to the server, so replay will never encounter a history without the marker."
+        },
+        {
+          "key": "B",
+          "text": "Any still-running Workflow Executions older than 30 days that were started before the patch was deployed will have no 'order-v2' marker in their history. When replayed against the patched-removed code, Temporal will skip the marker check and silently execute the wrong branch."
+        },
+        {
+          "key": "C",
+          "text": "Workflows started before the patch that are still running will have no 'order-v2' marker in their history. Replaying them on code with the patch removed triggers a nondeterminism error because the history expects the old code path but the marker-free code no longer branches."
+        },
+        {
+          "key": "D",
+          "text": "The `DeprecatePatch` step is only needed when old Workers are still polling the task queue alongside new Workers. Since all Workers run the new code, the deprecation phase adds no safety and can always be skipped."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Retention period controls how long *completed* Workflow histories are retained for visibility, not how long *running* Workflows can live. An 18-month Workflow started before the patch can still be running and open after 30 days. Its Event History has no 'order-v2' marker. If you remove the `Patched` call entirely, Temporal replays that history and never records the marker, causing the new code to follow the post-patch branch while the history records the pre-patch activity—this is a nondeterminism error. `DeprecatePatch` bridges this gap: it writes a marker during replay but does NOT fail when the marker is absent in the history, so old running Workflows are handled gracefully. Option A is wrong because retention only covers closed executions. Option B describes silent wrong-branch execution, which is not how Temporal behaves—it raises an error. Option D conflates Worker availability with replay safety.",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_hard_003",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "hard",
+      "question": "In Go, a Workflow calls `workflow.GetVersion(ctx, \"Step1\", workflow.DefaultVersion, 2)`. Three cohorts of executions exist: (1) started before any patch—no marker in history, (2) started after the first patch with `maxSupported=1`—marker records version 1, (3) started after raising `maxSupported` to 2—marker records version 2. You now want to retire support for cohort 1. You change `minSupported` from `DefaultVersion` to `1`. Which executions will fail replay on the next redeploy?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Only cohort 3 executions fail, because raising `minSupported` to 1 invalidates the version-2 marker recorded for those executions."
+        },
+        {
+          "key": "B",
+          "text": "Cohort 1 executions fail because their histories have no marker and the new `minSupported` of 1 causes `GetVersion` to reject `DefaultVersion` as below the minimum."
+        },
+        {
+          "key": "C",
+          "text": "All three cohorts fail because changing `minSupported` forces Temporal to re-evaluate every existing marker against the new minimum, invalidating all previously recorded versions."
+        },
+        {
+          "key": "D",
+          "text": "No executions fail immediately; the `minSupported` change only affects Workflows started after the redeploy and does not impact executions already in progress."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When `GetVersion` replays a history with no marker, it returns `DefaultVersion`. If `minSupported` has been raised to 1, returning `DefaultVersion` violates the constraint and Temporal raises a nondeterminism error for those executions. Cohort 2 histories have version 1 recorded, which satisfies `minSupported=1`. Cohort 3 histories have version 2 recorded, which also satisfies it. So only cohort 1 (no marker → `DefaultVersion` \u003c `minSupported`) is broken. Option A is incorrect—version 2 is ≥ minSupported=1. Option C is wrong; Temporal checks only whether the recorded version falls within [minSupported, maxSupported]. Option D is wrong; replay runs on *all* in-progress executions, not just new ones.",
+      "source_doc": "develop_go_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_hard_004",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "hard",
+      "question": "A team uses the deprecated Go Worker Versioning API. They add Build ID `v2` to the task queue as a new default set using `BuildIDOpAddNewIDInNewDefaultSet`. The task queue previously had Build ID `v1` as its default. Shortly after deployment, they notice that some long-running Workflow Executions that were processing on `v1` Workers are not making progress. What is the most likely explanation?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Adding `v2` as a new default set immediately migrates all in-flight `v1` Workflow tasks to `v2` Workers, but since those Workers run incompatible code, Temporal pauses the tasks until they time out."
+        },
+        {
+          "key": "B",
+          "text": "Tasks for Workflows pinned to the `v1` set remain assigned to `v1`-compatible Workers. If the `v1` Workers were shut down before those Workflows completed, no Workers are available to process their tasks, causing them to stall."
+        },
+        {
+          "key": "C",
+          "text": "Using `BuildIDOpAddNewIDInNewDefaultSet` creates a version set that is incompatible with all prior sets by design, so any task queue assignment rules from `v1` are automatically revoked, blocking all existing tasks."
+        },
+        {
+          "key": "D",
+          "text": "The `v2` Build ID Workers have not yet registered their task queue subscription, so all tasks—both new and existing—queue up waiting for a compatible Worker to come online."
+        }
+      ],
+      "answer": "B",
+      "explanation": "In the deprecated Build ID versioning model, Workflows are 'pinned' to the version set in which they started. A `v1` Workflow requires a `v1`-compatible Worker (any Worker in the `v1` version set or a set that is declared compatible with it). Adding `v2` as a *new independent* default set does not make `v2` Workers compatible with `v1` tasks—those require `BuildIDOpAddNewCompatibleVersion` to express compatibility. If `v1` Workers are drained or terminated, `v1`-pinned Workflow tasks queue up with no eligible Workers to process them. Option A is wrong—Temporal doesn't migrate pinned Workflow tasks to a new set. Option C is wrong—`BuildIDOpAddNewIDInNewDefaultSet` doesn't revoke existing set rules. Option D is wrong—the `v1` Workers would process `v1` tasks normally as long as they remain running.",
+      "source_doc": "develop_go_worker-versioning-legacy.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_hard_005",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "hard",
+      "question": "You have a .NET Workflow that has been running for 8 months. You deployed `Workflow.Patched(\"feature-x\")` four months ago. Today you deploy `Workflow.DeprecatePatch(\"feature-x\")`. A few old Workers (still running pre-patch code) are still draining and pick up a Workflow history that was generated by the post-patch code path. What happens?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The old Workers crash because `DeprecatePatch` introduces an incompatible marker type that the pre-patch SDK version cannot deserialize from the history."
+        },
+        {
+          "key": "B",
+          "text": "The old Workers encounter the `feature-x` marker in the history. Since that marker matches the branch they expect, they follow the pre-patch code path and complete successfully, but with incorrect business logic."
+        },
+        {
+          "key": "C",
+          "text": "The old Workers safely follow the patched branch when they see the `feature-x` marker in the post-patch history, because the presence of the marker signals them to take the post-patch code path."
+        },
+        {
+          "key": "D",
+          "text": "The old Workers raise a nondeterminism error because `DeprecatePatch` changes the marker format in a way that is incompatible with the original `Patched` marker the pre-patch Workers were compiled to expect."
+        }
+      ],
+      "answer": "C",
+      "explanation": "This is exactly the safety guarantee `DeprecatePatch` provides. Old Workers running pre-patch code that include `Workflow.Patched(\"feature-x\")` will see the marker in the history generated by post-patch code and return `true`, causing them to execute the post-patch branch. This ensures a safe rolling deployment where old and new Workers can coexist while draining. Option A is wrong—`DeprecatePatch` is backward compatible at the SDK level. Option B is wrong—seeing the marker causes old Workers to follow the *patched* branch, not the pre-patch branch. Option D is wrong—`DeprecatePatch` uses the same marker format; the difference is only that its *absence* during replay does not cause failure.",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_hard_006",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "hard",
+      "question": "An engineering team uses Go Worker Versioning (deprecated API) and wants a new Activity spawned from a long-running Workflow to always run on the latest-deployed Build ID rather than the Build ID that started the parent Workflow. They have not set any explicit `VersioningIntent`. What is the default behavior, and what change is needed?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "By default, Activities run on the latest assignment rules regardless of parent Workflow Build ID. No change is needed; the team's requirement is already satisfied out of the box."
+        },
+        {
+          "key": "B",
+          "text": "By default, Activities on the same task queue inherit the parent Workflow's Build ID. To override this, set `VersioningIntent: VersioningIntentUseAssignmentRules` on the `ActivityOptions` so the Activity uses the current task queue assignment rules instead."
+        },
+        {
+          "key": "C",
+          "text": "By default, Activities are always routed to the globally newest Build ID across all task queues. The team needs to explicitly pin the Activity to its parent Workflow's Build ID using `VersioningIntentInheritBuildID` to prevent unintended upgrades."
+        },
+        {
+          "key": "D",
+          "text": "Build ID inheritance only applies to Child Workflows and Continue-as-New, not to Activities. Activities always use task queue assignment rules regardless of the parent Workflow's Build ID, so no change is needed."
+        }
+      ],
+      "answer": "B",
+      "explanation": "In the deprecated Go Worker Versioning API, Activities, Child Workflows, and Continue-as-New Workflows scheduled on the *same* task queue as their parent inherit the parent Workflow's Build ID by default. This ensures deterministic replay because the same Worker version handles all work within a given Workflow execution. To override this behavior and use the current default assignment rules instead—routing to the latest Build ID—you must explicitly set `VersioningIntent: VersioningIntentUseAssignmentRules` on the `ActivityOptions`. This is a critical distinction for teams that want Activities to benefit from new Worker deployments without waiting for the parent Workflow to complete. Option A inverts the default. Option C is incorrect—there is no global newest Build ID concept. Option D is incorrect—Activities do inherit the parent's Build ID by default when on the same task queue.",
+      "source_doc": "develop_go_worker-versioning-legacy.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_hard_007",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "hard",
+      "question": "A team wants to rename a long-running Go Workflow by creating `SayHelloWorkflowV2` alongside `SayHelloWorkflow` and routing new executions to V2. They register both on the same task queue and update their Workflow starter to use `SayHelloWorkflowV2`. Six months later, all `SayHelloWorkflow` executions have completed. The team now wants to retire V1. What is a key limitation of this cutover approach compared to patching that they should account for before removing `SayHelloWorkflow` from registration?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Workflow cutover approach writes version markers into the Event History just like `GetVersion`, so removing `SayHelloWorkflow` will cause replay failures on any V1 histories still within the retention window."
+        },
+        {
+          "key": "B",
+          "text": "Running both Workflow types on the same task queue doubles the number of sticky task queues allocated per Worker, which may exhaust Worker cache capacity before all V1 executions drain."
+        },
+        {
+          "key": "C",
+          "text": "There is no safe way to confirm all V1 executions have completed other than checking that no open executions exist in the Temporal Web UI, because the Workflow cutover approach provides no built-in version tracking mechanism."
+        },
+        {
+          "key": "D",
+          "text": "The cutover approach duplicates the entire Workflow Definition under a new name and requires updating every client that starts the Workflow, but it provides no mechanism to migrate still-running V1 Workflows to V2 logic mid-execution."
+        }
+      ],
+      "answer": "D",
+      "explanation": "The Workflow cutover strategy creates a clean break: new executions use V2, old executions finish on V1. This avoids nondeterminism for existing runs. However, it has two concrete costs: (1) you must duplicate the entire Workflow code and maintain both versions, and (2) every system that starts the Workflow must be updated to reference the new name. Most importantly, it provides no way to apply logic changes to *currently running* V1 executions—those must run to completion on V1. Patching, by contrast, lets you introduce conditional logic that changes behavior mid-execution for in-progress Workflows. Option A is wrong—the cutover approach does not write patch markers, so removing V1 registration after all V1 executions finish is safe. Option B, while a real Worker concern, is not a limitation of the cutover approach itself. Option C is wrong—Temporal's visibility and Web UI let you query for open executions by Workflow type.",
+      "source_doc": "develop_go_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_hard_008",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "hard",
+      "question": "A Go Workflow uses `workflow.GetVersion` with `minSupported=1` and `maxSupported=2`. An execution that ran entirely on `maxSupported=1` code (version marker records `1`) is replayed on the updated worker where `maxSupported=2`. Which outcome best describes what Temporal does during this replay?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Temporal raises a nondeterminism error because the recorded version `1` is below the new `maxSupported` of `2`, indicating the history was produced by an older, incompatible Worker."
+        },
+        {
+          "key": "B",
+          "text": "Temporal replays the execution correctly: `GetVersion` reads the recorded version `1` from the history marker, returns `1` to the Workflow code, and the execution follows the `v == 1` branch without error."
+        },
+        {
+          "key": "C",
+          "text": "Temporal silently upgrades the recorded version from `1` to `2` during replay to align with the new `maxSupported`, which may cause the execution to take the `v == 2` code branch unexpectedly."
+        },
+        {
+          "key": "D",
+          "text": "Temporal ignores the recorded marker and re-evaluates the version at runtime, returning `2` because the running Worker reports `maxSupported=2`, causing the execution to follow the latest code branch."
+        }
+      ],
+      "answer": "B",
+      "explanation": "A core property of `workflow.GetVersion` is that once a version is recorded in the Event History, it is immutable for that execution. During replay, `GetVersion` reads the *stored* marker value—`1` in this case—and returns it, provided the stored value falls within [minSupported, maxSupported]. Since `1 \u003e= minSupported (1)` and `1 \u003c= maxSupported (2)`, the constraint is satisfied and the execution replays successfully along the `v == 1` branch. This is the fundamental safety guarantee: raising `maxSupported` to support newer Workflows does not retroactively alter older executions. Option A is wrong—`maxSupported` is an upper bound on new versions, not a minimum floor. Options C and D are wrong—Temporal never silently overwrites or re-evaluates a recorded version marker.",
+      "source_doc": "develop_go_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_nightmare_001",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "nightmare",
+      "question": "A Go-based payment workflow has been running in production for 8 months. An engineer makes two sequential code changes: first replacing `ActivityA` with `ActivityC` (patched as 'Step1' v1), then later replacing `ActivityC` with `ActivityD` (patched as 'Step1' v2). Some workflows are still on DefaultVersion, some on v1, and some on v2. The engineer now wants to remove the DefaultVersion branch by changing `minSupported` from `workflow.DefaultVersion` to `1`. A workflow execution that ran entirely before the first `GetVersion` call was ever introduced — meaning it has NO marker in its history for 'Step1' — is replayed on this updated code. What happens?\n\n```go\nv := workflow.GetVersion(ctx, \"Step1\", 1, 2)\nif v == 1 {\n    err = workflow.ExecuteActivity(ctx, ActivityC, data).Get(ctx, \u0026result1)\n} else {\n    err = workflow.ExecuteActivity(ctx, ActivityD, data).Get(ctx, \u0026result1)\n}\n```",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The workflow replays successfully because `GetVersion` with no prior marker returns `DefaultVersion` (0), which is silently coerced to 1 since `minSupported` is now 1, and `ActivityC` is executed deterministically."
+        },
+        {
+          "key": "B",
+          "text": "The workflow fails with a nondeterminism error because the replay encounters a `GetVersion` call whose returned value (DefaultVersion/0) falls below the new `minSupported` of 1, which the SDK treats as a fatal history incompatibility."
+        },
+        {
+          "key": "C",
+          "text": "The workflow silently skips the `GetVersion` call entirely since no marker exists in history, falls through to the `else` branch, and executes `ActivityD`, potentially skipping `ActivityA` which the original run already completed."
+        },
+        {
+          "key": "D",
+          "text": "The workflow task fails transiently and is retried; after three retries the server forces a reset to the last good checkpoint before the `GetVersion` marker would have been written, then resumes with `ActivityC`."
+        }
+      ],
+      "answer": "B",
+      "explanation": "When `workflow.GetVersion` has never been called before in a workflow execution's history, replaying that history returns `DefaultVersion` (the sentinel value -1 internally, exposed as `workflow.DefaultVersion`). The `minSupported` parameter exists precisely to enforce a lower bound: if the version stored in (or implied by) the history is less than `minSupported`, the SDK raises a nondeterminism/history-incompatibility error immediately. This is intentional — it prevents silently running the wrong code branch. The implication for production rollouts is critical: you must be certain that ALL workflows that could return `DefaultVersion` — including those that predate the first `GetVersion` call — have left the namespace's retention window before you raise `minSupported` above `DefaultVersion`. The three-phase patching lifecycle (GetVersion with DefaultVersion → raise minSupported → remove branch) is not just stylistic; each step has a hard dependency on retention expiry. Skipping steps or rushing them causes exactly this class of fatal replay failure on long-running workflows.",
+      "source_doc": "develop_go_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_nightmare_002",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "nightmare",
+      "question": "A team maintains a .NET workflow that processes insurance claims over 6–18 months. They deployed a patch using `Workflow.Patched(\"claim-v2\")` three months ago, and have since moved all new executions to the post-patch code path. They now want to deploy the `DeprecatePatch` stage. During this deployment window, some old workers running the original `PrePatchActivity` branch are still live and pick up a workflow task from a history generated by the post-patch workers. Which of the following accurately describes what happens and why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The old worker fails the workflow task with a nondeterminism error because the history contains a patch marker for 'claim-v2' but the old worker's code does not call `Workflow.Patched`, causing a marker mismatch on replay."
+        },
+        {
+          "key": "B",
+          "text": "The old worker successfully replays the history by entering the patched (`PostPatchActivity`) branch, because `Workflow.Patched` returns `true` when a matching marker exists in history regardless of which code path the worker was originally written to run."
+        },
+        {
+          "key": "C",
+          "text": "The old worker ignores the patch marker entirely since it predates the `DeprecatePatch` call, executes `PrePatchActivity`, and the server reconciles the divergence by discarding the conflicting history event."
+        },
+        {
+          "key": "D",
+          "text": "The old worker panics at startup because it cannot deserialize the `DeprecatePatch` marker command from the history, since that command type was only registered after the new deployment began."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is the core safety guarantee of `Workflow.Patched`: when replaying a history that already contains the patch marker, the method returns `true` regardless of whether the worker 'expects' to be in the old or new branch. This is why the documentation explicitly states: 'If, during the deployment of PostPatchActivity, there are still live Workers running PrePatchActivity code and these Workers pick up Workflow histories generated by PostPatchActivity, they will safely use the patched branch.' The patch marker is a deterministic replay signal — it records the decision made at the time of original execution. Old workers reading a history with the marker will correctly enter the new branch. This bidirectional safety is exactly what makes the three-step process robust during rolling deployments. The `DeprecatePatch` variant extends this further: its marker does NOT cause a replay failure when absent (unlike the regular `Patched` marker), making the deprecation stage safe to deploy while old workers are still alive. Understanding this distinction — `Patched` failures are asymmetric on missing markers, `DeprecatePatch` is not — is critical when planning multi-week production rollout windows.",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_nightmare_003",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "nightmare",
+      "question": "An engineering team is using the legacy Go Worker Versioning API (Build ID compatibility sets) on a task queue named `payments-queue`. They have deployed Build ID `v1` as the default. They now run:\n\n```go\nerr := client.UpdateWorkerBuildIdCompatibility(ctx, \u0026client.UpdateWorkerBuildIdCompatibilityOptions{\n   TaskQueue: \"payments-queue\",\n   Operation: \u0026client.BuildIDOpAddNewCompatibleVersion{\n      BuildID:                   \"v2\",\n      ExistingCompatibleBuildId: \"v1\",\n   },\n})\n```\n\nImmediately after, they start a brand-new workflow execution. A child workflow is launched from within a running `v1`-pinned workflow execution, using default `VersioningIntent`. Which workers will receive tasks for the new top-level execution and the child workflow respectively?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Both the new top-level execution and the child workflow are routed to `v2` workers, since `v2` is now the default Build ID for the compatible set and both use current assignment rules by default."
+        },
+        {
+          "key": "B",
+          "text": "The new top-level execution is routed to `v2` workers (the new default), while the child workflow inherits the parent's `v1` build and is routed to `v1` workers, because child workflows default to the parent's build when on the same task queue."
+        },
+        {
+          "key": "C",
+          "text": "The new top-level execution is routed to `v1` workers because updating a compatible set does not change the default set, and the child workflow also runs on `v1` workers by inheriting the parent context."
+        },
+        {
+          "key": "D",
+          "text": "The new top-level execution is routed to `v2` workers, and the child workflow also runs on `v2` workers because `BuildIDOpAddNewCompatibleVersion` promotes `v2` to the default of its set, which all new scheduling decisions including children resolve against."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`BuildIDOpAddNewCompatibleVersion` adds `v2` to the existing compatible set containing `v1` and makes `v2` the new default for that set. Since a compatible set is treated as a single logical version, `v2` becomes the effective default — so brand-new top-level workflow executions are routed to `v2` workers. However, for activities and child workflows launched from within an already-running workflow execution, the legacy API's default `VersioningIntent` is to inherit the parent's Build ID (not use the latest assignment rules). This means a `v1`-pinned parent workflow will cause its child workflows (and activities) on the same task queue to also run on `v1` workers. This interaction between compatible-set promotion and per-execution pinning is a frequent source of confusion during rolling deployments: operators see new top-level work go to `v2` but child work silently stay on `v1`. The explicit override using `VersioningIntentUseAssignmentRules` is required to opt child workflows into the latest default. This distinction also explains why the modern Worker Versioning (non-legacy) approach with Deployment Versions was designed to make these routing decisions more explicit and predictable.",
+      "source_doc": "develop_go_worker-versioning-legacy.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "features_workerversioning_nightmare_004",
+      "category": "Features_WorkerVersioning",
+      "difficulty": "nightmare",
+      "question": "A .NET team runs a multi-year compliance workflow. To avoid patching, they decide to use the 'Workflow cutover' approach: they duplicate `ComplianceWorkflow` as `ComplianceWorkflowV2` and register both with the same worker. Six months later, they realize a bug exists in shared helper logic called by both workflow types. After fixing the helper, they deploy. During replay of a `ComplianceWorkflow` (original) execution that previously ran through the shared helper, what is the primary risk compared to using `Workflow.Patched`, and what does this reveal about the cutover method's limitations?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The replay risk is identical to patching, because the determinism guarantee applies at the workflow type level and both `ComplianceWorkflow` and `ComplianceWorkflowV2` share the same task queue routing rules, making helper changes equally dangerous in both cases."
+        },
+        {
+          "key": "B",
+          "text": "The cutover method provides no mechanism to version still-running `ComplianceWorkflow` executions; a non-deterministic change to shared helper logic will cause replay failures on those open executions just as if no versioning had been applied, and the only remediation is to patch or reset affected workflows."
+        },
+        {
+          "key": "C",
+          "text": "The risk is lower than patching because having two registered workflow types means the server can route the old execution to the original code path automatically, provided the worker registers both types and the helper change is backward-compatible at the binary level."
+        },
+        {
+          "key": "D",
+          "text": "The replay will succeed unconditionally because the helper logic runs outside the workflow coroutine context and its output is stored as activity results in history, making the implementation of the helper irrelevant to determinism checks."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The workflow cutover approach (duplicating into V2) protects against determinism errors in new executions started after the cutover, but it provides absolutely no protection for still-running executions of the original workflow type. If shared helper logic called by `ComplianceWorkflow` is changed in a non-deterministic way — e.g., it now executes a different activity, makes a different branching decision, or yields at a different point — replaying any open `ComplianceWorkflow` execution against the new code will produce a nondeterminism error. The documentation states explicitly: 'This method also does not provide a way to version any still-running Workflows — it is essentially just a cutover, unlike Patching.' This is the fundamental architectural limitation of the cutover approach: it handles the 'new executions' dimension but ignores the 'open executions' dimension. In contrast, `Workflow.Patched` wraps changes in deterministic branches anchored to history markers, so both old and new executions replay safely against the same deployed code. For production systems with workflows running over months or years, shared helper logic is a particularly dangerous surface area because even a seemingly innocuous refactor can cause widespread replay failures across all open executions. The correct approach for such systems is either Worker Versioning (to pin executions to specific worker deployments) or Patching (to branch in-place).",
+      "source_doc": "develop_dotnet_workflows_versioning.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    }
+  ]
+}

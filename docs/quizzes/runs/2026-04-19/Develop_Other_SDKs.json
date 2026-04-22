@@ -1,0 +1,369 @@
+{
+  "category": "Develop_Other_SDKs",
+  "questions": [
+    {
+      "id": "develop_other_sdks_easy_001",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "easy",
+      "question": "What is the main purpose of an Activity in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To define the overall logic and flow of a long-running process"
+        },
+        {
+          "key": "B",
+          "text": "To execute a single, well-defined action like calling an API or querying a database"
+        },
+        {
+          "key": "C",
+          "text": "To manage connections between different Temporal Workers"
+        },
+        {
+          "key": "D",
+          "text": "To store the history of a Workflow Execution"
+        }
+      ],
+      "answer": "B",
+      "explanation": "In Temporal, an Activity is designed to perform one specific task — something that interacts with the outside world, like calling a third-party API, querying a database, or processing a file. Think of Activities as the 'doers' in your application. The overall logic that coordinates when and how Activities run belongs to Workflows, not Activities themselves.",
+      "source_doc": "develop_dotnet_activities_basics.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_easy_002",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "easy",
+      "question": "What is a 'Standalone Activity' in Temporal, and how is it different from a regular Activity?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It is a special type of Activity that runs faster because it skips the event history"
+        },
+        {
+          "key": "B",
+          "text": "It is an Activity that can only be written in certain programming languages"
+        },
+        {
+          "key": "C",
+          "text": "It is an Activity that runs independently, started directly from a Temporal Client instead of from inside a Workflow"
+        },
+        {
+          "key": "D",
+          "text": "It is an Activity that automatically retries forever without any configuration"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Normally, Activities are started from within a Workflow — the Workflow acts as the coordinator. A Standalone Activity breaks this pattern by allowing you to start an Activity directly from your application code using a Temporal Client, without needing a Workflow to orchestrate it. Importantly, the Activity code itself is written the same way — the difference is only in how it is launched.",
+      "source_doc": "develop_dotnet_activities_standalone-activities.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_easy_003",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "easy",
+      "question": "Why would you mark an Activity error as 'benign' in Temporal?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To make the Activity retry faster when it fails"
+        },
+        {
+          "key": "B",
+          "text": "To prevent the Activity from being recorded in the event history"
+        },
+        {
+          "key": "C",
+          "text": "To reduce noise in logs and monitoring for expected or non-critical errors"
+        },
+        {
+          "key": "D",
+          "text": "To automatically cancel the Workflow when the Activity fails"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Not all errors are serious. For example, if your Activity polls an external service that isn't ready yet, that failure is expected and routine. Marking such errors as 'benign' tells Temporal to treat them quietly — lowering the log level and skipping failure metrics — so your monitoring dashboards stay clean and you can focus on real problems. The Workflow can still handle these errors normally in its logic.",
+      "source_doc": "develop_dotnet_activities_benign-exceptions.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_med_001",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "med",
+      "question": "In the .NET SDK, what exception should an Activity throw to signal that it will be completed asynchronously by an external system?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "TaskCanceledException"
+        },
+        {
+          "key": "B",
+          "text": "CompleteAsyncException"
+        },
+        {
+          "key": "C",
+          "text": "ApplicationFailureException"
+        },
+        {
+          "key": "D",
+          "text": "ActivityCompletionException"
+        }
+      ],
+      "answer": "B",
+      "explanation": "To mark an Activity as completing asynchronously, the Activity must capture its Task Token via `ActivityExecutionContext.Current.Info.TaskToken` and then throw `CompleteAsyncException`. This signals to Temporal that the Activity will not complete within the Activity function itself but will instead be completed later via `GetAsyncActivityHandle()` and `CompleteAsync()`. This pattern is useful when the actual work is delegated to an external system, such as a human approval step or a third-party callback.",
+      "source_doc": "develop_dotnet_activities_asynchronous-activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_med_002",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "med",
+      "question": "What is the effect of throwing an `ApplicationFailureException` with `category: ApplicationErrorCategory.Benign` in a .NET Activity?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity is immediately cancelled and will not be retried"
+        },
+        {
+          "key": "B",
+          "text": "The error is suppressed entirely and the Workflow never sees it"
+        },
+        {
+          "key": "C",
+          "text": "Activity failure logs are downgraded to DEBUG level, failure metrics are not emitted, and OpenTelemetry failure status is not set to ERROR"
+        },
+        {
+          "key": "D",
+          "text": "The Activity retries immediately without recording the failure in Event History"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Benign exceptions reduce observability noise for expected or non-severe errors. They downgrade failure logs to DEBUG, suppress Activity failure metrics, and avoid setting the OpenTelemetry status to ERROR. The Workflow can still handle the failure in its logic — the error is not hidden from the Workflow, only from your monitoring and alerting systems. This is useful for polling activities or expected transient failures.",
+      "source_doc": "develop_dotnet_activities_benign-exceptions.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_med_003",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "med",
+      "question": "How do you define a Dynamic Activity in the .NET SDK, and what argument type must it accept?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Decorate the method with `[Activity(\"*\")]` and accept any `object[]` argument"
+        },
+        {
+          "key": "B",
+          "text": "Decorate the method with `[Activity(Dynamic = true)]` and accept a single `IRawValue[]` argument"
+        },
+        {
+          "key": "C",
+          "text": "Register the Activity with a wildcard task queue and accept `string` arguments"
+        },
+        {
+          "key": "D",
+          "text": "Implement the `IDynamicActivity` interface and override `ExecuteAsync()`"
+        }
+      ],
+      "answer": "B",
+      "explanation": "A Dynamic Activity in the .NET SDK is created by setting `Dynamic = true` on the `[Activity]` attribute. The method must accept a single argument of type `IRawValue[]`. You then use `ActivityExecutionContext.Current.PayloadConverter` to deserialize the raw values into the desired types. Only one Dynamic Activity can be registered per Worker, and it is invoked when no other Activity with the matching name is registered.",
+      "source_doc": "develop_dotnet_activities_dynamic-activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_med_004",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "med",
+      "question": "What is the key difference between a Standalone Activity and a regular Workflow Activity in the .NET SDK?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Standalone Activities must be written differently using a special base class"
+        },
+        {
+          "key": "B",
+          "text": "Standalone Activities do not support retries or timeouts"
+        },
+        {
+          "key": "C",
+          "text": "Standalone Activities are executed directly from a Temporal Client instead of being orchestrated by a Workflow, but the Activity definition and Worker registration are identical"
+        },
+        {
+          "key": "D",
+          "text": "Standalone Activities run in-process and are not tracked by the Temporal Server"
+        }
+      ],
+      "answer": "C",
+      "explanation": "The Activity definition (decorated with `[Activity]`) and Worker registration are exactly the same for both Standalone and Workflow Activities — the same Activity can even serve both purposes. The distinction is in how they are started: Standalone Activities are started directly from a Temporal Client using `client.ExecuteActivityAsync()` or `client.StartActivityAsync()`, rather than from inside a Workflow with `Workflow.ExecuteActivityAsync()`. This is useful for running durable, tracked work without the overhead of a full Workflow.",
+      "source_doc": "develop_dotnet_activities_standalone-activities.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_hard_001",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "hard",
+      "question": "Your team runs a payment processing system where Activities frequently poll an external payment gateway that returns 'pending' status before eventually settling. These polling failures are expected and happen dozens of times per minute, flooding your dashboards with error-level alerts and making it impossible to spot real issues. What is the correct approach in Temporal .NET SDK to handle this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Catch the exception and return a special sentinel value like null or an empty string to signal the pending state to the Workflow, avoiding any exception propagation."
+        },
+        {
+          "key": "B",
+          "text": "Throw an ApplicationFailureException with category set to ApplicationErrorCategory.Benign so that failure logs are downgraded to DEBUG level, failure metrics are not emitted, and OpenTelemetry status is not set to ERROR."
+        },
+        {
+          "key": "C",
+          "text": "Use a try/catch inside the Workflow Definition to suppress the Activity failure before it reaches your observability tooling."
+        },
+        {
+          "key": "D",
+          "text": "Configure the Activity's retry policy with a non-retryable error type so Temporal stops retrying and the Activity completes immediately without logging."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Temporal's benign exception category exists precisely for this production scenario: expected, frequent, non-severe errors that would otherwise pollute your observability stack. When you throw ApplicationFailureException with ApplicationErrorCategory.Benign, Temporal downgrades Activity failure logs to DEBUG, suppresses Activity failure metrics, and avoids setting the OpenTelemetry failure status to ERROR — all without changing how the Workflow handles the failure logic. Option A is dangerous because returning sentinel values breaks type safety and forces your Workflow to understand internal Activity states. Option C is wrong because exception handling belongs in Activities, not Workflow Definitions, and Workflow code cannot intercept low-level Activity log noise. Option D would stop retries entirely, preventing the polling from ever succeeding. Benign exceptions let you keep clean dashboards while retrying normally.",
+      "source_doc": "develop_dotnet_activities_benign-exceptions.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_hard_002",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "hard",
+      "question": "You are building a human-in-the-loop document approval system. An Activity starts the approval process by sending an email, then the actual approval may happen hours or days later via a webhook hitting your REST API. The Activity cannot stay running for days. How should you implement this in Temporal .NET?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Have the Activity sleep in a loop with Task.Delay, periodically checking a database for the approval decision until the timeout expires."
+        },
+        {
+          "key": "B",
+          "text": "Use a Workflow Timer instead of an Activity for the waiting period, and have the webhook signal the Workflow directly when approval arrives."
+        },
+        {
+          "key": "C",
+          "text": "Capture the TaskToken from ActivityExecutionContext.Current.Info.TaskToken, throw CompleteAsyncException to release the Activity thread, then later call handle.CompleteAsync() or handle.FailAsync() via a Temporal Client using that token."
+        },
+        {
+          "key": "D",
+          "text": "Start a Child Workflow from the Activity to handle the long wait, since Child Workflows can be paused indefinitely without holding a thread."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Asynchronous Activity Completion is the correct pattern for human-in-the-loop or external system handoffs. The Activity captures its TaskToken (a unique identifier), throws CompleteAsyncException to tell Temporal 'this Activity is not done yet but it's releasing its thread,' and the Worker is freed immediately. When the external event (webhook approval) arrives — potentially days later — your REST handler creates a Temporal Client, calls GetAsyncActivityHandle(capturedToken), and calls CompleteAsync or FailAsync. Temporal has been durably tracking this Activity the whole time. Option A wastes a thread for days and will likely hit Activity timeouts. Option B changes the architecture entirely and the Workflow would need to own waiting logic, losing the Activity abstraction. Option D is wrong because Activities cannot and should not start Child Workflows — only Workflows can do that. The TaskToken pattern is exactly what Temporal designed for external system completion.",
+      "source_doc": "develop_dotnet_activities_asynchronous-activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_hard_003",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "hard",
+      "question": "Your platform team wants to build a plugin system where third-party teams can register Activity handlers at runtime by name, without the core system knowing the Activity type at compile time. When a Workflow schedules an Activity named 'plugin-transform-v2', the system should route it to a registered handler. How does Temporal .NET SDK support this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Register multiple Activities with the same name on different Workers and let Temporal route based on load balancing."
+        },
+        {
+          "key": "B",
+          "text": "Use a Dynamic Activity by setting Dynamic = true on the [Activity] attribute. The method must accept IRawValue[] and use ActivityExecutionContext.Current.PayloadConverter to deserialize arguments. Only one Dynamic Activity can be registered per Worker."
+        },
+        {
+          "key": "C",
+          "text": "Implement a custom ITemporalClient interceptor that intercepts ScheduleActivityTask commands and routes them to the correct handler before they reach the Worker."
+        },
+        {
+          "key": "D",
+          "text": "Use the [Activity] attribute with a wildcard name parameter like [Activity(\"plugin-*\")] to match any Activity name starting with 'plugin-'."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Dynamic Activities are Temporal's built-in mechanism for runtime Activity routing. When a Worker receives a task for an Activity name it doesn't have a specific handler for, it falls back to the Dynamic Activity handler (if one is registered). The handler receives IRawValue[] containing the raw serialized arguments, and must use ActivityExecutionContext.Current.PayloadConverter to deserialize them to the expected types. The critical constraint is that only ONE Dynamic Activity can be registered per Worker — if you try to register two, you'll get an error. This is a deliberate design choice: the dynamic handler is a catch-all, not a multi-handler system. Option A would cause conflicts — you cannot have two Activities with the same name on the same Worker. Option C doesn't exist as an API. Option D is fictional — wildcard name patterns are not supported. Dynamic Activities are powerful for plugin systems, multi-tenant platforms, and code generation scenarios.",
+      "source_doc": "develop_dotnet_activities_dynamic-activity.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_hard_004",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "hard",
+      "question": "A data engineering team wants to trigger a one-off ETL Activity directly from their orchestration script when a file arrives in S3, without wrapping it in a Workflow. They want durable execution guarantees and the ability to check on the Activity's status later by ID. They are using Temporal .NET SDK. Which approach correctly achieves this, and what important constraint must they be aware of?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Call Workflow.ExecuteActivityAsync() from a console application. This works outside Workflows because the method is static and accessible anywhere in .NET code."
+        },
+        {
+          "key": "B",
+          "text": "Use client.ExecuteActivityAsync() or client.StartActivityAsync() from application code (not inside a Workflow). This is Standalone Activity functionality, currently at Pre-release/experimental stage, requiring StartActivityOptions with an Id, TaskQueue, and at least one timeout."
+        },
+        {
+          "key": "C",
+          "text": "Register the Activity on a Worker and call it as a normal async method directly from the script. Temporal automatically intercepts the call and makes it durable because the method has the [Activity] attribute."
+        },
+        {
+          "key": "D",
+          "text": "Create a thin wrapper Workflow that immediately calls the Activity and returns, since all durable execution in Temporal must go through a Workflow."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Standalone Activities let you execute Activities directly from a Temporal Client without a wrapping Workflow, providing durable execution, retries, visibility, and the ability to retrieve results by Activity ID. You call client.ExecuteActivityAsync() (which starts and waits for result) or client.StartActivityAsync() (which returns a handle immediately) from regular application code — never from inside a Workflow Definition. The required parameters are Id (your chosen activity ID), TaskQueue, and at least ScheduleToCloseTimeout or StartToCloseTimeout. The critical caveat: as of the documentation, this feature is Pre-release/experimental in the .NET SDK, meaning APIs may change in backwards-incompatible ways. Option A is wrong — Workflow.ExecuteActivityAsync() is only valid inside Workflow code and would throw if called outside a Workflow context. Option C is wrong — the [Activity] attribute does not intercept normal method calls; Temporal only executes Activities when they're scheduled through the Temporal service. Option D represents the old pattern that Standalone Activities are designed to replace for simple cases.",
+      "source_doc": "develop_dotnet_activities_standalone-activities.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_nightmare_001",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "nightmare",
+      "question": "Your team is building a payment processing system using .NET SDK. An Activity polls an external payment gateway that frequently returns 'payment pending' responses during normal operation. You've implemented it as follows:\n\n```csharp\n[Activity]\npublic async Task\u003cPaymentResult\u003e CheckPaymentStatusAsync(string paymentId)\n{\n    var status = await paymentGateway.CheckAsync(paymentId);\n    if (status == PaymentStatus.Pending)\n    {\n        throw new ApplicationFailureException(\n            \"Payment still pending\",\n            errorType: \"PaymentPending\");\n    }\n    return new PaymentResult(status);\n}\n```\n\nIn production, you notice your monitoring dashboards are flooded with ERROR-level Activity failure metrics and alerts firing constantly, even though the system is working correctly. The pending status occurs thousands of times per hour across all payment workflows. What is the most appropriate fix, and what effect will it have on your observability stack?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Catch the exception inside the Workflow Definition and suppress it there using a try/catch around ExecuteActivityAsync — this prevents the failure from being recorded in the event history entirely."
+        },
+        {
+          "key": "B",
+          "text": "Throw the ApplicationFailureException with category: ApplicationErrorCategory.Benign — this downgrades the Activity failure log to DEBUG level, suppresses the failure metric emission, and prevents OpenTelemetry from setting the failure status to ERROR, while still allowing the Workflow to handle the exception normally."
+        },
+        {
+          "key": "C",
+          "text": "Return a nullable PaymentResult from the Activity instead of throwing, and check for null in the Workflow — this avoids any exception path and eliminates all failure observability overhead."
+        },
+        {
+          "key": "D",
+          "text": "Set RetryPolicy.MaximumAttempts = 1 on the Activity Options so retries stop immediately — this reduces the volume of failure events hitting your observability pipeline."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The core issue here is the intersection of expected business logic failures and observability signal quality. When you throw a plain ApplicationFailureException without a benign category, Temporal treats it as a genuine failure: it emits Activity failure metrics, logs at ERROR level, and sets OpenTelemetry span status to ERROR. For failures that are actually normal operational states — like a payment gateway returning 'pending' thousands of times an hour — this creates catastrophic alert fatigue and drowns out real incidents.\n\nThe .NET SDK's ApplicationErrorCategory.Benign was designed precisely for this pattern. When you throw:\n```csharp\nthrow new ApplicationFailureException(\n    \"Payment still pending\",\n    inner: null,\n    category: ApplicationErrorCategory.Benign);\n```\nThree things happen simultaneously: (1) failure logs are downgraded to DEBUG — they still exist for debugging but don't trigger ERROR-level log alerts; (2) Activity failure metrics are NOT emitted — your dashboards remain clean; (3) OpenTelemetry span failure status is NOT set to ERROR — your distributed traces stay readable.\n\nCritically, the Workflow still receives the exception and can handle it normally (e.g., retry via retry policy, or catch it and branch logic). The benign category is purely an observability classification — it does not change retry behavior or Workflow control flow.\n\nOption A is wrong: catching in the Workflow doesn't help because the failure metric/log is emitted by the Worker when the Activity throws, before the Workflow ever sees the result. Option C changes the contract of your Activity in a way that loses type safety and still doesn't fix the underlying observability model. Option D addresses symptom volume but doesn't fix the signal quality problem and would actually break legitimate retry behavior for transient failures.\n\nThe production insight here: every failure path in your Activities should be consciously categorized. Not all exceptions are equal. 'Benign' failures that are part of normal polling, expected transient states, or known business conditions should be marked benign from day one — retrofitting this after your monitoring is already noisy is far more painful than getting it right upfront.",
+      "source_doc": "develop_dotnet_activities_benign-exceptions.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    },
+    {
+      "id": "develop_other_sdks_nightmare_002",
+      "category": "Develop_Other_SDKs",
+      "difficulty": "nightmare",
+      "question": "Your team is migrating a long-running document processing system to use Temporal's new Standalone Activities feature (.NET SDK v1.12.0+). A senior engineer proposes the following architecture: use Standalone Activities (started via client.StartActivityAsync()) for all document processing tasks, and store the activity handle's ID in your database so you can later call client.GetActivityHandle() to retrieve results from a separate microservice. They argue this replaces the need for Workflows entirely since 'Standalone Activities are durable just like Workflows.' During architecture review, what is the most critical operational risk this design introduces compared to Workflow-orchestrated Activities?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Standalone Activities cannot use heartbeating, so long-running document processing tasks will not be able to report progress or be cancelled mid-execution."
+        },
+        {
+          "key": "B",
+          "text": "Standalone Activities require a different Worker registration process than Workflow Activities, meaning you cannot reuse existing Worker infrastructure and must maintain separate Worker pools."
+        },
+        {
+          "key": "C",
+          "text": "Standalone Activities have no orchestration layer above them, so if your client application crashes after calling StartActivityAsync() but before persisting the handle ID, or if the downstream microservice that calls GetResultAsync() fails, you have no durable mechanism to recover the coordination state — the Activity may execute successfully but its result is lost with no retry or recovery path for the orchestration logic itself."
+        },
+        {
+          "key": "D",
+          "text": "Standalone Activities cannot be listed or monitored via the Temporal Web UI, making it impossible to observe their execution state in production."
+        }
+      ],
+      "answer": "C",
+      "explanation": "This question exposes one of the most dangerous misunderstandings about Standalone Activities: conflating 'the Activity execution is durable' with 'the entire coordination pattern is durable.' These are fundamentally different things.\n\nWhen you call client.StartActivityAsync(), Temporal durably enqueues the Activity execution — the Activity itself will run to completion (or exhaust retries) regardless of what happens to your client. That part is durable. However, the coordination logic — 'I started this activity, stored the ID, and later need to retrieve the result' — lives entirely in your application code. If your client crashes between StartActivityAsync() and persisting the handle ID, that coordination state is gone. If the microservice that calls GetResultAsync() fails or restarts, it has no durable record of what it was waiting for.\n\nThis is precisely the problem Workflows solve. A Workflow's execution state — including what Activities it has started, what results it has received, and what it needs to do next — is fully persisted in Temporal's event history. A Workflow can crash and replay from scratch, correctly reconstructing exactly where it was. Your proposed architecture essentially reimplements a fragile, non-durable version of workflow orchestration using an external database and microservice coordination.\n\nThe documentation is explicit about the intended use: 'Call this from your application code, not from inside a Workflow Definition.' Standalone Activities are designed for cases where you want to durably execute a single unit of work without needing orchestration — fire-and-forget durable tasks, or simple request-response patterns. They are not a replacement for Workflows when you have multi-step coordination, conditional logic, or result-dependent branching.\n\nOption A is wrong: the documentation shows handle.HeartbeatAsync() is available for Standalone Activities. Option B is wrong: 'The Worker doesn't need to know whether the Activity will be invoked from a Workflow or as a Standalone Activity' — same registration. Option D is wrong: client.ListActivitiesAsync() and the Web UI nav bar item are explicitly documented for Standalone Activities.\n\nThe architectural principle to internalize: Temporal's durability guarantee applies to what Temporal manages. The moment your coordination logic lives in application code (database + microservice), you've reintroduced all the failure modes that Temporal was designed to eliminate. Use Standalone Activities for truly standalone work; use Workflows when you need durable orchestration.",
+      "source_doc": "develop_dotnet_activities_standalone-activities.html",
+      "generated_at": "2026-04-19T17:05:44Z"
+    }
+  ]
+}

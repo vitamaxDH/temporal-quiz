@@ -1,0 +1,341 @@
+{
+  "category": "Self_Hosted_and_Ops",
+  "questions": [
+    {
+      "id": "self_hosted_and_ops_easy_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "easy",
+      "question": "When rotating credentials for Temporal Cloud Workers, why is it important to support both old and new credentials at the same time during the process?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Because Temporal Cloud requires a waiting period before new credentials become active"
+        },
+        {
+          "key": "B",
+          "text": "To allow Workers to transition to new credentials without causing authentication failures or downtime"
+        },
+        {
+          "key": "C",
+          "text": "Because old credentials automatically expire the moment new ones are created"
+        },
+        {
+          "key": "D",
+          "text": "To give Temporal Cloud time to verify that the new credentials are secure"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When you rotate credentials, there is a period where some Workers may still be using the old credentials while others have switched to the new ones. If you removed the old credentials immediately, those Workers would fail to authenticate and running workflows could be disrupted. By temporarily supporting both old and new credentials, you give yourself time to safely migrate all Workers over, then remove the old credentials only after confirming everything works. This is called 'near-zero-downtime rotation.'",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_easy_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "easy",
+      "question": "What is a key risk of combining many separate Activities into a single large Activity in order to reduce costs?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "It makes Workflows run slower because Temporal processes fewer Activities at a time"
+        },
+        {
+          "key": "B",
+          "text": "It increases storage costs because single Activities store more data"
+        },
+        {
+          "key": "C",
+          "text": "You lose the ability to see which step failed and to retry individual steps independently"
+        },
+        {
+          "key": "D",
+          "text": "Temporal charges more for Activities with longer names"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Each Activity in Temporal represents a distinct step in your workflow, and having separate Activities gives you visibility into exactly which step failed and lets you retry just that step. If you merge multiple steps into one big Activity to save on costs, you lose that fine-grained visibility. For example, if you combine 'validate input,' 'charge payment,' and 'send confirmation email' into one Activity, and something fails, you cannot tell which of those three things went wrong. You also cannot retry just the email step — the entire combined Activity retries, including the payment charge. This tradeoff between cost and observability is an important concept to understand.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_easy_003",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "easy",
+      "question": "What is the main purpose of creating an internal Temporal knowledge hub within an organization?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "To replace Temporal's official documentation with a custom version"
+        },
+        {
+          "key": "B",
+          "text": "To give developers one centralized place to find organization-specific guidance, patterns, and standards for using Temporal"
+        },
+        {
+          "key": "C",
+          "text": "To track how many workflows each team has built"
+        },
+        {
+          "key": "D",
+          "text": "To automatically generate Temporal credentials and namespace configurations for new teams"
+        }
+      ],
+      "answer": "B",
+      "explanation": "When many teams independently adopt Temporal, they often develop inconsistent approaches, reinvent solutions others have already figured out, and ask the same support questions repeatedly. A knowledge hub solves this by providing one central place with your organization's specific decisions, conventions, quickstart guides, and operational runbooks. Importantly, it is NOT meant to copy Temporal's official documentation — instead, it links to official docs and focuses on what is unique to your organization, like which namespace naming conventions you use or how your teams escalate incidents.",
+      "source_doc": "best-practices_knowledge-hub.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "When rotating mTLS certificates or API keys for Temporal Cloud Workers, what is the correct order of operations to achieve near-zero-downtime?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Remove old credentials first, then generate new ones, then update Workers to use the new credentials"
+        },
+        {
+          "key": "B",
+          "text": "Generate new credentials, configure Temporal Cloud to support both old and new credentials simultaneously, migrate Workers, validate connectivity, then remove old credentials"
+        },
+        {
+          "key": "C",
+          "text": "Generate new credentials, immediately update all Workers to use them, then remove old credentials from Temporal Cloud"
+        },
+        {
+          "key": "D",
+          "text": "Stop all Workers, replace credentials, restart Workers with new credentials, then validate connectivity"
+        }
+      ],
+      "answer": "B",
+      "explanation": "The correct rotation process is: (1) generate new credentials, (2) configure dual-credential support so both old and new are accepted, (3) migrate Workers to new credentials, (4) validate everything works, then (5) remove old credentials. The 'dual credentials' step is critical — it prevents authentication failures during the transition window when some Workers may still be using old credentials. Skipping this step and immediately removing old credentials would cause running Workflows to fail as Workers lose connectivity.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "According to Temporal Cloud cost optimization best practices, which of the following correctly describes the cost difference between Child Workflows and Activities, and what is the implication?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Child Workflows cost 1 Action (same as Activities), so they can be used interchangeably with no cost impact"
+        },
+        {
+          "key": "B",
+          "text": "Child Workflows cost 3 Actions compared to an Activity's 1 Action, so they should be avoided entirely"
+        },
+        {
+          "key": "C",
+          "text": "Child Workflows cost 2 Actions compared to an Activity's 1 Action, so the decision to use them should be driven by capability requirements, not just cost"
+        },
+        {
+          "key": "D",
+          "text": "Child Workflows cost 2 Actions but multiple Local Activities that run back-to-back also cost 2 Actions, so they are equivalent in price"
+        }
+      ],
+      "answer": "C",
+      "explanation": "Child Workflows cost 2 Actions vs an Activity's 1 Action. However, the docs emphasize that the choice between Child Workflows and Activities should be based on their capabilities and use cases, not cost optimization alone. Additionally, multiple Local Activities that run back-to-back count as a single billable Action (not 2), making them much cheaper than either regular Activities or Child Workflows when their failure semantics are acceptable.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_003",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "A team is running multiple Temporal Workers that connect to both dev and prod namespaces, all using certificates signed by the same Certificate Authority (CA). What mechanism can prevent a dev certificate from accidentally authenticating against the prod namespace?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Use separate CAs for dev and prod — there is no other way to enforce namespace isolation with mTLS"
+        },
+        {
+          "key": "B",
+          "text": "Configure Certificate Filters on the prod namespace, using a common name convention that matches the namespace name, to restrict which certificates are accepted"
+        },
+        {
+          "key": "C",
+          "text": "Use Let's Encrypt certificates for dev and a private CA for prod to ensure different root authorities"
+        },
+        {
+          "key": "D",
+          "text": "Enable API key authentication on the prod namespace — Certificate Filters are only available for self-signed certificates"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Certificate Filters allow you to validate the client certificate presented during authentication beyond just CA trust. By naming certificates with a common name that matches their target namespace (e.g., 'prod-namespace'), and configuring Certificate Filters on the prod namespace to enforce this, you prevent dev certificates from accessing prod even though they share the same CA. Notably, Let's Encrypt is explicitly NOT recommended for Temporal mTLS as it's designed for public-facing services and lacks support for internal certificate requirements.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_med_004",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "med",
+      "question": "A long-running data processing Activity completes in about 2 minutes and processes records one by one. A developer wants to add Heartbeating to save progress and detect stuck Workers. What does the cost optimization guidance say about this?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Heartbeating should always be added to any Activity that processes multiple records, regardless of duration, to enable progress tracking"
+        },
+        {
+          "key": "B",
+          "text": "Each Heartbeat counts as one Action, so Heartbeats should only be used for long-running Activities (10+ minutes) where detecting Worker failures and tracking progress justify the cost"
+        },
+        {
+          "key": "C",
+          "text": "Heartbeats are free and do not count as billable Actions, so they can be added liberally without cost concerns"
+        },
+        {
+          "key": "D",
+          "text": "Heartbeats should be removed from all Activities as a cost optimization measure, since the Activity timeout will eventually detect stuck Workers"
+        }
+      ],
+      "answer": "B",
+      "explanation": "Each Heartbeat counts as one billable Action. The guidance is clear: only use Heartbeats for long-running Activities (10+ minutes) where you need to detect Worker failures and track progress. A 2-minute Activity doesn't warrant Heartbeating from a cost perspective — the overhead isn't justified. However, the docs also warn against removing Heartbeats from genuinely long-running Activities as a cost-cutting measure, since that eliminates the ability to detect stuck Workers until the full Activity timeout expires and removes progress tracking visibility.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "Your security team requires credential rotation for Temporal Cloud Workers with zero authentication failures during the transition. You currently have 50 Workers running across 3 regions all using mTLS certificates. Which rotation sequence prevents authentication failures?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Generate new certificates, immediately update all Worker deployments to use the new certificates, then remove the old certificates from Temporal Cloud once all Workers have restarted."
+        },
+        {
+          "key": "B",
+          "text": "Generate new certificates, configure Temporal Cloud to accept both old and new certificates simultaneously, migrate Workers to new certificates in batches, validate connectivity, then remove old certificates."
+        },
+        {
+          "key": "C",
+          "text": "Remove the old certificates from Temporal Cloud first to force Workers to fail, then generate and deploy new certificates so Workers reconnect cleanly with no credential overlap."
+        },
+        {
+          "key": "D",
+          "text": "Generate new certificates and deploy them to all Workers at the same time using a rolling restart, relying on Kubernetes liveness probes to catch any authentication failures."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documented near-zero-downtime rotation process explicitly requires a 'dual credential' phase: Temporal Cloud must be configured to accept both old and new credentials before any Workers are migrated. This is critical because Workers across 3 regions cannot all be restarted atomically. During the migration window, some Workers will still present the old certificate while others present the new one. If you remove the old certificate before all Workers have transitioned (option A), Workers that haven't restarted yet will immediately fail authentication. Option C is obviously destructive. Option D skips the dual-credential phase entirely and relies on a rolling restart to be faster than in-flight authentication failures, which is not reliable across distributed regions. The correct mental model is: credential rotation is a multi-phase distributed coordination problem, not a simple swap.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "Your team shares a single Certificate Authority (CA) between dev and prod Temporal Cloud namespaces to simplify certificate management. A developer accidentally pointed a Worker at the production namespace using a dev certificate. Which combination of controls prevents this class of mistake?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Use separate CAs for dev and prod so the certificates are cryptographically incompatible with each other's namespaces."
+        },
+        {
+          "key": "B",
+          "text": "Assign certificates Common Names that match their intended namespace and configure Certificate Filters on the production namespace to reject certificates whose Common Name does not match."
+        },
+        {
+          "key": "C",
+          "text": "Rotate certificates more frequently in production so dev certificates expire before they can be used accidentally in prod."
+        },
+        {
+          "key": "D",
+          "text": "Switch entirely to API keys instead of mTLS, since API keys are scoped to a specific namespace and cannot be used cross-environment."
+        }
+      ],
+      "answer": "B",
+      "explanation": "The documentation explicitly addresses the shared-CA problem: when multiple certificates are signed by the same CA, Temporal Cloud cannot distinguish dev from prod certificates by cryptographic trust alone. The recommended workaround is to give certificates a Common Name that matches the namespace (e.g., 'payments-prod'), then use Certificate Filters on the production namespace to validate that the presented certificate's Common Name matches. This creates an authorization layer on top of authentication. Option A solves the problem but adds operational overhead of managing multiple CAs, which is why the docs describe it as a workaround for teams that specifically want shared CAs. Option C doesn't prevent access, it only limits the window. Option D is a valid alternative strategy but the question asks what controls work within a shared-CA mTLS setup, and the docs specifically describe Certificate Filters as the answer to this exact scenario.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_hard_003",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "hard",
+      "question": "A team has a payment processing Workflow that runs 5 Activities in sequence: validate input, call payment API, update database, send notification, and generate receipt. To reduce Temporal Cloud costs, they merge all 5 into a single 'processOrder' Activity. Their Actions cost drops significantly. What production risk have they introduced that the cost dashboard will NOT show?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Workflow Event History will grow faster because a single Activity produces more history entries than five separate Activities."
+        },
+        {
+          "key": "B",
+          "text": "Temporal's retry mechanism will now re-execute the payment API call whenever the notification step fails, because all five steps share a single retry boundary."
+        },
+        {
+          "key": "C",
+          "text": "The merged Activity will exceed Temporal's maximum Activity execution time limit, causing silent timeouts."
+        },
+        {
+          "key": "D",
+          "text": "The Workflow will no longer be able to receive Signals while the merged Activity is executing, breaking real-time cancellation flows."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This is the core observability vs. cost tradeoff the documentation specifically warns about. When you merge five Activities into one, all five operations share a single retry policy. If the notification step fails (a cheap, low-risk operation), Temporal retries the entire Activity from the beginning, which re-executes the payment API call. This can cause duplicate charges or idempotency violations in production — a serious correctness bug that has nothing to do with cost metrics. The cost dashboard shows fewer Actions, but you lose independent retry control for each step, per-step visibility in the Temporal UI, and the ability to filter Workflows by failure stage. The documentation uses this exact scenario (validate, payment, database, notification, receipt) as its cautionary example. Option A is wrong — fewer Activities means fewer history entries. Option C is a configuration concern, not an inherent risk of merging. Option D is partially true (signals can be queued) but not the primary correctness risk introduced.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_nightmare_001",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "nightmare",
+      "question": "Your team runs 50,000 concurrent long-running order-processing Workflows on Temporal Cloud. Each Workflow sleeps for 23 hours between daily processing steps and accumulates ~500KB of Event History after 30 days. Your monthly bill shows Active Storage costs are 8x higher than expected. An engineer proposes three optimizations simultaneously: (1) call Continue-As-New before each 23-hour sleep, (2) consolidate five sequential Activities (validate, charge, notify, log, audit) into one 'processOrder' Activity to reduce Actions, and (3) implement a custom DataConverter with gzip compression. A fourth engineer argues that optimization (2) is actively dangerous and should be rejected. Which of the following statements best captures the full production impact of implementing all three optimizations together?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "All three optimizations are sound. Continue-As-New reduces Active Storage by moving closed executions to cheaper Retained Storage, Activity consolidation reduces Actions by 4x per cycle, and compression further reduces payload size. The combined effect resolves the storage cost problem with no meaningful operational downside."
+        },
+        {
+          "key": "B",
+          "text": "Continue-As-New legitimately solves the Active Storage problem, and compression helps with payload size, but Activity consolidation creates a severe operational trap: when the notification step fails after the payment has already succeeded, Temporal retries the entire consolidated Activity including the charge step, potentially causing duplicate charges. You've traded per-step retry isolation for a cost saving that is dwarfed by the incident cost of a billing bug in production."
+        },
+        {
+          "key": "C",
+          "text": "Continue-As-New before a 23-hour sleep is redundant because Temporal already archives Event History for sleeping Workflows. The real fix is to reduce the retention period from 30 days to 7 days, which moves all closed Workflow History to cheaper Retained Storage. Activity consolidation is safe as long as the consolidated Activity is idempotent."
+        },
+        {
+          "key": "D",
+          "text": "The correct approach is to replace all five Activities with Local Activities, since back-to-back Local Activities count as a single billable Action. This reduces cost by 5x per cycle without requiring Continue-As-New or consolidation, and Local Activity retries are scoped so that only the failing step retries."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question tests whether engineers understand the failure semantics of Activity consolidation under the pressure of a real cost problem — a situation where the optimization appears rational but hides a production catastrophe.\n\n**Why Continue-As-New solves the storage problem**: Sleeping Workflows are *open* Workflows, not closed ones. Open Workflow executions accumulate Event History stored in Active Storage, which the docs note is 'significantly more expensive than Retained Storage.' A Workflow sleeping 23 hours per day for 30 days is open the entire time, and its 500KB Event History sits in Active Storage. Calling Continue-As-New before the sleep closes the current execution (moving it to cheaper Retained Storage) and opens a fresh execution when work resumes. This is the canonical fix for this exact pattern.\n\n**Why Activity consolidation is dangerous, not just suboptimal**: Temporal's Activity retry boundary is the fundamental unit of failure isolation. When you consolidate validate→charge→notify→log→audit into one Activity, you destroy that isolation. If the notify step fails after charge has already succeeded, Temporal retries the *entire* consolidated Activity from the beginning. Now you're calling the payment API again. Unless you've implemented robust idempotency keys at the payment provider level (and verified they work across retries with your specific provider's behavior), you risk duplicate charges. The docs explicitly warn: 'a notification failure retries the entire flow including the payment call, and you can't filter Workflows by failure stage.' This isn't a theoretical concern — it's a billing bug waiting for its first 3am incident.\n\n**Why option C is wrong**: Active Storage applies to *open* Workflows regardless of what those Workflows are doing (running, sleeping, waiting). Temporal does not automatically archive Event History for sleeping Workflows. Reducing retention only affects *Retained Storage* (closed Workflow History), not Active Storage. The 50,000 sleeping Workflows are all open, so retention period changes don't help.\n\n**Why option D is wrong**: Local Activities have critically different failure semantics. The docs state: 'if a specific Local Activity fails, *all* of them will be retried together.' This is the *opposite* of what's described — Local Activities provide less retry isolation than regular Activities, not more. They're also inappropriate for operations taking more than 10 seconds and don't support independent resource management. Using them for a payment flow would make the duplicate charge problem even worse.\n\n**The deeper principle**: Cost optimization in Temporal must be evaluated against failure mode consequences, not just steady-state behavior. The 4x Action reduction from consolidation looks compelling in a spreadsheet. It looks catastrophic after your first duplicate-charge incident. The docs' guidance is explicit: 'Build Workflows following best practices first, then optimize based on observed costs. Premature optimization can compromise observability and create operational challenges.' Failure boundaries — not cost boundaries — should drive Activity granularity decisions.",
+      "source_doc": "best-practices_cost-optimization.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    },
+    {
+      "id": "self_hosted_and_ops_nightmare_002",
+      "category": "Self_Hosted_and_Ops",
+      "difficulty": "nightmare",
+      "question": "A fintech company uses Temporal Cloud with mTLS certificates for Worker authentication. They use a single internal CA for both dev and prod namespaces to simplify certificate management. Their security team mandates zero-downtime certificate rotation with no shared credentials between environments. During a rotation audit, they discover that a misconfigured dev Worker has been successfully authenticating to the prod namespace for three weeks — despite the prod namespace having no explicit allowlist for that Worker's certificate. The team wants to prevent this while maintaining a single CA. Which combination of Temporal Cloud features, applied in the correct sequence, would have prevented the breach AND supports near-zero-downtime rotation going forward?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "Switch from mTLS to API keys for all Workers. API keys are namespace-scoped by default, so a dev API key cannot authenticate to prod. Rotate API keys using the dual-credential pattern: add the new key, migrate Workers, validate connectivity, then remove the old key. This eliminates the shared-CA problem entirely."
+        },
+        {
+          "key": "B",
+          "text": "Configure Certificate Filters on the prod namespace using common names that match the namespace (e.g., CN=prod-namespace). Issue dev certificates with CN=dev-namespace and prod certificates with CN=prod-namespace from the same CA. During rotation, use the dual-credential window: add the new cert to the namespace's accepted certificates before expiring the old one, migrate Workers to the new cert, validate, then remove the old cert. This prevents cross-environment auth while keeping a single CA and enabling zero-downtime rotation."
+        },
+        {
+          "key": "C",
+          "text": "Use separate CAs for dev and prod. A single CA with Certificate Filters is not sufficient because Certificate Filters only inspect the Subject Alternative Name (SAN) field, not the Common Name, so a dev certificate with a prod SAN can bypass the filter. Separate CAs provide cryptographic isolation that filters cannot replicate."
+        },
+        {
+          "key": "D",
+          "text": "Keep the single CA but configure Temporal Cloud's built-in namespace isolation, which automatically rejects certificates not explicitly registered to a namespace. Certificate Filters are only needed for RBAC within a namespace (e.g., read-only vs. read-write), not for cross-namespace access prevention. The real fix is to register each Worker certificate explicitly to its target namespace."
+        }
+      ],
+      "answer": "B",
+      "explanation": "This question tests a subtle but critical interaction between Temporal Cloud's certificate trust model, Certificate Filters, and the operational rotation process — three features that must work together correctly to achieve both security isolation and operational continuity.\n\n**Why the breach happened**: When you use a single CA for dev and prod, Temporal Cloud's mTLS validation only verifies that the presented certificate was signed by a trusted CA. Without Certificate Filters, *any* certificate signed by that CA can authenticate to *any* namespace that trusts that CA. The dev Worker's certificate was valid because it was signed by the same CA prod trusted. This is explicitly the scenario the docs describe: 'In the case that you are using multiple certificates signed by the same CA, and some of these certificates are for production environments, there are some workarounds you can employ.'\n\n**Why Certificate Filters with CN matching solves it**: Certificate Filters are an additional validation layer applied *after* the CA trust check. By setting the prod namespace's Certificate Filter to require CN=prod-namespace and issuing dev certificates with CN=dev-namespace, the prod namespace will reject any certificate — even a validly CA-signed one — whose common name doesn't match. The docs state: 'Give certificates a common name that matches the namespace. If you do this when using the same CA for dev and prod, then you can leverage Certificate Filters to prevent access to production environments.' This is the documented workaround for exactly this scenario.\n\n**Why rotation still works**: The dual-credential rotation sequence (generate new cert → add to namespace accepted list → migrate Workers → validate → remove old cert) works with Certificate Filters because both old and new certs can be issued with the correct CN. The filter inspects CN, not the specific certificate, so the migration window supports both certificates simultaneously as long as they have the correct CN. This is the 'near-zero-downtime rotation' the docs prescribe.\n\n**Why option A is tempting but incomplete**: API keys are a valid alternative and the docs recommend them as the default for most teams. However, the question asks what would have prevented the breach *while maintaining a single CA*, and API keys represent a full architecture change, not a fix to the mTLS model. Also worth noting: the Operations API and Terraform provider *only* support API keys, so hybrid approaches are common. The question is specifically about the mTLS path.\n\n**Why option C is wrong**: The docs do not say Certificate Filters only inspect SANs. Certificate Filters inspect the client certificate fields as configured, and the documented pattern specifically uses Common Name. The claim that 'a dev certificate with a prod SAN can bypass the filter' inverts the actual mechanism — the filter rejects certificates that don't match the configured fields, it doesn't pass certificates that do match other fields.\n\n**Why option D is wrong**: Temporal Cloud does not have a feature that 'automatically rejects certificates not explicitly registered to a namespace' outside of the CA trust configuration and Certificate Filters. The framing of 'built-in namespace isolation' as distinct from Certificate Filters misrepresents the architecture. Certificate Filters *are* the mechanism for this purpose.\n\n**The broader principle**: Security isolation and operational continuity must be designed together, not sequentially. Certificate Filters provide the security boundary; the dual-credential rotation window provides the operational safety. Designing one without the other produces either a breach (filters without rotation planning causes downtime) or a security gap (rotation planning without filters allows cross-environment access). The documented five-step rotation process exists precisely because near-zero-downtime requires overlapping credential validity — and filters must accommodate that overlap.",
+      "source_doc": "best-practices_cloud-access-control.html",
+      "generated_at": "2026-04-19T17:05:45Z"
+    }
+  ]
+}

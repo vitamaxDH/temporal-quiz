@@ -1,0 +1,173 @@
+{
+  "category": "Tooling_CLI",
+  "questions": [
+    {
+      "id": "tooling_cli_easy_001",
+      "category": "Tooling_CLI",
+      "difficulty": "easy",
+      "question": "When you run `temporal activity cancel`, what happens to an Activity that is actively heartbeating?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The Activity is immediately stopped and removed from the task queue without any notification to the Worker."
+        },
+        {
+          "key": "B",
+          "text": "The Activity transitions to CancelRequested status, and the Worker receives a cancellation error on its next heartbeat response."
+        },
+        {
+          "key": "C",
+          "text": "The Activity is paused until a separate unpause command is issued by an operator."
+        },
+        {
+          "key": "D",
+          "text": "The Activity completes its current attempt normally and is then marked as canceled before any retry is scheduled."
+        }
+      ],
+      "answer": "B",
+      "explanation": "Requesting cancellation does not forcibly kill the Activity. Instead, Temporal transitions it to a CancelRequested state. Because the Activity is heartbeating, the cancellation signal is delivered as an error on the next heartbeat response. If the Activity lets that error propagate, it moves to the canceled status. This design gives the Activity code a chance to clean up gracefully before stopping — a key advantage over simply killing a process.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "tooling_cli_easy_002",
+      "category": "Tooling_CLI",
+      "difficulty": "easy",
+      "question": "What is the difference between `temporal activity start` and `temporal activity execute`?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`start` launches the Activity and returns immediately with the Activity ID and Run ID, while `execute` launches the Activity and blocks until it finishes, printing the result."
+        },
+        {
+          "key": "B",
+          "text": "`start` runs the Activity synchronously in the CLI process, while `execute` sends the Activity to a remote Worker and returns immediately."
+        },
+        {
+          "key": "C",
+          "text": "`start` is used for Workflow-owned Activities, while `execute` is reserved for Standalone Activities that have no parent Workflow."
+        },
+        {
+          "key": "D",
+          "text": "`start` requires a retry policy to be specified, while `execute` uses Temporal's default retry settings automatically."
+        }
+      ],
+      "answer": "A",
+      "explanation": "`temporal activity start` is a fire-and-forget command — it schedules the Standalone Activity and immediately prints the Activity ID and Run ID so you can track it later. `temporal activity execute` does the same scheduling but then waits (blocks) until the Activity completes and prints the result to stdout. This mirrors a common pattern in programming: submitting a job vs. submitting and waiting for its result.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "tooling_cli_easy_003",
+      "category": "Tooling_CLI",
+      "difficulty": "easy",
+      "question": "When you use `temporal activity reset` on an Activity that is currently executing, when does the reset actually take effect?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The reset takes effect immediately, interrupting the current execution and restarting the Activity from scratch right away."
+        },
+        {
+          "key": "B",
+          "text": "The reset is queued and applies only after the entire parent Workflow has completed and been archived."
+        },
+        {
+          "key": "C",
+          "text": "The reset takes effect the next time the Activity fails, heartbeats, or times out, rather than interrupting the current attempt instantly."
+        },
+        {
+          "key": "D",
+          "text": "The reset is applied on a schedule determined by the retry policy interval, not at the time the command is issued."
+        }
+      ],
+      "answer": "C",
+      "explanation": "Temporal does not forcibly terminate a running Activity on reset. Instead, it marks the Activity so that the reset kicks in the next time that Activity fails, heartbeats, or times out. If the Activity is already waiting for a retry (i.e., it has already failed or timed out), the reset applies immediately. This approach keeps the system consistent — Temporal records intent and acts on it at the next safe checkpoint, rather than abruptly killing work in progress.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "tooling_cli_med_002",
+      "category": "Tooling_CLI",
+      "difficulty": "med",
+      "question": "A developer wants to forcibly mark a running workflow-owned Activity as failed from the command line — for example, to unblock a stuck workflow in staging. Which command and required flags are correct?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`temporal activity fail --activity-id \u003cid\u003e` with no other flags required, because the server infers the workflow from the activity ID alone."
+        },
+        {
+          "key": "B",
+          "text": "`temporal activity fail --activity-id \u003cid\u003e --workflow-id \u003cwfId\u003e`, because `--workflow-id` is required when targeting a workflow-owned Activity, while `--activity-id` identifies which activity within that workflow to fail."
+        },
+        {
+          "key": "C",
+          "text": "`temporal activity complete --activity-id \u003cid\u003e --workflow-id \u003cwfId\u003e --result '{\"error\":true}'`, because the `fail` subcommand only works on Standalone Activities, not workflow-owned ones."
+        },
+        {
+          "key": "D",
+          "text": "`temporal activity fail --activity-id \u003cid\u003e --run-id \u003crunId\u003e` where `--run-id` is the Activity Run ID and is the only additional required flag for workflow-owned Activities."
+        }
+      ],
+      "answer": "B",
+      "explanation": "For workflow-owned Activities, `temporal activity fail` requires both `--activity-id` (to identify which activity inside the workflow) and `--workflow-id` (to locate the parent workflow). The docs explicitly state `--workflow-id` is 'Required for workflow Activities.' Option A is wrong because activity IDs are not globally unique across workflows — the server needs the workflow context. Option C is wrong because `temporal activity fail` works on both workflow-owned and Standalone Activities. Option D is wrong because `--run-id` on `activity fail` is the *Workflow* Run ID (not an Activity Run ID), and it is optional, not required.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "tooling_cli_med_004",
+      "category": "Tooling_CLI",
+      "difficulty": "med",
+      "question": "You need to start a Standalone Activity and immediately block your terminal until it finishes, printing its result to stdout. Which `temporal activity` subcommand should you use?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "`temporal activity start`, then poll `temporal activity result` in a loop, because `start` itself never blocks and there is no single blocking command."
+        },
+        {
+          "key": "B",
+          "text": "`temporal activity execute`, which starts the Standalone Activity and blocks until it completes, then outputs the result to stdout in a single command."
+        },
+        {
+          "key": "C",
+          "text": "`temporal activity start --wait`, using the `--wait` flag to make the `start` subcommand block synchronously until the activity finishes and prints its output."
+        },
+        {
+          "key": "D",
+          "text": "`temporal activity result --activity-id \u003cid\u003e` run immediately after `temporal activity start`, since `result` blocks and the two together form the standard blocking pattern."
+        }
+      ],
+      "answer": "B",
+      "explanation": "`temporal activity execute` is explicitly designed to start a new Standalone Activity and block until it completes, outputting the result to stdout — all in one command. This is the right tool when you want synchronous, terminal-blocking behavior. Option A is partially true in mechanics but wrong in conclusion — `execute` is the single blocking command for this purpose. Option C is wrong because `temporal activity start` has no `--wait` flag; it is a fire-and-forget command that only outputs the Activity ID and Run ID. Option D describes a valid two-step workaround, but `result` requires the activity to have already been started and identified by ID first, and the docs show `execute` as the idiomatic single-command solution.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    },
+    {
+      "id": "tooling_cli_nightmare_002",
+      "category": "Tooling_CLI",
+      "difficulty": "nightmare",
+      "question": "A platform team uses Standalone Activities (not embedded in Workflows) for high-throughput, idempotent data pipeline tasks. They start activities with `--id-reuse-policy RejectDuplicate` and `--id-conflict-policy UseExisting`. During an incident, an operator tries to externally complete a stuck Standalone Activity using:\n\n```\ntemporal activity complete \\\n    --activity-id pipeline-task-8801 \\\n    --result '{\"status\": \"force-completed\"}'\n```\n\nnotably omitting `--workflow-id`. A junior engineer argues they also need to pass `--workflow-id` for this to work. What actually happens and why?",
+      "choices": [
+        {
+          "key": "A",
+          "text": "The command succeeds without --workflow-id because Standalone Activities are not owned by any Workflow execution. The --workflow-id flag is only required when completing Activities that were scheduled by a Workflow, and omitting it for a Standalone Activity is the correct invocation per the CLI's activity complete semantics."
+        },
+        {
+          "key": "B",
+          "text": "The command fails because --workflow-id is always required by the activity complete subcommand regardless of whether the Activity is standalone or workflow-owned. The CLI cannot distinguish between the two types without an explicit workflow ID, so it rejects the request with a missing-required-flag validation error."
+        },
+        {
+          "key": "C",
+          "text": "The command succeeds but targets the most recent run of any Activity with that ID across all namespaces, since without a --workflow-id the server uses global deduplication state. This can inadvertently complete an Activity in a different namespace if the activity-id collides."
+        },
+        {
+          "key": "D",
+          "text": "The command succeeds but the --id-reuse-policy RejectDuplicate means that once this Activity is marked complete, any future attempt to start a new Standalone Activity with the same ID will be silently dropped rather than returning an error, creating a hidden deduplication trap for the pipeline."
+        }
+      ],
+      "answer": "A",
+      "explanation": "The CLI documentation for `activity complete` states: '--workflow-id: Workflow ID. Required for workflow Activities. Omit for Standalone Activities.' This is a direct statement that --workflow-id must be omitted (not just optional) for Standalone Activities, and is required only for workflow-owned Activities. The junior engineer is wrong. This reflects a fundamental architectural distinction: Standalone Activities have their own independent lifecycle and identity on the Temporal server, not anchored to any Workflow execution's event history. When you complete a Standalone Activity externally, the server resolves it purely by activity-id (and optionally the Activity Run ID for precision). Option B is wrong because the flag is explicitly documented as 'Omit for Standalone Activities.' Option C is wrong because visibility and activity resolution are always scoped to a namespace — the CLI's --namespace global flag controls this, and there is no cross-namespace deduplication. Option D conflates two separate concepts: the --id-reuse-policy governs what happens when you try to *start* a new Standalone Activity with the same ID after a prior one has completed — RejectDuplicate would cause the new start to be rejected, not silently dropped. The deeper production insight is that the --id-reuse-policy and --id-conflict-policy flags on Standalone Activities give you exactly-once and at-most-once semantics for pipeline tasks without needing a Workflow layer, but you need to understand the interaction: UseExisting means concurrent duplicate starts coalesce onto the running instance, while RejectDuplicate means post-completion restarts are explicitly blocked unless you use AllowDuplicate. Operators working incidents must understand which policy applies to correctly diagnose whether a force-complete will unblock downstream starts.",
+      "source_doc": "cli_activity.html",
+      "generated_at": "2026-04-21T16:15:08Z"
+    }
+  ]
+}
