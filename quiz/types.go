@@ -38,6 +38,13 @@ var PriorityCategories = []string{
 	"Features_WorkerVersioning",
 	"Features_DataConversion",
 	"Features_Security",
+	// Cloud-first operator features that matter on day one of running
+	// Temporal in production. Split out of Operations_TemporalCloud so
+	// they get their own coverage each run instead of being averaged into
+	// a single "cloud" bucket.
+	"Features_Export",
+	"Features_Observability",
+	"Features_HighAvailability",
 }
 
 // IsPriorityCategory reports whether the given category is in PriorityCategories.

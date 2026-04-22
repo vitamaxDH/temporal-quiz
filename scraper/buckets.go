@@ -27,7 +27,11 @@ var Buckets = map[string][]string{
 	"Features_WorkerVersioning": {"worker-versioning", "versioning", "build-id", "deployments", "deployment-version"},
 	"Features_Composition":      {"continue-as-new", "child-workflows", "child-workflow", "side-effects", "side-effect"},
 	"Features_Visibility":       {"visibility", "search-attribute", "search-attributes", "list-filter", "list-filters", "dual-visibility"},
-	"Features_Export":           {"export", "continuous-export", "bigquery"},
+	// cloud_export_* covers the real Temporal Cloud docs (cloud_export_aws-s3.html,
+	// cloud_export_gcs.html, cloud_export_bigquery.html) so they route to
+	// Features_Export instead of getting swallowed by Operations_TemporalCloud's
+	// bare "cloud" prefix in pass-1's full-name HasPrefix check.
+	"Features_Export":           {"cloud_export", "export", "continuous-export", "bigquery"},
 
 	// --- Data & Security ---
 	"Features_DataConversion":    {"dataconversion", "data-conversion", "payload", "codec", "failure-converter", "remote-data"},
@@ -35,9 +39,17 @@ var Buckets = map[string][]string{
 	"Features_ConnectivityRules": {"connectivity", "tls", "mtls", "private-link", "privatelink", "ip-allowlist", "ip-allowlists"},
 
 	// --- Operations ---
-	"Features_Namespaces":      {"namespaces", "namespace", "global-namespace"},
-	"Operations_TemporalCloud": {"cloud"},
-	"Operations_SelfHosted":    {"self-hosted", "production", "troubleshooting", "best-practices", "deployment", "ops"},
+	"Features_Namespaces": {"namespaces", "namespace", "global-namespace"},
+	// These three are Cloud-first topics that used to get buried under
+	// Operations_TemporalCloud's bare "cloud" prefix. They include the
+	// two-segment "cloud_<feature>" form so pass-1's full-name HasPrefix
+	// check anchors cloud_<feature>.html here before Operations_TemporalCloud
+	// claims it. Listed ahead of Operations_TemporalCloud in bucketOrder.
+	"Features_AuditLogging":     {"cloud_audit-log", "audit-log", "audit-logging", "siem"},
+	"Features_Observability":    {"cloud_metrics", "cloud_monitor", "cloud_prometheus", "cloud_grafana", "monitor-worker-health", "monitor-temporal-cloud", "sdk-metrics", "prometheus", "grafana", "observability"},
+	"Features_HighAvailability": {"cloud_high-availability", "cloud_multi-region", "cloud_failover", "cloud_replication", "cloud_rpo", "cloud_rto", "high-availability", "multi-region", "failover", "disaster-recovery"},
+	"Operations_TemporalCloud":  {"cloud"},
+	"Operations_SelfHosted":     {"self-hosted", "production", "troubleshooting", "best-practices", "deployment", "ops"},
 
 	// --- Concepts ---
 	"General_Concepts": {"evaluate", "encyclopedia", "glossary", "why-temporal", "concepts", "key-concepts", "temporal-service"},
@@ -76,6 +88,9 @@ var bucketOrder = []string{
 	"Features_Activities",
 	"Features_Workflows",
 	"Features_Workers",            // after WorkerVersioning
+	"Features_AuditLogging",       // before Operations_TemporalCloud ("cloud")
+	"Features_Observability",      // before Operations_TemporalCloud ("cloud")
+	"Features_HighAvailability",   // before Operations_TemporalCloud ("cloud")
 	"Operations_TemporalCloud",
 	"Operations_SelfHosted",
 	"General_Concepts",
@@ -142,13 +157,16 @@ func SortedBucketKeys() []string {
 	return []string{
 		"Develop",
 		"Features_Activities",
+		"Features_AuditLogging",
 		"Features_ConnectivityRules",
 		"Features_Composition",
 		"Features_DataConversion",
 		"Features_Export",
+		"Features_HighAvailability",
 		"Features_History",
 		"Features_Namespaces",
 		"Features_Nexus",
+		"Features_Observability",
 		"Features_Schedules",
 		"Features_Security",
 		"Features_Signals_Queries_Updates",

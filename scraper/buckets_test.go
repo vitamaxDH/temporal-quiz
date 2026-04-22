@@ -54,6 +54,10 @@ func TestGetBucketKey(t *testing.T) {
 		{"search-attribute.html", "Features_Visibility"},
 		{"export-bigquery.html", "Features_Export"},
 		{"continuous-export.html", "Features_Export"},
+		{"cloud_export_aws-s3.html", "Features_Export"},
+		{"cloud_export_gcs.html", "Features_Export"},
+		{"cloud_export_bigquery.html", "Features_Export"},
+		{"cloud_export_overview.html", "Features_Export"},
 
 		// Data & security
 		{"dataconversion.html", "Features_DataConversion"},
@@ -68,6 +72,23 @@ func TestGetBucketKey(t *testing.T) {
 		{"namespaces.html", "Features_Namespaces"},
 		{"self-hosted-guide.html", "Operations_SelfHosted"},
 		{"cloud-namespaces.html", "Operations_TemporalCloud"},
+
+		// Cloud-level feature buckets split out of Operations_TemporalCloud.
+		// The "cloud_<feature>" forms must win over the bare "cloud" prefix.
+		{"cloud_audit-logging.html", "Features_AuditLogging"},
+		{"audit-logging.html", "Features_AuditLogging"},
+		{"cloud_metrics.html", "Features_Observability"},
+		{"cloud_monitor-worker-health.html", "Features_Observability"},
+		{"cloud_monitor-temporal-cloud.html", "Features_Observability"},
+		{"sdk-metrics.html", "Features_Observability"},
+		{"cloud_high-availability.html", "Features_HighAvailability"},
+		{"cloud_rpo-and-rto.html", "Features_HighAvailability"},
+		{"cloud_multi-region.html", "Features_HighAvailability"},
+		{"high-availability.html", "Features_HighAvailability"},
+		// Generic cloud docs still fall through to Operations_TemporalCloud.
+		{"cloud_overview.html", "Operations_TemporalCloud"},
+		{"cloud_notifications.html", "Operations_TemporalCloud"},
+		{"cloud_billing.html", "Operations_TemporalCloud"},
 
 		// Tooling / concepts
 		{"ai-cookbook-intro.html", "Tooling_AI_Cookbook"},
