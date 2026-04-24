@@ -7,10 +7,31 @@ import "fmt"
 // Anthropic prompt caching) and each difficulty only contributes its
 // unique RULES / RELATIONSHIP bits on top.
 
-const choiceQualitySection = `CHOICE QUALITY (critical — avoid these MCQ tells):
-- All four choices (A, B, C, D) must be comparable in length and specificity. Aim for within ~20% word count of each other.
-- The correct answer must NOT be the longest, most hedged, most qualified, or most "textbook-sounding" option. Wrong answers should not be noticeably terser.
-- Rotate which letter is correct across the question set so A/B/C/D are roughly evenly distributed. Do NOT default to a single letter.`
+const choiceQualitySection = `CHOICE QUALITY (critical, avoid these MCQ tells):
+
+LENGTH PARITY (hard constraint, highest priority):
+- Count the words of each of the four choices. The correct choice MUST NOT be the single longest choice. Ideally make the correct choice the SHORTEST or MEDIAN-length of the four.
+- The correct choice word count MUST be <= 1.10x the average word count of the three wrong choices. If this ratio is exceeded, you MUST either shorten the correct choice or lengthen the wrong choices before returning.
+- Do NOT pad the correct choice with hedges, qualifiers, parenthetical clarifications, or "textbook-sounding" phrasing to make it more precise. Keep it lean.
+- When the correct answer is naturally a longer concept, extend the wrong answers with equally specific, equally plausible detail (real Temporal terms, real API names, real operator concerns) so they match length without becoming absurd.
+
+STYLE PARITY:
+- All four choices must share the same grammatical shape (all noun phrases, or all full sentences, or all code snippets of comparable structure). Do NOT mix shapes.
+- No choice may be visibly more hedged, more qualified, more jargon-dense, or more "complete-sentence textbook" than the others.
+- Every wrong answer must be a plausible misconception a real Temporal user could hold. No joke options, no obviously-wrong filler.
+
+LETTER ROTATION:
+- Across the question set you return, the correct letter MUST be roughly evenly distributed across A, B, C, D. Target each letter at 20-30% frequency. Do NOT default to a single letter, and do NOT use the same letter for more than two consecutive questions.
+
+MANDATORY SELF-CHECK (perform silently before returning JSON):
+For EACH question, verify:
+  1. Word count of correct choice vs max(word count of wrong choices). If correct is strictly largest, rewrite.
+  2. Ratio of correct-choice word count to AVG(wrong-choice word counts). If > 1.10, rewrite.
+  3. All four choices share the same grammatical shape. If not, rewrite.
+  4. No choice is more hedged / qualified / jargon-heavy than the rest. If so, rewrite.
+For the full set, verify:
+  5. The correct-letter distribution. If any letter appears in > 40% of answers, reassign letters by permuting choices within questions until balanced.
+Only emit JSON after every check above passes.`
 
 const topicalSpreadSection = `TOPICAL SPREAD:
 - If the documentation covers a core Temporal primitive (Workflows, Activities, Workers, Task Queues, Signals, Queries, Updates, Nexus, Data Converter, Retry Policies, Schedules, Child Workflows, Continue-As-New, Versioning, etc.), spread the questions across a diverse set of sub-topics — definition, lifecycle, common APIs, typical usage, and common pitfalls — rather than clustering on one narrow aspect.
@@ -137,7 +158,7 @@ func GenerationUserMsg(n int, difficulty, bucketText string) string {
 // every eval batch in a pipeline run.
 const EvalSystem = `You are a quiz quality evaluator for Temporal platform educational content. Evaluate each question on these criteria (score 1-5):
 
-1. CLARITY: Is the question unambiguous? Is there exactly one clearly correct answer? Are the four choices comparable in length and specificity (no choice should be noticeably longer, more hedged, or more qualified than the others)?
+1. CLARITY: Is the question unambiguous? Is there exactly one clearly correct answer? Are the four choices comparable in length and specificity? Apply this concrete length rule: count the words of each choice, then FAIL CLARITY (score <= 2) if the correct choice is strictly the single longest, OR if the correct choice's word count exceeds 1.10x the average word count of the three wrong choices. Also FAIL CLARITY if the correct choice is more hedged, more qualified, or more "textbook-sounding" than the wrong choices, or if the four choices do not share the same grammatical shape.
 2. ACCURACY: Is the stated correct answer actually correct AND aligned with current Temporal behavior? Reject answers that depend on deprecated APIs or patterns (for example, legacy Cron fields when Schedules are the recommended replacement, or outdated signal handler signatures).
 3. DIFFICULTY_FIT: Does the difficulty label (easy/med/hard/nightmare) match the actual difficulty?
 4. EXPLANATION: Does the explanation teach something useful and correctly explain why the answer is right?
