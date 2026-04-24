@@ -980,15 +980,15 @@ async function startCustomSession() {
     ? customConfig.categories
     : (manifest?.categories?.map(c => c.category) ?? []);
 
-  let pool = [];
-  for (const cat of chosenCats) {
+  const settled = await Promise.all(chosenCats.map(async cat => {
     try {
-      const qs = await fetchCategoryQuestions(cat);
-      pool.push(...qs);
+      return await fetchCategoryQuestions(cat);
     } catch (e) {
       console.error('Failed to load category for custom session', cat, e);
+      return [];
     }
-  }
+  }));
+  let pool = settled.flat();
 
   if (customConfig.difficulties.length > 0) {
     pool = pool.filter(q => customConfig.difficulties.includes(q.difficulty));
@@ -1019,10 +1019,18 @@ async function startCustomSession() {
 /* ---- Session ---- */
 
 async function startAutoSession() {
+  const fetched = await Promise.all(manifest.categories.map(async cat => {
+    try {
+      const qs = await fetchCategoryQuestions(cat.category);
+      return { category: cat.category, qs };
+    } catch (e) {
+      console.error('Failed to load category for auto session', cat.category, e);
+      return { category: cat.category, qs: [] };
+    }
+  }));
   const all = [];
-  for (const cat of manifest.categories) {
-    const qs = await fetchCategoryQuestions(cat.category);
-    const stats = state.categoryStats[cat.category];
+  for (const { category, qs } of fetched) {
+    const stats = state.categoryStats[category];
     const accuracy = stats && stats.answered > 0 ? stats.correct / stats.answered : 1;
     if (accuracy < 0.7) all.push(...qs, ...qs);
     else all.push(...qs);
