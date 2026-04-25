@@ -415,6 +415,7 @@ body::after {
 }
 
 .pill {
+  appearance: none;
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 400;
@@ -548,6 +549,10 @@ body::after {
   color: var(--text-secondary);
 }
 
+.quiz-stage {
+  position: relative;
+}
+
 /* Question card */
 .question-card {
   background: var(--bg-card);
@@ -565,6 +570,7 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 14px;
   margin-bottom: 16px;
 }
 .question-meta-left {
@@ -607,6 +613,65 @@ body::after {
   font-size: 10px;
   color: var(--text-muted);
 }
+.quiz-copy {
+  position: absolute;
+  top: 0;
+  right: -92px;
+  z-index: 20;
+}
+.quiz-copy[hidden] {
+  display: none;
+}
+.quiz-copy-trigger {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  min-width: 68px;
+  padding: 7px 10px;
+}
+.quiz-copy-trigger.copied {
+  color: var(--correct);
+  border-color: rgba(34, 197, 94, 0.45);
+  background: var(--correct-glow);
+}
+.quiz-copy-trigger.copy-failed {
+  color: var(--wrong);
+  border-color: rgba(239, 68, 68, 0.45);
+  background: var(--wrong-glow);
+}
+.quiz-copy-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 136px;
+  list-style: none;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+}
+.quiz-copy-menu button {
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  padding: 8px 10px;
+  text-align: left;
+}
+.quiz-copy-menu button:hover,
+.quiz-copy-menu button:focus-visible {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  outline: none;
+}
 
 /* Colored difficulty badge — rendered by difficultyDots().
    Four tiers: easy (green), med (amber), hard (orange), nightmare (red).
@@ -626,6 +691,13 @@ body::after {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+}
+.difficulty-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+  letter-spacing: 0;
 }
 
 .difficulty-easy      { color: var(--correct); background: var(--correct-glow); border-color: rgba(34, 197, 94, 0.35); }
@@ -658,9 +730,12 @@ html[data-theme="light"] .difficulty-all {
    is shown with a matching-color ring + slight lift so it never needs a
    separate purple selection pill around it. */
 .diff-chip {
+  appearance: none;
   display: inline-flex;
   cursor: pointer;
   user-select: none;
+  border: 0;
+  background: transparent;
   border-radius: 999px;
   padding: 2px;
   opacity: 0.45;
@@ -732,13 +807,18 @@ code {
   margin-bottom: 20px;
 }
 .answer {
+  width: 100%;
   display: flex;
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
+  appearance: none;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
   transition: all 0.15s ease;
   user-select: none;
@@ -1111,6 +1191,20 @@ code {
   flex-direction: column;
   gap: 10px;
 }
+.custom-source-grid {
+  gap: 8px;
+}
+.custom-source-dates {
+  gap: 6px;
+}
+.custom-source-dates:empty {
+  display: none;
+}
+.customize-source-note {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
 .customize-group {
   display: flex;
   flex-direction: column;
@@ -1211,6 +1305,24 @@ code {
    buttons, and action row off-screen. */
 @media (max-width: 768px) {
   body { zoom: 1; }
+}
+
+@media (max-width: 920px) {
+  .quiz-copy {
+    position: relative;
+    top: auto;
+    right: auto;
+    display: flex;
+    justify-content: flex-end;
+    margin: -6px 0 10px;
+  }
+  .quiz-copy[hidden] {
+    display: none;
+  }
+  .quiz-copy-menu {
+    top: calc(100% + 4px);
+    right: 0;
+  }
 }
 
 @media (max-width: 480px) {

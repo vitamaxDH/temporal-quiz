@@ -7,8 +7,8 @@
   <link rel="icon" href="favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=70">
-  <script src="app.js?v=70" defer></script>
+  <link rel="stylesheet" href="style.css?v=77">
+  <script src="app.js?v=77" defer></script>
 </head>
 <body>
 <canvas id="confettiCanvas" aria-hidden="true"></canvas>
@@ -16,8 +16,8 @@
   <span class="ptr-icon">&#8635;</span>
 </div>
 <div class="quiz-generated" id="quizGenerated" title="When the current quiz run was generated"></div>
-<div class="app">
-  <div class="header">
+<main class="app">
+  <header class="header">
     <div class="logo-mark">
       <img src="temporal-logo.svg" alt="Temporal" width="56" height="56">
     </div>
@@ -31,12 +31,14 @@
       <button class="btn btn-ghost" id="notesBtn">Notes</button>
       <button class="btn btn-ghost btn-history" id="historyBtn">History</button>
     </nav>
-  </div>
+  </header>
 
-  <div class="section-label run-section-label" style="display:none;">Quiz date</div>
-  <div class="run-picker" style="display:none;"></div>
+  <section class="run-selector" aria-label="Quiz date">
+    <h2 class="section-label run-section-label" style="display:none;">Quiz date</h2>
+    <nav class="run-picker" style="display:none;" aria-label="Available quiz dates"></nav>
+  </section>
 
-  <div class="stats">
+  <section class="stats" aria-label="Quiz statistics">
     <div class="progress-ring">
       <svg width="44" height="44" viewBox="0 0 44 44">
         <circle class="bg" cx="22" cy="22" r="18" />
@@ -58,17 +60,27 @@
     <div class="stat">
       <span>Session <span class="stat-value" id="statSession">0s</span></span>
     </div>
-  </div>
+  </section>
 
-  <div class="question-card">
-    <p class="question-text">Loading…</p>
-  </div>
+  <section class="quiz-stage" aria-label="Current quiz">
+    <article class="question-card">
+      <p class="question-text">Loading…</p>
+    </article>
+    <aside class="quiz-copy" id="quizCopy" aria-label="Copy quiz content" hidden>
+      <button class="btn btn-ghost quiz-copy-trigger" id="quizCopyBtn" type="button" aria-haspopup="menu" aria-expanded="false">Copy</button>
+      <menu class="quiz-copy-menu" id="quizCopyMenu" role="menu" hidden>
+        <li><button type="button" role="menuitem" data-copy-action="quiz">Copy quiz</button></li>
+        <li><button type="button" role="menuitem" data-copy-action="options">Copy options</button></li>
+        <li><button type="button" role="menuitem" data-copy-action="both">Copy both</button></li>
+      </menu>
+    </aside>
+  </section>
 
-  <div class="answers"></div>
+  <section class="answers" aria-label="Answer choices"></section>
 
-  <div class="explanation" id="explanation" style="display:none;"></div>
+  <section class="explanation" id="explanation" style="display:none;" aria-label="Answer explanation"></section>
 
-  <div class="actions">
+  <section class="actions" aria-label="Quiz actions">
     <div class="quiz-controls" id="quizControls" style="display:none;">
       <button class="btn btn-ghost quiz-control-btn" id="restartBtn" title="Restart this session from question 1">Start over</button>
       <button class="btn btn-ghost quiz-control-btn" id="scopeBtn" title="See which categories, difficulties and length are active">Status</button>
@@ -79,15 +91,15 @@
       <button class="btn btn-ghost" id="prevBtn" disabled title="Go back to the previous question">&#8592; Previous</button>
       <button class="btn btn-primary" id="submitBtn" disabled>Submit</button>
     </div>
-  </div>
+  </section>
 
-  <div class="footer">
+  <footer class="footer">
     powered by <a href="https://temporal.io">temporal</a> + claude &middot; updated daily
-  </div>
-  <div class="disclaimer">
+  </footer>
+  <p class="disclaimer">
     Disclaimer: This is not an official Temporal quiz website. It is an unofficial, community-made project and is not affiliated with or endorsed by Temporal Technologies.
-  </div>
-</div>
+  </p>
+</main>
 
 <div class="modal-backdrop" id="modalBackdrop" style="display:none;">
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -101,7 +113,7 @@
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
-<div class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar" aria-label="Quiz history">
   <div class="sidebar-header">
     <h2>History</h2>
     <div class="sidebar-header-actions">
@@ -110,10 +122,10 @@
     </div>
   </div>
   <div class="sidebar-list" id="historyList"></div>
-</div>
+</aside>
 
 <div class="sidebar-overlay" id="notesSidebarOverlay"></div>
-<div class="sidebar" id="notesSidebar">
+<aside class="sidebar" id="notesSidebar" aria-label="Notes">
   <div class="sidebar-header">
     <h2>Notes</h2>
     <div class="sidebar-header-actions">
@@ -122,11 +134,11 @@
     </div>
   </div>
   <div class="sidebar-list" id="notesList"></div>
-</div>
+</aside>
 
 <button class="btn toolbox-launcher" id="toolboxLauncher" title="Tools">&#128736;</button>
 
-<div class="toolbox" id="toolbox" style="display:none;">
+<aside class="toolbox" id="toolbox" style="display:none;" aria-label="Quiz tools">
   <div class="toolbox-header" id="toolboxHeader">
     <span class="toolbox-title">Tools</span>
     <div class="toolbox-tabs" id="toolboxTabs">
@@ -138,6 +150,6 @@
     <button class="btn btn-ghost toolbox-close" id="toolboxClose" title="Close">&times;</button>
   </div>
   <div class="toolbox-body" id="toolboxBody"></div>
-</div>
+</aside>
 </body>
 </html>

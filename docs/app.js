@@ -18,6 +18,8 @@ let sessionWrongItems = []; // [{ question, choices, answer, selectedKey, diffic
 
 // Custom config (persisted to localStorage via saveState)
 let customConfig = {
+  sourceMode: 'date',
+  dates: [],
   categories: [],
   difficulties: [],
   length: 10,
@@ -28,7 +30,16 @@ let customConfig = {
 // back to the legacy flat layout (no runs.json on the server).
 let runs = [];
 let currentRun = null;
+let runManifestCache = {};
+const questionSetCache = new Map();
 const MAX_RUNS_VISIBLE = 7;
+
+let customPoolStats = {
+  baseTotal: null,
+  filteredTotal: null,
+  byDifficulty: { easy: null, med: null, hard: null, nightmare: null }
+};
+let customPoolStatsSeq = 0;
 
 // Notes UI state (session-only, not persisted)
 let notesActiveCategory = null;
@@ -59,6 +70,9 @@ function loadState() {
       if (!state.questionNotes) state.questionNotes = {};
       if (parsed.customConfig) {
         customConfig = { ...customConfig, ...parsed.customConfig };
+        if (customConfig.sourceMode !== 'category') customConfig.sourceMode = 'date';
+        if (!Array.isArray(customConfig.dates)) customConfig.dates = [];
+        customConfig.dates = customConfig.dates.filter(date => typeof date === 'string');
         if (customConfig.length === null) customConfig.length = Infinity;
       }
     }
@@ -134,6 +148,139 @@ function escapeHtml(s) {
   }[c]));
 }
 
+function normalizeClipboardText(text) {
+  return (text || '').replace(/\r\n/g, '\n').trim();
+}
+
+function formatChoicesForClipboard(q) {
+  return (q?.choices || [])
+    .map(choice => `${choice.key}. ${normalizeClipboardText(choice.text)}`)
+    .join('\n');
+}
+
+function formatQuizForClipboard(q) {
+  if (!q) return '';
+  const topic = [formatCategoryLabel(q.category || ''), formatSubcategory(q.source_doc)]
+    .filter(Boolean)
+    .join(' / ');
+  const lines = [];
+  if (topic) lines.push(`Topic: ${topic}`);
+  if (q.difficulty) lines.push(`Difficulty: ${q.difficulty}`);
+  if (lines.length) lines.push('');
+  lines.push('Question:');
+  lines.push(normalizeClipboardText(q.question));
+  return lines.join('\n');
+}
+
+function formatQuizAndOptionsForClipboard(q) {
+  if (!q) return '';
+  const lines = [formatQuizForClipboard(q), '', 'Options:', formatChoicesForClipboard(q)];
+  return lines.join('\n');
+}
+
+function formatCopyActionText(action, q) {
+  switch (action) {
+  case 'quiz':
+    return formatQuizForClipboard(q);
+  case 'options':
+    return formatChoicesForClipboard(q);
+  case 'both':
+    return formatQuizAndOptionsForClipboard(q);
+  default:
+    return '';
+  }
+}
+
+function setQuizCopyVisible(visible) {
+  const el = document.getElementById('quizCopy');
+  if (!el) return;
+  el.hidden = !visible;
+  if (!visible) setQuizCopyMenuOpen(false);
+}
+
+function setQuizCopyMenuOpen(open) {
+  const menu = document.getElementById('quizCopyMenu');
+  const btn = document.getElementById('quizCopyBtn');
+  if (!menu || !btn) return;
+  menu.hidden = !open;
+  btn.setAttribute('aria-expanded', String(open));
+}
+
+function toggleQuizCopyMenu() {
+  const menu = document.getElementById('quizCopyMenu');
+  if (!menu) return;
+  setQuizCopyMenuOpen(menu.hidden);
+}
+
+function handleQuizCopyAction(e) {
+  const option = e.target.closest('[data-copy-action]');
+  if (!option) return;
+  const q = questions[currentIndex];
+  const text = formatCopyActionText(option.dataset.copyAction, q);
+  setQuizCopyMenuOpen(false);
+  copyTextToClipboard(text, document.getElementById('quizCopyBtn'));
+}
+
+function closeQuizCopyOnOutsideClick(e) {
+  if (e.target.closest('.quiz-copy')) return;
+  setQuizCopyMenuOpen(false);
+}
+
+function closeQuizCopyOnEscape(e) {
+  if (e.key === 'Escape') setQuizCopyMenuOpen(false);
+}
+
+function bindQuizCopyControls() {
+  document.getElementById('quizCopyBtn')?.addEventListener('click', toggleQuizCopyMenu);
+  document.getElementById('quizCopyMenu')?.addEventListener('click', handleQuizCopyAction);
+  document.addEventListener('click', closeQuizCopyOnOutsideClick);
+  document.addEventListener('keydown', closeQuizCopyOnEscape);
+}
+
+function fallbackCopyText(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  ta.style.top = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  const ok = document.execCommand('copy');
+  document.body.removeChild(ta);
+  if (!ok) throw new Error('copy command failed');
+}
+
+async function copyTextToClipboard(text, btn) {
+  if (!text) return;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      fallbackCopyText(text);
+    }
+    flashCopyButton(btn);
+  } catch (e) {
+    console.warn('Failed to copy quiz text', e);
+    flashCopyButton(btn, 'Copy failed');
+  }
+}
+
+function flashCopyButton(btn, label = 'Copied') {
+  if (!btn) return;
+  const original = btn.dataset.copyLabel || btn.textContent;
+  btn.dataset.copyLabel = original;
+  btn.textContent = label;
+  btn.classList.remove('copied', 'copy-failed');
+  btn.classList.add(label === 'Copied' ? 'copied' : 'copy-failed');
+  clearTimeout(btn._copyTimer);
+  btn._copyTimer = setTimeout(() => {
+    if (!btn.isConnected) return;
+    btn.textContent = original;
+    btn.classList.remove('copied', 'copy-failed');
+  }, 1100);
+}
+
 /* ---- Format helpers ---- */
 
 function formatQuestion(text) {
@@ -170,10 +317,24 @@ function formatQuestion(text) {
   return text;
 }
 
-function difficultyDots(difficulty) {
+function formatDifficultyLabel(difficulty) {
+  return difficulty === 'med' ? 'medium' : (difficulty || 'easy');
+}
+
+function difficultyDots(difficulty, count = null) {
   const levels = { easy: 1, med: 2, hard: 3, nightmare: 4 };
   const safe = levels[difficulty] ? difficulty : 'easy';
-  return `<span class="difficulty-badge difficulty-${safe}"><span class="difficulty-label">${difficulty}</span></span>`;
+  const countHtml = count === null ? '' : `<span class="difficulty-count">(${count})</span>`;
+  return `<span class="difficulty-badge difficulty-${safe}"><span class="difficulty-label">${formatDifficultyLabel(safe)}</span>${countHtml}</span>`;
+}
+
+function difficultyAllBadge(count = null) {
+  const countHtml = count === null ? '' : `<span class="difficulty-count">(${count})</span>`;
+  return `<span class="difficulty-badge difficulty-all"><span class="difficulty-label">all</span>${countHtml}</span>`;
+}
+
+function createEmptyDifficultyStats() {
+  return { easy: null, med: null, hard: null, nightmare: null };
 }
 
 function formatCategoryLabel(category) {
@@ -189,8 +350,12 @@ function formatCategoryLabel(category) {
    only the last underscore-separated segment for brevity. */
 /* Resolve the URL prefix for fetching quiz data. All content lives under
    quizzes/runs/<YYYY-MM-DD>/ and currentRun comes from runs.json. */
+function runQuizPath(runDate, suffix) {
+  return `quizzes/runs/${runDate}/${suffix}`;
+}
+
 function quizPath(suffix) {
-  return `quizzes/runs/${currentRun}/${suffix}`;
+  return runQuizPath(currentRun, suffix);
 }
 
 /* Human-friendly label for a YYYY-MM-DD run date.
@@ -258,6 +423,7 @@ async function init() {
     const btn = e.target.closest('.toolbox-tab');
     if (btn) setToolboxTab(btn.dataset.tab);
   });
+  bindQuizCopyControls();
   initToolboxDrag();
   applyToolboxPosition();
   window.addEventListener('resize', applyToolboxPosition);
@@ -298,7 +464,29 @@ async function loadRuns() {
 async function loadManifest() {
   const res = await fetch(quizPath('manifest.json'), { cache: 'no-store' });
   manifest = await res.json();
+  if (currentRun) runManifestCache[currentRun] = manifest;
   updateGeneratedBadge();
+}
+
+async function fetchRunManifest(runDate) {
+  if (!runDate) return null;
+  if (runManifestCache[runDate]) return runManifestCache[runDate];
+  const res = await fetch(runQuizPath(runDate, 'manifest.json'), { cache: 'no-store' });
+  if (!res.ok) throw new Error(`manifest ${runDate}: ${res.status}`);
+  const data = await res.json();
+  runManifestCache[runDate] = data;
+  return data;
+}
+
+async function ensureRunManifests() {
+  if (!runs.length) {
+    if (currentRun && manifest) runManifestCache[currentRun] = manifest;
+    return;
+  }
+  await Promise.all(runs.map(run => fetchRunManifest(run.date).catch(e => {
+    console.warn('Failed to load run manifest', run.date, e);
+    return null;
+  })));
 }
 
 function updateGeneratedBadge() {
@@ -315,40 +503,82 @@ function updateGeneratedBadge() {
 
 /* ---- Run picker ---- */
 
-function renderRunPicker() {
-  const labelEl = document.querySelector('.run-section-label');
-  const container = document.querySelector('.run-picker');
-  if (!container || !labelEl) return;
+function getLandingSubview() {
+  if (document.querySelector('.customize')) return 'customize';
+  if (document.querySelector('.about')) return 'about';
+  return 'landing';
+}
 
-  // Hide the picker entirely when there's nothing meaningful to switch to.
-  if (runs.length < 2) {
-    container.style.display = 'none';
-    labelEl.style.display = 'none';
-    container.innerHTML = '';
-    return;
-  }
-
-  container.style.display = '';
-  labelEl.style.display = '';
+function populateRunPicker(container, { activeDates = [], onSelect = setRun } = {}) {
+  if (!container) return;
   container.innerHTML = '';
+  const activeSet = new Set(activeDates);
 
   const visible = runs.slice(0, MAX_RUNS_VISIBLE);
   visible.forEach(run => {
-    const pill = document.createElement('div');
+    const pill = document.createElement('button');
+    pill.type = 'button';
     pill.className = 'pill pill-run';
-    if (run.date === currentRun) pill.classList.add('active');
+    if (activeSet.has(run.date)) pill.classList.add('active');
     pill.dataset.run = run.date;
     pill.textContent = formatRunDate(run.date);
     pill.title = run.generated_at
       ? `${run.date} · ${run.total_count} questions · ${run.generated_at}`
       : run.date;
-    pill.addEventListener('click', () => setRun(run.date));
+    pill.addEventListener('click', () => onSelect(run.date));
     container.appendChild(pill);
+  });
+}
+
+function renderRunPicker() {
+  const sectionEl = document.querySelector('.run-selector');
+  const labelEl = document.querySelector('.run-section-label');
+  const topContainer = document.querySelector('.run-picker');
+  const inlineContainer = document.getElementById('customSourceDates');
+  if (!topContainer || !labelEl || !sectionEl) return;
+
+  topContainer.innerHTML = '';
+  if (inlineContainer) inlineContainer.innerHTML = '';
+
+  const showingCustomize = !!inlineContainer;
+  if (showingCustomize) {
+    sectionEl.style.display = 'none';
+    labelEl.style.display = 'none';
+    topContainer.style.display = 'none';
+
+    if (customConfig.sourceMode !== 'date' || runs.length < 2) {
+      inlineContainer.style.display = 'none';
+      return;
+    }
+
+    inlineContainer.style.display = 'flex';
+    populateRunPicker(inlineContainer, {
+      activeDates: getSelectedCustomDates(),
+      onSelect: toggleCustomDate
+    });
+    return;
+  }
+
+  // Hide the picker entirely when there's nothing meaningful to switch to.
+  if (runs.length < 2) {
+    sectionEl.style.display = 'none';
+    labelEl.style.display = 'none';
+    topContainer.style.display = 'none';
+    return;
+  }
+
+  sectionEl.style.display = '';
+  labelEl.style.display = '';
+  topContainer.style.display = '';
+  populateRunPicker(topContainer, {
+    activeDates: currentRun ? [currentRun] : [],
+    onSelect: setRun
   });
 }
 
 async function setRun(dateStr) {
   if (!dateStr || dateStr === currentRun) return;
+  const landingSubview = getLandingSubview();
   currentRun = dateStr;
   renderRunPicker();
 
@@ -365,32 +595,51 @@ async function setRun(dateStr) {
   selectedKey = null;
   revealed = false;
 
-  renderLanding();
+  if (landingSubview === 'customize') openCustomize();
+  else if (landingSubview === 'about') renderAbout();
+  else renderLanding();
   updateProgress();
 }
 
 /* ---- Load questions ---- */
 
 async function fetchCategoryQuestions(category) {
+  return fetchCategoryQuestionsForRun(category, currentRun);
+}
+
+async function fetchCategoryQuestionsForRun(category, runDate) {
+  const cacheKey = `${runDate}:${category}`;
+  if (questionSetCache.has(cacheKey)) return questionSetCache.get(cacheKey);
+
   // Category payloads are the bulky part of a run, so the worker writes
   // them gzip-compressed. Decode client-side via the native
   // DecompressionStream API and fall back to the plain .json file for
   // older runs that pre-date the compression switch.
-  try {
-    const gzRes = await fetch(quizPath(`${category}.json.gz`), { cache: 'no-store' });
-    if (gzRes.ok) {
-      const stream = gzRes.body.pipeThrough(new DecompressionStream('gzip'));
-      const data = await new Response(stream).json();
-      return data.questions || [];
+  const loadPromise = (async () => {
+    try {
+      const gzRes = await fetch(runQuizPath(runDate, `${category}.json.gz`), { cache: 'no-store' });
+      if (gzRes.ok) {
+        const stream = gzRes.body.pipeThrough(new DecompressionStream('gzip'));
+        const data = await new Response(stream).json();
+        return (data.questions || []).map(q => ({ ...q, run_date: runDate }));
+      }
+    } catch (e) {
+      // Network error or no DecompressionStream support — try the plain
+      // file before giving up.
+      console.warn('Compressed category fetch failed, trying .json fallback', category, runDate, e);
     }
+    const res = await fetch(runQuizPath(runDate, `${category}.json`), { cache: 'no-store' });
+    const data = await res.json();
+    return (data.questions || []).map(q => ({ ...q, run_date: runDate }));
+  })();
+
+  questionSetCache.set(cacheKey, loadPromise);
+  try {
+    return await loadPromise;
   } catch (e) {
-    // Network error or no DecompressionStream support — try the plain
-    // file before giving up.
-    console.warn('Compressed category fetch failed, trying .json fallback', category, e);
+    questionSetCache.delete(cacheKey);
+    throw e;
   }
-  const res = await fetch(quizPath(`${category}.json`), { cache: 'no-store' });
-  const data = await res.json();
-  return data.questions || [];
 }
 
 /* ---- Landing ---- */
@@ -458,6 +707,7 @@ function renderLanding() {
   mode = 'landing';
   stopMainTimer(true);
   hideQuizControls();
+  renderRunPicker();
   const card = document.querySelector('.question-card');
   const totalCount = manifest?.categories?.reduce((n, c) => n + c.question_count, 0) ?? 0;
   const runLabel = currentRun ? formatRunDate(currentRun) : 'latest';
@@ -557,11 +807,13 @@ function abandonUnfinishedSession() {
 function showQuizControls() {
   const el = document.getElementById('quizControls');
   if (el) el.style.display = 'flex';
+  setQuizCopyVisible(true);
 }
 
 function hideQuizControls() {
   const el = document.getElementById('quizControls');
   if (el) el.style.display = 'none';
+  setQuizCopyVisible(false);
 }
 
 async function restartSession() {
@@ -593,21 +845,33 @@ async function restartSession() {
 function showSessionScope() {
   if (mode !== 'quiz') return;
   const sess = state.sessions && state.sessions[0];
+  const dates = Array.isArray(sess?.config?.dates) && sess.config.dates.length
+    ? sess.config.dates
+    : (currentRun ? [currentRun] : []);
+  const fallbackCatList = sess?.config?.sourceMode === 'category'
+    ? [...getArchiveCategoryIds()]
+    : [...getCategoryIdsForDates(dates)];
 
-  const fallbackCatList = (manifest?.categories ?? []).map(c => c.category);
+  const modeLabel = sess?.config?.sourceMode === 'category'
+    ? 'Custom · by category'
+    : sess?.mode === 'custom'
+      ? 'Custom · by date'
+      : 'Quick start';
 
-  const modeLabel = sess?.mode === 'custom' ? 'Custom' : 'Quick start';
-
-  const catIds = sess?.config?.categories?.length
-    ? sess.config.categories
-    : (sess?.mode === 'custom' ? fallbackCatList : fallbackCatList);
-  const catsDisplay = (sess?.config?.categories?.length)
-    ? sess.config.categories.map(formatCategoryLabel).join(', ')
+  const configCats = Array.isArray(sess?.config?.categories) ? sess.config.categories : [];
+  const coversAllCurrentCats = configCats.length === fallbackCatList.length
+    && fallbackCatList.every(cat => configCats.includes(cat));
+  const catsDisplay = configCats.length && !coversAllCurrentCats
+    ? configCats.map(formatCategoryLabel).join(', ')
     : `All categories (${fallbackCatList.length})`;
 
   const diffsDisplay = sess?.config?.difficulties?.length
-    ? sess.config.difficulties.join(', ')
+    ? sess.config.difficulties.map(formatDifficultyLabel).join(', ')
     : 'All difficulties';
+
+  const datesDisplay = dates.length === 1
+    ? formatRunDate(dates[0])
+    : `${dates.length} quiz dates`;
 
   const lengthDisplay = Number.isFinite(sess?.planned)
     ? `${sess.planned} questions`
@@ -627,6 +891,7 @@ function showSessionScope() {
     <div class="scope-list">
       ${row('Mode', modeLabel)}
       ${row('Categories', catsDisplay)}
+      ${row('Dates', datesDisplay)}
       ${row('Difficulty', diffsDisplay)}
       ${row('Length', lengthDisplay)}
       ${row('Progress', progressDisplay)}
@@ -658,6 +923,7 @@ async function quitSession() {
 function renderAbout() {
   mode = 'landing';
   hideQuizControls();
+  renderRunPicker();
   const card = document.querySelector('.question-card');
   card.innerHTML = `
     <div class="about">
@@ -698,7 +964,14 @@ function openCustomize() {
       </div>
 
       <div class="customize-row">
-        <div class="customize-label">Categories <span class="customize-hint">(empty = all)</span></div>
+        <div class="customize-label">Source</div>
+        <div class="customize-grid custom-source-grid" id="customSourceMode"></div>
+        <div class="customize-grid custom-source-dates" id="customSourceDates"></div>
+        <div class="customize-source-note" id="customSourceNote"></div>
+      </div>
+
+      <div class="customize-row">
+        <div class="customize-label">Categories <span class="customize-hint" id="customCategoryHint"></span></div>
         <div class="customize-grid" id="customCats"></div>
       </div>
 
@@ -724,9 +997,20 @@ function openCustomize() {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Submit';
 
+  renderCustomSourceMode();
   renderCustomCategories();
   renderCustomDifficulties();
   renderCustomLengths();
+  refreshCustomizePoolStats();
+  ensureRunManifests().then(() => {
+    if (mode === 'landing' && document.getElementById('customCats')) {
+      renderCustomSourceMode();
+      renderCustomCategories();
+      refreshCustomizePoolStats();
+    }
+  }).catch(e => {
+    console.warn('Failed to refresh historical categories', e);
+  });
 
   document.getElementById('customizeBackBtn').addEventListener('click', renderLanding);
   document.getElementById('customizeStartBtn').addEventListener('click', startCustomSession);
@@ -737,6 +1021,160 @@ function toggleChip(arr, value) {
   if (i >= 0) arr.splice(i, 1);
   else arr.push(value);
   saveState();
+}
+
+function getKnownRunDates() {
+  if (runs.length > 0) return runs.map(run => run.date);
+  return currentRun ? [currentRun] : [];
+}
+
+function getSelectedCustomDates() {
+  const knownDates = getKnownRunDates();
+  const knownSet = new Set(knownDates);
+  const savedDates = Array.isArray(customConfig.dates) ? customConfig.dates : [];
+  const nextDates = savedDates.filter(date => knownSet.has(date));
+
+  if (nextDates.length === 0) {
+    if (currentRun && knownSet.has(currentRun)) nextDates.push(currentRun);
+    else if (knownDates.length > 0) nextDates.push(knownDates[0]);
+  }
+
+  if (savedDates.join('|') !== nextDates.join('|')) {
+    customConfig.dates = nextDates;
+    saveState();
+  }
+
+  return nextDates;
+}
+
+function toggleCustomDate(date) {
+  const knownDates = getKnownRunDates();
+  if (!knownDates.includes(date)) return;
+
+  const selected = new Set(getSelectedCustomDates());
+  if (selected.has(date)) {
+    if (selected.size === 1) return;
+    selected.delete(date);
+  } else {
+    selected.add(date);
+  }
+
+  customConfig.dates = knownDates.filter(runDate => selected.has(runDate));
+  saveState();
+  renderCustomSourceMode();
+  renderCustomCategories();
+  refreshCustomizePoolStats();
+}
+
+function getCategoryIdsForDate(date) {
+  const runManifest = runManifestCache[date] || (date === currentRun ? manifest : null);
+  return new Set((runManifest?.categories ?? []).map(c => c.category));
+}
+
+function getCategoryIdsForDates(dates) {
+  const ids = new Set();
+  dates.forEach(date => {
+    getCategoryIdsForDate(date).forEach(id => ids.add(id));
+  });
+  return ids;
+}
+
+function getCurrentRunCategoryIds() {
+  return getCategoryIdsForDate(currentRun);
+}
+
+function getArchiveCategoryIds() {
+  const ids = new Set((manifest?.categories ?? []).map(c => c.category));
+  getKnownRunDates().forEach(date => {
+    getCategoryIdsForDate(date).forEach(id => ids.add(id));
+  });
+  return ids;
+}
+
+function getCustomCategoryIds() {
+  return customConfig.sourceMode === 'category'
+    ? getArchiveCategoryIds()
+    : getCategoryIdsForDates(getSelectedCustomDates());
+}
+
+function getRunDatesForCategory(category) {
+  return getKnownRunDates().filter(date => {
+    const m = runManifestCache[date] || (date === currentRun ? manifest : null);
+    return (m?.categories ?? []).some(entry => entry.category === category);
+  });
+}
+
+function buildCustomCategoryRunPairs() {
+  if (customConfig.sourceMode === 'category') {
+    return customConfig.categories.flatMap(cat =>
+      getRunDatesForCategory(cat).map(date => ({ cat, date }))
+    );
+  }
+
+  return getSelectedCustomDates().flatMap(date => {
+    const dateCategoryIds = [...getCategoryIdsForDate(date)];
+    const cats = customConfig.categories.length > 0
+      ? customConfig.categories.filter(cat => dateCategoryIds.includes(cat))
+      : dateCategoryIds;
+    return cats.map(cat => ({ cat, date }));
+  });
+}
+
+async function refreshCustomizePoolStats() {
+  const host = document.getElementById('customDiffs');
+  if (!host) return;
+
+  const seq = ++customPoolStatsSeq;
+  customPoolStats = {
+    baseTotal: null,
+    filteredTotal: null,
+    byDifficulty: createEmptyDifficultyStats()
+  };
+  renderCustomDifficulties();
+  renderCustomLengths();
+
+  const categoryRunPairs = buildCustomCategoryRunPairs();
+  if (categoryRunPairs.length === 0) {
+    if (seq !== customPoolStatsSeq || !document.getElementById('customDiffs')) return;
+    customPoolStats = {
+      baseTotal: 0,
+      filteredTotal: 0,
+      byDifficulty: { easy: 0, med: 0, hard: 0, nightmare: 0 }
+    };
+    renderCustomDifficulties();
+    renderCustomLengths();
+    return;
+  }
+
+  const settled = await Promise.all(categoryRunPairs.map(async ({ cat, date }) => {
+    try {
+      return await fetchCategoryQuestionsForRun(cat, date);
+    } catch (e) {
+      console.error('Failed to load category for customize stats', cat, date, e);
+      return [];
+    }
+  }));
+
+  const basePool = settled.flat();
+  const byDifficulty = { easy: 0, med: 0, hard: 0, nightmare: 0 };
+  basePool.forEach(q => {
+    if (Object.prototype.hasOwnProperty.call(byDifficulty, q.difficulty)) {
+      byDifficulty[q.difficulty] += 1;
+    }
+  });
+
+  const filteredPool = customConfig.difficulties.length > 0
+    ? basePool.filter(q => customConfig.difficulties.includes(q.difficulty))
+    : basePool;
+
+  if (seq !== customPoolStatsSeq || !document.getElementById('customDiffs')) return;
+  customPoolStats = {
+    baseTotal: basePool.length,
+    filteredTotal: filteredPool.length,
+    byDifficulty
+  };
+  renderCustomDifficulties();
+  renderCustomLengths();
 }
 
 const CUSTOM_CATEGORY_GROUPS = [
@@ -810,17 +1248,62 @@ const CUSTOM_CATEGORY_GROUPS = [
   },
 ];
 
+function renderCustomSourceMode() {
+  const host = document.getElementById('customSourceMode');
+  const note = document.getElementById('customSourceNote');
+  const hint = document.getElementById('customCategoryHint');
+  if (!host) return;
+  host.innerHTML = '';
+
+  [
+    { value: 'date', label: 'By date' },
+    { value: 'category', label: 'By category' },
+  ].forEach(opt => {
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'pill';
+    if (customConfig.sourceMode === opt.value) pill.classList.add('active');
+    pill.textContent = opt.label;
+    pill.addEventListener('click', () => {
+      if (customConfig.sourceMode === opt.value) return;
+      customConfig.sourceMode = opt.value;
+      customConfig.categories = [];
+      saveState();
+      renderCustomSourceMode();
+      renderCustomCategories();
+      refreshCustomizePoolStats();
+    });
+    host.appendChild(pill);
+  });
+
+  if (note) {
+    const selectedDates = getSelectedCustomDates();
+    note.textContent = customConfig.sourceMode === 'category'
+      ? 'Builds a focused pool from selected categories across every archived quiz day.'
+      : selectedDates.length === 1
+        ? `Builds a pool from the selected categories in ${formatRunDate(selectedDates[0])}.`
+        : `Builds a pool from the selected categories across ${selectedDates.length} selected quiz days.`;
+  }
+  if (hint) {
+    hint.textContent = customConfig.sourceMode === 'category'
+      ? '(pick one or more topics)'
+      : '(empty = all in selected dates)';
+  }
+  renderRunPicker();
+}
+
 function renderCustomCategories() {
   const host = document.getElementById('customCats');
   if (!host) return;
   host.innerHTML = '';
 
-  const manifestIds = new Set((manifest?.categories ?? []).map(c => c.category));
+  const manifestIds = getCustomCategoryIds();
   const renderedIds = new Set();
   const selected = new Set(customConfig.categories);
 
   const makePill = (id, label) => {
-    const pill = document.createElement('div');
+    const pill = document.createElement('button');
+    pill.type = 'button';
     pill.className = 'pill';
     if (selected.has(id)) pill.classList.add('active');
     pill.textContent = label;
@@ -828,12 +1311,14 @@ function renderCustomCategories() {
     pill.addEventListener('click', () => {
       toggleChip(customConfig.categories, id);
       renderCustomCategories();
+      refreshCustomizePoolStats();
     });
     return pill;
   };
 
   const makeAllPill = (label, ids) => {
-    const pill = document.createElement('div');
+    const pill = document.createElement('button');
+    pill.type = 'button';
     pill.className = 'pill pill-all-toggle';
     const allSelected = ids.length > 0 && ids.every(id => selected.has(id));
     if (allSelected) pill.classList.add('active');
@@ -848,6 +1333,7 @@ function renderCustomCategories() {
       }
       saveState();
       renderCustomCategories();
+      refreshCustomizePoolStats();
     });
     return pill;
   };
@@ -914,13 +1400,16 @@ function renderCustomDifficulties() {
   // "All" chip — active when no specific difficulty is picked (an empty
   // filter already means every difficulty is in). Clicking it resets the
   // selection. Clicking any specific chip deactivates All implicitly.
-  const allChip = document.createElement('div');
+  const allChip = document.createElement('button');
+  allChip.type = 'button';
   allChip.className = 'diff-chip diff-chip-all';
   if (customConfig.difficulties.length === 0) allChip.classList.add('active');
-  allChip.innerHTML = '<span class="difficulty-badge difficulty-all"><span class="difficulty-label">All</span></span>';
+  allChip.innerHTML = difficultyAllBadge(customPoolStats.baseTotal);
   allChip.addEventListener('click', () => {
     customConfig.difficulties = [];
+    saveState();
     renderCustomDifficulties();
+    refreshCustomizePoolStats();
   });
   host.appendChild(allChip);
 
@@ -930,10 +1419,11 @@ function renderCustomDifficulties() {
   // unambiguous instead of the chips going dim.
   const allActive = customConfig.difficulties.length === 0;
   diffs.forEach(d => {
-    const pill = document.createElement('div');
+    const pill = document.createElement('button');
+    pill.type = 'button';
     pill.className = 'diff-chip';
     if (allActive || customConfig.difficulties.includes(d)) pill.classList.add('active');
-    pill.innerHTML = difficultyDots(d);
+    pill.innerHTML = difficultyDots(d, customPoolStats.byDifficulty[d]);
     pill.addEventListener('click', () => {
       // First click out of the All state seeds the selection with ONLY
       // the clicked difficulty. Without this, the dim-all → dim-one
@@ -943,9 +1433,11 @@ function renderCustomDifficulties() {
       } else {
         toggleChip(customConfig.difficulties, d);
       }
+      saveState();
       // Re-render so the All chip activates/deactivates in sync with the
       // specific picks.
       renderCustomDifficulties();
+      refreshCustomizePoolStats();
     });
     host.appendChild(pill);
   });
@@ -959,10 +1451,11 @@ function renderCustomLengths() {
     { value: 5,        label: '5'  },
     { value: 10,       label: '10' },
     { value: 20,       label: '20' },
-    { value: Infinity, label: '∞'  },
+    { value: Infinity, label: customPoolStats.filteredTotal === null ? '∞' : `∞ (${customPoolStats.filteredTotal})` },
   ];
   options.forEach(opt => {
-    const pill = document.createElement('div');
+    const pill = document.createElement('button');
+    pill.type = 'button';
     pill.className = 'pill';
     if (customConfig.length === opt.value) pill.classList.add('active');
     pill.textContent = opt.label;
@@ -975,16 +1468,42 @@ function renderCustomLengths() {
   });
 }
 
-async function startCustomSession() {
-  const chosenCats = customConfig.categories.length > 0
-    ? customConfig.categories
-    : (manifest?.categories?.map(c => c.category) ?? []);
+function showCustomizeEmpty(message) {
+  const host = document.querySelector('.customize');
+  if (!host) return;
+  const existing = host.querySelector('.customize-empty');
+  if (existing) existing.remove();
+  const msg = document.createElement('div');
+  msg.className = 'customize-empty';
+  msg.textContent = message;
+  host.appendChild(msg);
+}
 
-  const settled = await Promise.all(chosenCats.map(async cat => {
+async function startCustomSession() {
+  if (customConfig.sourceMode === 'category') {
+    await ensureRunManifests();
+    if (customConfig.categories.length === 0) {
+      openCustomize();
+      showCustomizeEmpty('Pick at least one category for category mode.');
+      return;
+    }
+  }
+
+  const availableCats = getCustomCategoryIds();
+  if (customConfig.categories.length > 0) {
+    customConfig.categories = customConfig.categories.filter(cat => availableCats.has(cat));
+    saveState();
+  }
+
+  const categoryRunPairs = buildCustomCategoryRunPairs();
+  const dates = Array.from(new Set(categoryRunPairs.map(pair => pair.date).filter(Boolean)));
+  const categories = Array.from(new Set(categoryRunPairs.map(pair => pair.cat)));
+
+  const settled = await Promise.all(categoryRunPairs.map(async ({ cat, date }) => {
     try {
-      return await fetchCategoryQuestions(cat);
+      return await fetchCategoryQuestionsForRun(cat, date);
     } catch (e) {
-      console.error('Failed to load category for custom session', cat, e);
+      console.error('Failed to load category for custom session', cat, date, e);
       return [];
     }
   }));
@@ -996,20 +1515,16 @@ async function startCustomSession() {
 
   if (pool.length === 0) {
     openCustomize();
-    const host = document.querySelector('.customize');
-    if (host) {
-      const msg = document.createElement('div');
-      msg.className = 'customize-empty';
-      msg.textContent = 'No questions match this filter. Widen selection.';
-      host.appendChild(msg);
-    }
+    showCustomizeEmpty('No questions match this filter. Widen selection.');
     return;
   }
 
   startSession(shuffle(pool), customConfig.length, {
     mode: 'custom',
     config: {
-      categories: [...customConfig.categories],
+      sourceMode: customConfig.sourceMode,
+      categories,
+      dates,
       difficulties: [...customConfig.difficulties],
       length: customConfig.length
     }
@@ -1047,6 +1562,7 @@ function startSession(qs, length, meta = {}) {
   questions = Number.isFinite(length) ? qs.slice(0, length) : qs;
   currentIndex = 0;
   mode = 'quiz';
+  renderRunPicker();
   if (questions.length === 0) {
     renderLanding();
     return;
@@ -1123,13 +1639,13 @@ function showQuestion() {
     ? `<span class="question-subcategory">${subcategory}</span>`
     : '';
   card.innerHTML = `
-    <div class="question-meta">
+    <header class="question-meta">
       <div class="question-meta-left">
         <span class="question-category">${formatCategoryLabel(q.category)}</span>
         ${subEl}
       </div>
       <span class="question-difficulty">${difficultyDots(q.difficulty)}</span>
-    </div>
+    </header>
     <p class="question-text">${formatQuestion(q.question)}</p>
   `;
   // Re-trigger card animation
@@ -1141,14 +1657,15 @@ function showQuestion() {
   const answersEl = document.querySelector('.answers');
   answersEl.innerHTML = '';
   q.choices.forEach(choice => {
-    const div = document.createElement('div');
-    div.className = 'answer';
-    div.innerHTML = `
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'answer';
+    btn.innerHTML = `
       <div class="answer-key">${choice.key}</div>
       <div class="answer-text">${formatQuestion(choice.text)}</div>
     `;
-    div.addEventListener('click', () => selectAnswer(choice.key));
-    answersEl.appendChild(div);
+    btn.addEventListener('click', () => selectAnswer(choice.key));
+    answersEl.appendChild(btn);
   });
 
   // Hide explanation
