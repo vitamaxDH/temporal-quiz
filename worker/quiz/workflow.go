@@ -132,6 +132,21 @@ func QuizGeneratorWorkflow(ctx workflow.Context, params QuizGenParams) (int, err
 		RetryPolicy:         &temporal.RetryPolicy{MaximumAttempts: 2},
 	}
 
+	allowlistOpts := workflow.ActivityOptions{
+		StartToCloseTimeout: 2 * time.Minute,
+		RetryPolicy:         &temporal.RetryPolicy{MaximumAttempts: 3, InitialInterval: 5 * time.Second},
+	}
+
+	validateOpts := workflow.ActivityOptions{
+		StartToCloseTimeout: 1 * time.Minute,
+		RetryPolicy:         &temporal.RetryPolicy{MaximumAttempts: 2},
+	}
+
+	fixOpts := workflow.ActivityOptions{
+		StartToCloseTimeout: 2 * time.Minute,
+		RetryPolicy:         &temporal.RetryPolicy{MaximumAttempts: 2, InitialInterval: 5 * time.Second},
+	}
+
 	// Step 1: List all bucket files
 	listCtx := workflow.WithActivityOptions(ctx, listOpts)
 	var buckets []GenerateQuizInput
@@ -228,7 +243,79 @@ func QuizGeneratorWorkflow(ctx workflow.Context, params QuizGenParams) (int, err
 		}
 	}
 
-	// Step 4: Write quiz files
+	// Step 4: Validate reference URLs against the live docs.temporal.io
+	// allowlist. Broken references get fixed (or cleared) before the
+	// questions are written to disk so the UI never serves dead links.
+	allowlistCtx := workflow.WithActivityOptions(ctx, allowlistOpts)
+	var allowlist []string
+	if err := workflow.ExecuteActivity(allowlistCtx, "FetchDocsURLAllowlist").Get(ctx, &allowlist); err != nil {
+		// Non-fatal: skip validation rather than failing the whole pipeline.
+		logger.Warn("FetchDocsURLAllowlist failed; skipping reference validation", "error", err)
+	} else if len(allowlist) > 0 {
+		validateCtx := workflow.WithActivityOptions(ctx, validateOpts)
+		var validation ValidateReferencesOutput
+		if err := workflow.ExecuteActivity(validateCtx, "ValidateReferences", ValidateReferencesInput{
+			Questions: allQuestions,
+			Allowlist: allowlist,
+		}).Get(ctx, &validation); err != nil {
+			logger.Warn("ValidateReferences failed; keeping questions as-is", "error", err)
+		} else {
+			logger.Info("Reference validation done",
+				"valid", len(validation.Valid),
+				"invalid", len(validation.Invalid))
+
+			// Fan out FixReference per invalid question so they run in
+			// parallel. Each fix call may invoke Claude when there are
+			// multiple plausible candidates for the source_doc.
+			fixCtx := workflow.WithActivityOptions(ctx, fixOpts)
+			fixFutures := make([]workflow.Future, len(validation.Invalid))
+			for i, q := range validation.Invalid {
+				fixFutures[i] = workflow.ExecuteActivity(fixCtx, "FixReference", FixReferenceInput{
+					Question:  q,
+					Allowlist: allowlist,
+				})
+			}
+			fixed := make([]QuizQuestion, 0, len(validation.Invalid))
+			fixedCount, clearedCount, droppedCount := 0, 0, 0
+			for i, f := range fixFutures {
+				var out FixReferenceOutput
+				q := validation.Invalid[i]
+				if err := f.Get(ctx, &out); err != nil {
+					logger.Warn("FixReference failed; clearing reference",
+						"question_id", q.ID, "error", err)
+					q.Reference = ""
+					fixed = append(fixed, q)
+					clearedCount++
+					continue
+				}
+				if out.Drop {
+					droppedCount++
+					continue
+				}
+				if out.FixedReference != "" {
+					q.Reference = out.FixedReference
+					fixedCount++
+				} else {
+					q.Reference = ""
+					clearedCount++
+				}
+				fixed = append(fixed, q)
+			}
+			logger.Info("Reference fix done",
+				"fixed", fixedCount,
+				"cleared", clearedCount,
+				"dropped", droppedCount)
+
+			// Reassemble the final question set: validated questions plus
+			// post-fix invalid questions (with new or cleared refs).
+			merged := make([]QuizQuestion, 0, len(validation.Valid)+len(fixed))
+			merged = append(merged, validation.Valid...)
+			merged = append(merged, fixed...)
+			allQuestions = merged
+		}
+	}
+
+	// Step 5: Write quiz files
 	writeCtx := workflow.WithActivityOptions(ctx, writeOpts)
 	if err := workflow.ExecuteActivity(writeCtx, "WriteQuizFiles", allQuestions).Get(ctx, nil); err != nil {
 		return 0, err

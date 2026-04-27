@@ -57,6 +57,10 @@ func (s *QuizWorkflowTestSuite) TestQuizGeneratorWorkflow_Success() {
 		[]QuizQuestion{{ID: "q2", Category: "Develop_Go", Difficulty: "hard"}}, nil,
 	).Once()
 
+	// Reference validation runs after all generation; mock empty allowlist
+	// so the validate/fix loop is a no-op for these synthetic questions.
+	s.env.OnActivity("FetchDocsURLAllowlist", mock.Anything).Return([]string{}, nil).Once()
+
 	s.env.OnActivity("WriteQuizFiles", mock.Anything, mock.Anything).Return(nil).Once()
 
 	s.env.ExecuteWorkflow(QuizGeneratorWorkflow, QuizGenParams{
@@ -116,6 +120,7 @@ func (s *QuizWorkflowTestSuite) TestQuizGeneratorWorkflow_WithEval() {
 			Results: []EvalResult{{QuestionID: "q1", Pass: true}, {QuestionID: "q2", Pass: false}},
 		}, nil,
 	).Once()
+	s.env.OnActivity("FetchDocsURLAllowlist", mock.Anything).Return([]string{}, nil).Once()
 	s.env.OnActivity("WriteQuizFiles", mock.Anything, mock.Anything).Return(nil).Once()
 
 	s.env.ExecuteWorkflow(QuizGeneratorWorkflow, QuizGenParams{
@@ -129,6 +134,55 @@ func (s *QuizWorkflowTestSuite) TestQuizGeneratorWorkflow_WithEval() {
 	// q1 passes, q2 fails — priority-category recovery only fires when the
 	// category loses ALL its questions, so only q1 survives.
 	require.Equal(s.T(), 1, result)
+}
+
+func (s *QuizWorkflowTestSuite) TestQuizGeneratorWorkflow_FixesBrokenReferences() {
+	buckets := []GenerateQuizInput{
+		{BucketPath: "/tmp/a.txt", Category: "Features_Workflows"},
+	}
+	s.env.OnActivity("ListBuckets", mock.Anything).Return(buckets, nil).Once()
+
+	// Two questions: one with a valid ref, one with a broken ref.
+	q1 := QuizQuestion{ID: "q1", Category: "Features_Workflows", Difficulty: "hard",
+		SourceDoc: "develop_go_workflows.html",
+		Reference: "https://docs.temporal.io/develop/go/workflows"}
+	q2 := QuizQuestion{ID: "q2", Category: "Features_Workflows", Difficulty: "hard",
+		SourceDoc: "develop_go_workflows.html",
+		Reference: "https://docs.temporal.io/develop/go/workflowz"}
+	s.env.OnActivity("GenerateQuiz", mock.Anything, mock.Anything).Return(
+		[]QuizQuestion{q1, q2}, nil,
+	).Once()
+
+	allowlist := []string{"https://docs.temporal.io/develop/go/workflows"}
+	s.env.OnActivity("FetchDocsURLAllowlist", mock.Anything).Return(allowlist, nil).Once()
+	s.env.OnActivity("ValidateReferences", mock.Anything, mock.Anything).Return(
+		ValidateReferencesOutput{
+			Valid:   []QuizQuestion{q1},
+			Invalid: []QuizQuestion{q2},
+		}, nil,
+	).Once()
+	// Fixer picks the only valid candidate for q2.
+	s.env.OnActivity("FixReference", mock.Anything, mock.Anything).Return(
+		FixReferenceOutput{FixedReference: "https://docs.temporal.io/develop/go/workflows"}, nil,
+	).Once()
+
+	var written []QuizQuestion
+	s.env.OnActivity("WriteQuizFiles", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+		written = args.Get(1).([]QuizQuestion)
+	}).Return(nil).Once()
+
+	s.env.ExecuteWorkflow(QuizGeneratorWorkflow, QuizGenParams{
+		EasyCount: 3, MedCount: 4, HardCount: 4, NightmareCount: 2,
+		SkipEval: true,
+	})
+	require.True(s.T(), s.env.IsWorkflowCompleted())
+	require.NoError(s.T(), s.env.GetWorkflowError())
+
+	require.Len(s.T(), written, 2)
+	for _, q := range written {
+		require.Equal(s.T(), "https://docs.temporal.io/develop/go/workflows", q.Reference,
+			"both questions should end up with the only valid URL")
+	}
 }
 
 func (s *QuizWorkflowTestSuite) TestDailyPipelineWorkflow_Success() {
