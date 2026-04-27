@@ -37,6 +37,20 @@ const topicalSpreadSection = `TOPICAL SPREAD:
 - If the documentation covers a core Temporal primitive (Workflows, Activities, Workers, Task Queues, Signals, Queries, Updates, Nexus, Data Converter, Retry Policies, Schedules, Child Workflows, Continue-As-New, Versioning, etc.), spread the questions across a diverse set of sub-topics — definition, lifecycle, common APIs, typical usage, and common pitfalls — rather than clustering on one narrow aspect.
 - Operator-facing concepts matter too. When the docs touch on Namespaces, connectivity and TLS, mTLS client certificates, Temporal Cloud networking, private link / IP allowlists, cluster topology, task queue routing, visibility store, cross-namespace Nexus endpoints, dual-visibility migration, API keys, RBAC roles, or any other concern someone running Temporal in production would need to reason about, include at least one question on the operator angle.`
 
+const languageNeutralitySection = `LANGUAGE NEUTRALITY:
+- Default to language-neutral Temporal concepts, production scenarios, and pseudo-code. Do NOT require the reader to know a specific SDK's annotations, attributes, decorators, package names, class names, method signatures, analyzer rules, language runtime APIs, or syntax in general categories.
+- If the source documentation is SDK-specific but the category is not explicitly SDK- or language-specific, translate the detail into an abstract Temporal concept. Examples: "workflow definition metadata", "workflow entry point", "dynamic workflow handler", "raw argument payloads", "deterministic timer API", "workflow-safe randomness", "cancellation token/signal".
+- Use pseudo-code only when it makes the scenario clearer. Label it as pseudo-code or write it as descriptive steps; avoid real Go, Java, Python, .NET, or TypeScript syntax unless the category explicitly names that SDK/language.
+- If an SDK-specific fact cannot be generalized into a useful Temporal concept, skip that fact and choose another concept from the bucket.`
+
+const referenceSection = `REFERENCE FIELD:
+- Include a "reference" field for every question.
+- "reference" must be a docs URL link, not quoted content. Return a single canonical URL string that points to the page supporting the answer.
+- Prefer a full https://docs.temporal.io/... URL for the same page named by source_doc.
+- Convert the underscore-separated source_doc filename back into a docs path when needed. Example: develop_go_workflows_schedules.html -> https://docs.temporal.io/develop/go/workflows/schedules.
+- If source_doc is a single page like security.html, use https://docs.temporal.io/security.
+- Do NOT return excerpts, section headings, explanations, or made-up URLs.`
+
 // Per-difficulty SYSTEM prompts. These are the stable prefix and never
 // include the variable bucket text or the N-questions count, so they can
 // be cached across calls in a pipeline run.
@@ -53,12 +67,16 @@ RULES:
 - Focus on "what" and "why" rather than edge cases or production gotchas
 - Do NOT include code snippets or require SDK-specific knowledge
 
+` + languageNeutralitySection + `
+
 ` + choiceQualitySection + `
 
 ` + topicalSpreadSection + `
 
+` + referenceSection + `
+
 Return ONLY a JSON array matching this exact schema (no markdown fences, no extra text):
-[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"A","explanation":"...","source_doc":"filename.html"}]`
+[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"A","explanation":"...","source_doc":"filename.html","reference":"https://docs.temporal.io/example/path"}]`
 }
 
 func medSystem() string {
@@ -66,19 +84,23 @@ func medSystem() string {
 
 RULES:
 - Questions test PRACTICAL KNOWLEDGE of how Temporal features work
-- May include simple code snippets in Go, Java, Python, or TypeScript showing common patterns. Rotate across these tier-1 SDKs across the question set so users of any SDK see familiar syntax
+- May include short pseudo-code snippets or abstract API descriptions showing common patterns
 - Wrong answers should represent reasonable misunderstandings, not absurd options
 - The explanation is the most important part. Clarify the concept, mention when you would reach for this pattern in practice, and call out the misunderstanding embedded in each wrong option
 - Where two Temporal features overlap or are commonly confused (Signal vs Update, Continue-As-New vs child workflow, local vs regular activity, StartToCloseTimeout vs HeartbeatTimeout, RetryPolicy vs workflow-level timeout), make the choice between them the subject of the question
 - Focus on "how it works" and correct usage, not extreme edge cases
 - Questions should be answerable by someone who has built a few Temporal workflows
 
+` + languageNeutralitySection + `
+
 ` + choiceQualitySection + `
 
 ` + topicalSpreadSection + `
 
+` + referenceSection + `
+
 Return ONLY a JSON array matching this exact schema (no markdown fences, no extra text):
-[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"C","explanation":"...","source_doc":"filename.html"}]`
+[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"C","explanation":"...","source_doc":"filename.html","reference":"https://docs.temporal.io/example/path"}]`
 }
 
 func hardSystem() string {
@@ -93,6 +115,8 @@ RULES:
 - Do NOT write definition/recall questions like "What is X?"
 - Do NOT make questions tricky for the sake of being tricky
 
+` + languageNeutralitySection + `
+
 RELATIONSHIP QUESTIONS:
 - Reserve 1-2 questions per bucket that explicitly test the RELATIONSHIP between this feature and an adjacent one — e.g., Workflows + Retry Policies; Activities + Heartbeats + Timeouts; Signals + Worker Versioning + deploy rollouts; Schedules + Namespaces; Data Converter + Payload Codec + encryption-at-rest; Task Queues + Workers + sticky scheduling. These composite questions teach how Temporal features behave together in practice, not in isolation.
 
@@ -100,8 +124,10 @@ RELATIONSHIP QUESTIONS:
 
 ` + topicalSpreadSection + `
 
+` + referenceSection + `
+
 Return ONLY a JSON array matching this exact schema (no markdown fences, no extra text):
-[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"D","explanation":"...","source_doc":"filename.html"}]`
+[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"D","explanation":"...","source_doc":"filename.html","reference":"https://docs.temporal.io/example/path"}]`
 }
 
 func nightmareSystem() string {
@@ -109,10 +135,12 @@ func nightmareSystem() string {
 
 RULES:
 - Questions describe COMPLEX PRODUCTION SCENARIOS where 2-3 Temporal features interact. Cover BOTH application-developer interactions (e.g., child workflows + signals + timeouts; versioning + continue-as-new + deploy rollouts; local activities + heartbeats + cancellation; Updates + validators + replay) AND operator-side interactions (e.g., namespace retention + archival + visibility store migration; mTLS client certs + private link + multi-region namespaces; Nexus endpoints + cross-namespace auth; sticky scheduling + task queue versioning + worker rollout; dual-visibility + search attribute indexing)
-- May include code snippets in Go, Java, Python, or TypeScript showing real workflow/activity patterns. Rotate across tier-1 SDKs across the question set
+- May include pseudo-code or abstract API descriptions showing real workflow/activity patterns
 - Wrong answers represent things an engineer might reasonably believe before understanding the deeper behavior
 - The explanation should go deep: explain the underlying design principle, connect it to broader Temporal architecture, and give the reader an insight they can apply beyond this specific question
 - After reading the explanation, the engineer should think "I'm glad I learned that before hitting it in production"
+
+` + languageNeutralitySection + `
 
 RELATIONSHIP QUESTIONS:
 - At nightmare level, EVERY question should exercise the relationship between 2+ features. If you can't explain which features interact and how, the question isn't nightmare-worthy. Examples of strong feature pairings: Workflows + History + Versioning on replay safety; Signals + Updates + Workers on ordering guarantees; Schedules + Namespaces + Task Queues on cross-namespace routing; Data Converter + Payload Codec + mTLS on end-to-end encryption trust boundaries; Continuous Export + Visibility Store + Archival on observability cost and retention.
@@ -121,8 +149,10 @@ RELATIONSHIP QUESTIONS:
 
 ` + topicalSpreadSection + `
 
+` + referenceSection + `
+
 Return ONLY a JSON array matching this exact schema (no markdown fences, no extra text):
-[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"B","explanation":"...","source_doc":"filename.html"}]`
+[{"question":"...","choices":[{"key":"A","text":"..."},{"key":"B","text":"..."},{"key":"C","text":"..."},{"key":"D","text":"..."}],"answer":"B","explanation":"...","source_doc":"filename.html","reference":"https://docs.temporal.io/example/path"}]`
 }
 
 // GenerationSystem returns the stable system prompt for a given difficulty.
@@ -144,6 +174,13 @@ func GenerationSystem(difficulty string) string {
 
 // GenerationUserMsg returns the per-call variable part: count + bucket text.
 func GenerationUserMsg(n int, difficulty, bucketText string) string {
+	return GenerationUserMsgForCategory(n, difficulty, "", bucketText)
+}
+
+// GenerationUserMsgForCategory returns the per-call variable part with the
+// category included so the model can distinguish general Temporal buckets
+// from explicitly SDK/language-specific buckets.
+func GenerationUserMsgForCategory(n int, difficulty, category, bucketText string) string {
 	label := difficulty
 	switch difficulty {
 	case "med":
@@ -151,7 +188,10 @@ func GenerationUserMsg(n int, difficulty, bucketText string) string {
 	case "nightmare":
 		label = "nightmare-difficulty"
 	}
-	return fmt.Sprintf("Generate %d %s multiple-choice questions from this documentation:\n\n%s", n, label, bucketText)
+	if category == "" {
+		return fmt.Sprintf("Generate %d %s multiple-choice questions from this documentation:\n\n%s", n, label, bucketText)
+	}
+	return fmt.Sprintf("Generate %d %s multiple-choice questions for category %q from this documentation.\n\nIf this category is not explicitly SDK- or language-specific, abstract SDK-specific examples into language-neutral Temporal concepts or skip details that cannot be generalized.\n\n%s", n, label, category, bucketText)
 }
 
 // EvalSystem is the stable system prompt for the evaluator. Cached across
@@ -162,7 +202,7 @@ const EvalSystem = `You are a quiz quality evaluator for Temporal platform educa
 2. ACCURACY: Is the stated correct answer actually correct AND aligned with current Temporal behavior? Reject answers that depend on deprecated APIs or patterns (for example, legacy Cron fields when Schedules are the recommended replacement, or outdated signal handler signatures).
 3. DIFFICULTY_FIT: Does the difficulty label (easy/med/hard/nightmare) match the actual difficulty?
 4. EXPLANATION: Does the explanation teach something useful and correctly explain why the answer is right?
-5. RELEVANCE: Would a Temporal user — application developer OR platform operator — benefit from understanding this BEFORE hitting it in production? Reject questions about Temporal's internal implementation details, contributor-level concerns, or purely academic trivia that won't change how someone builds or runs a Temporal system.
+5. RELEVANCE: Would a Temporal user — application developer OR platform operator — benefit from understanding this BEFORE hitting it in production? Reject questions about Temporal's internal implementation details, contributor-level concerns, or purely academic trivia that won't change how someone builds or runs a Temporal system. For categories that are not explicitly SDK- or language-specific, FAIL RELEVANCE (score <= 2) if the question requires knowing a specific SDK's annotations, attributes, decorators, package names, class names, method signatures, analyzer rules, language runtime APIs, or syntax instead of a language-neutral Temporal concept.
 
 A question PASSES if ALL scores are >= 3. Otherwise it FAILS.
 

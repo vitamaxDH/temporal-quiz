@@ -76,6 +76,7 @@ func TestGenerateQuiz_Success(t *testing.T) {
 		Answer:      "B",
 		Explanation: "Workflows fail on timeout.",
 		SourceDoc:   "timeouts.html",
+		Reference:   "https://docs.temporal.io/develop/dotnet/activities/timeouts",
 	}
 	mockQuestionsJSON, err := json.Marshal([]rawQuestion{mockQuestion})
 	require.NoError(t, err)
@@ -132,6 +133,7 @@ func TestGenerateQuiz_Success(t *testing.T) {
 	assert.Equal(t, "easy", easy.Difficulty)
 	assert.Equal(t, mockQuestion.Question, easy.Question)
 	assert.Equal(t, mockQuestion.Answer, easy.Answer)
+	assert.Equal(t, mockQuestion.Reference, easy.Reference)
 	assert.NotEmpty(t, easy.GeneratedAt)
 
 	// Verify med question.
@@ -167,6 +169,7 @@ func TestWriteQuizFiles_Success(t *testing.T) {
 			Question:   "Q1",
 			Choices:    []Choice{{Key: "A", Text: "A1"}},
 			Answer:     "A",
+			Reference:  "https://docs.temporal.io/develop",
 		},
 		{
 			ID:         "develop_med_001",
@@ -175,6 +178,7 @@ func TestWriteQuizFiles_Success(t *testing.T) {
 			Question:   "Q2",
 			Choices:    []Choice{{Key: "A", Text: "A2"}},
 			Answer:     "A",
+			Reference:  "https://docs.temporal.io/develop/med",
 		},
 		{
 			ID:         "develop_hard_001",
@@ -183,6 +187,7 @@ func TestWriteQuizFiles_Success(t *testing.T) {
 			Question:   "Q3",
 			Choices:    []Choice{{Key: "A", Text: "A3"}},
 			Answer:     "A",
+			Reference:  "https://docs.temporal.io/develop/hard",
 		},
 		{
 			ID:         "develop_nightmare_001",
@@ -191,6 +196,7 @@ func TestWriteQuizFiles_Success(t *testing.T) {
 			Question:   "Q4",
 			Choices:    []Choice{{Key: "A", Text: "A4"}},
 			Answer:     "A",
+			Reference:  "https://docs.temporal.io/develop/nightmare",
 		},
 		{
 			ID:         "cli_hard_001",
@@ -199,6 +205,7 @@ func TestWriteQuizFiles_Success(t *testing.T) {
 			Question:   "Q5",
 			Choices:    []Choice{{Key: "A", Text: "A5"}},
 			Answer:     "A",
+			Reference:  "https://docs.temporal.io/cli/hard",
 		},
 	}
 
@@ -244,11 +251,13 @@ func TestWriteQuizFiles_Success(t *testing.T) {
 	readGzippedJSON(t, filepath.Join(runDir, "develop.json.gz"), &devQuiz)
 	assert.Equal(t, "develop", devQuiz.Category)
 	assert.Len(t, devQuiz.Questions, 4)
+	assert.Equal(t, "https://docs.temporal.io/develop", devQuiz.Questions[0].Reference)
 
 	var cliQuiz CategoryQuiz
 	readGzippedJSON(t, filepath.Join(runDir, "cli.json.gz"), &cliQuiz)
 	assert.Equal(t, "cli", cliQuiz.Category)
 	assert.Len(t, cliQuiz.Questions, 1)
+	assert.Equal(t, "https://docs.temporal.io/cli/hard", cliQuiz.Questions[0].Reference)
 
 	// No flat-file mirror should exist at the top of the output dir.
 	_, err = os.Stat(filepath.Join(outputDir, "manifest.json"))

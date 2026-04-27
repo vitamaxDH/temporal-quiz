@@ -88,7 +88,7 @@ func (a *QuizActivities) GenerateQuiz(ctx context.Context, input GenerateQuizInp
 
 	var questions []QuizQuestion
 	for _, d := range diffs {
-		raw, err := a.callClaudeCached(ctx, GenerationSystem(d.name), GenerationUserMsg(d.count, d.name, bucketText))
+		raw, err := a.callClaudeCached(ctx, GenerationSystem(d.name), GenerationUserMsgForCategory(d.count, d.name, input.Category, bucketText))
 		if err != nil {
 			// If Claude can't generate questions (e.g. thin content), skip this tier
 			fmt.Printf("Warning: skipping %s for %s: %v\n", d.name, input.Category, err)
@@ -104,6 +104,7 @@ func (a *QuizActivities) GenerateQuiz(ctx context.Context, input GenerateQuizInp
 				Answer:      rq.Answer,
 				Explanation: rq.Explanation,
 				SourceDoc:   rq.SourceDoc,
+				Reference:   rq.Reference,
 				GeneratedAt: now,
 			})
 		}
@@ -236,6 +237,7 @@ func (a *QuizActivities) EvaluateQuiz(ctx context.Context, questions []QuizQuest
 	// Build a compact JSON representation for evaluation
 	type evalInput struct {
 		ID          string   `json:"id"`
+		Category    string   `json:"category"`
 		Difficulty  string   `json:"difficulty"`
 		Question    string   `json:"question"`
 		Choices     []Choice `json:"choices"`
@@ -246,6 +248,7 @@ func (a *QuizActivities) EvaluateQuiz(ctx context.Context, questions []QuizQuest
 	for j, q := range questions {
 		inputs[j] = evalInput{
 			ID:          q.ID,
+			Category:    q.Category,
 			Difficulty:  q.Difficulty,
 			Question:    q.Question,
 			Choices:     q.Choices,

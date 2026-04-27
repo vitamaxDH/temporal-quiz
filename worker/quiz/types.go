@@ -66,6 +66,7 @@ type QuizQuestion struct {
 	Answer      string   `json:"answer"`
 	Explanation string   `json:"explanation"`
 	SourceDoc   string   `json:"source_doc"`
+	Reference   string   `json:"reference"`
 	GeneratedAt string   `json:"generated_at"`
 }
 
@@ -170,6 +171,7 @@ type rawQuestion struct {
 	Answer      string   `json:"answer"`
 	Explanation string   `json:"explanation"`
 	SourceDoc   string   `json:"source_doc"`
+	Reference   string   `json:"reference"`
 }
 
 type EvalScores struct {
