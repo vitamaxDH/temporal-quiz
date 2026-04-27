@@ -451,6 +451,8 @@ async function init() {
     if (e.target.id === 'modalBackdrop') closeModal(false);
   });
   document.getElementById('restartBtn').addEventListener('click', restartSession);
+  document.getElementById('pauseBtn').addEventListener('click', togglePause);
+  document.getElementById('quizPausedOverlay').addEventListener('click', togglePause);
   document.getElementById('scopeBtn').addEventListener('click', showSessionScope);
   document.getElementById('quitBtn').addEventListener('click', quitSession);
   document.getElementById('sidebarOverlay').addEventListener('click', toggleSidebar);
@@ -1597,6 +1599,12 @@ function startSession(qs, length, meta = {}) {
   sessionAnswered = 0;
   sessionCorrect = 0;
   sessionWrongItems = [];
+  if (timerState.paused) {
+    timerState.paused = false;
+    timerState.pausedQElapsed = null;
+    timerState.pausedSessionElapsed = null;
+    clearPausedUI();
+  }
   timerState.sessionStart = Date.now();
   questions = Number.isFinite(length) ? qs.slice(0, length) : qs;
   currentIndex = 0;
@@ -1791,7 +1799,7 @@ function renderExplanation(q) {
 }
 
 function goPrevQuestion() {
-  if (mode !== 'quiz' || currentIndex <= 0) return;
+  if (mode !== 'quiz' || currentIndex <= 0 || timerState.paused) return;
   currentIndex--;
   showQuestion();
 }
@@ -1817,7 +1825,7 @@ function selectAnswer(key) {
 /* ---- Submit ---- */
 
 function submitAnswer() {
-  if (!selectedKey || revealed) return;
+  if (!selectedKey || revealed || timerState.paused) return;
   revealed = true;
 
   const q = questions[currentIndex];
@@ -1964,6 +1972,7 @@ function submitAnswer() {
 /* ---- Next / Skip ---- */
 
 function nextQuestion() {
+  if (timerState.paused) return;
   currentIndex++;
   const activeSess = state.sessions && state.sessions[0];
   if (activeSess && activeSess.ended_at === null) {
@@ -2280,6 +2289,14 @@ document.addEventListener('keydown', (e) => {
       return;
     }
   }
+
+  if (mode === 'quiz' && (e.key === 'p' || e.key === 'P')) {
+    togglePause();
+    e.preventDefault();
+    return;
+  }
+
+  if (timerState.paused) return;
 
   if (mode === 'quiz' && e.key === 'ArrowLeft' && currentIndex > 0) {
     goPrevQuestion();
@@ -2888,7 +2905,7 @@ function renderDuration(host) {
 
 /* ---- Timer ---- */
 
-let timerState = { qStart: null, sessionStart: null };
+let timerState = { qStart: null, sessionStart: null, paused: false };
 // One-shot flag so showQuestion() leaves the resumed lap offset intact on
 // the first render after resumeSession(); it's cleared immediately after.
 let resumingSession = false;
@@ -2904,6 +2921,7 @@ let lastLapPersistAt = 0;
 // pagehide / visibilitychange where we may not get another tick).
 function persistCurrentLap(force = false) {
   if (!timerState.qStart) return;
+  if (timerState.paused && !force) return;
   const activeSess = state.sessions && state.sessions[0];
   if (!activeSess || activeSess.ended_at !== null) return;
   const now = Date.now();
@@ -2924,6 +2942,7 @@ function resetCurrentLap() {
 
 function startMainTimer() {
   if (mainTimerHandle) return;
+  if (timerState.paused) return;
   const tick = () => {
     const qEl = document.getElementById('statTime');
     const sEl = document.getElementById('statSession');
@@ -2949,6 +2968,54 @@ function stopMainTimer(resetSession = false) {
     const sEl = document.getElementById('statSession');
     if (sEl) sEl.textContent = '0s';
   }
+  if (timerState.paused) clearPausedUI();
+  timerState.paused = false;
+}
+
+function clearPausedUI() {
+  document.body.classList.remove('is-paused');
+  const btn = document.getElementById('pauseBtn');
+  if (btn) {
+    btn.classList.remove('is-paused');
+    btn.textContent = 'Pause';
+    btn.setAttribute('title', 'Pause this session and freeze the timer (P)');
+  }
+  const overlay = document.getElementById('quizPausedOverlay');
+  if (overlay) overlay.setAttribute('aria-hidden', 'true');
+}
+
+function togglePause() {
+  if (mode !== 'quiz') return;
+  if (!timerState.qStart && !timerState.paused) return;
+  if (timerState.paused) {
+    const now = Date.now();
+    timerState.qStart = now - (timerState.pausedQElapsed || 0);
+    timerState.sessionStart = now - (timerState.pausedSessionElapsed || 0);
+    timerState.pausedQElapsed = null;
+    timerState.pausedSessionElapsed = null;
+    timerState.paused = false;
+    clearPausedUI();
+    startMainTimer();
+    return;
+  }
+  const now = Date.now();
+  timerState.pausedQElapsed = timerState.qStart ? now - timerState.qStart : 0;
+  timerState.pausedSessionElapsed = timerState.sessionStart ? now - timerState.sessionStart : 0;
+  timerState.paused = true;
+  persistCurrentLap(true);
+  if (mainTimerHandle) {
+    clearInterval(mainTimerHandle);
+    mainTimerHandle = null;
+  }
+  document.body.classList.add('is-paused');
+  const btn = document.getElementById('pauseBtn');
+  if (btn) {
+    btn.classList.add('is-paused');
+    btn.textContent = 'Resume';
+    btn.setAttribute('title', 'Resume this session (P)');
+  }
+  const overlay = document.getElementById('quizPausedOverlay');
+  if (overlay) overlay.setAttribute('aria-hidden', 'false');
 }
 
 let scratchText = ''; // per-question scratch, resets in showQuestion
