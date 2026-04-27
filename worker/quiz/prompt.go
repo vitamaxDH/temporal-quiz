@@ -49,7 +49,14 @@ const referenceSection = `REFERENCE FIELD:
 - Prefer a full https://docs.temporal.io/... URL for the same page named by source_doc.
 - Convert the underscore-separated source_doc filename back into a docs path when needed. Example: develop_go_workflows_schedules.html -> https://docs.temporal.io/develop/go/workflows/schedules.
 - If source_doc is a single page like security.html, use https://docs.temporal.io/security.
-- Do NOT return excerpts, section headings, explanations, or made-up URLs.`
+- Do NOT return excerpts, section headings, explanations, or made-up URLs.
+- A downstream validator will reject any reference URL that does not exist on docs.temporal.io. If you are unsure the page exists at the path you are constructing, prefer a higher-level page that you are confident exists (e.g. https://docs.temporal.io/develop/go/workflows over a guessed deeper path).`
+
+const deprecatedToolsSection = `DEPRECATED TOOLS (do not generate questions about these):
+- DO NOT generate questions about tctl. It is the legacy CLI and has been replaced by the temporal CLI. Generate questions about the temporal CLI instead.
+- DO NOT generate questions about tcld. It is the legacy Temporal Cloud CLI and has been replaced by the "temporal cloud" subcommands of the temporal CLI. Generate questions about "temporal cloud" subcommands instead.
+- If the source documentation is primarily about tctl or tcld (filename, page title, or repeated commands), SKIP that source entirely and pick a different doc from the bucket.
+- Quiz only the current, supported way of doing things in Temporal today.`
 
 // Per-difficulty SYSTEM prompts. These are the stable prefix and never
 // include the variable bucket text or the N-questions count, so they can
@@ -68,6 +75,8 @@ RULES:
 - Do NOT include code snippets or require SDK-specific knowledge
 
 ` + languageNeutralitySection + `
+
+` + deprecatedToolsSection + `
 
 ` + choiceQualitySection + `
 
@@ -92,6 +101,8 @@ RULES:
 - Questions should be answerable by someone who has built a few Temporal workflows
 
 ` + languageNeutralitySection + `
+
+` + deprecatedToolsSection + `
 
 ` + choiceQualitySection + `
 
@@ -120,6 +131,8 @@ RULES:
 RELATIONSHIP QUESTIONS:
 - Reserve 1-2 questions per bucket that explicitly test the RELATIONSHIP between this feature and an adjacent one — e.g., Workflows + Retry Policies; Activities + Heartbeats + Timeouts; Signals + Worker Versioning + deploy rollouts; Schedules + Namespaces; Data Converter + Payload Codec + encryption-at-rest; Task Queues + Workers + sticky scheduling. These composite questions teach how Temporal features behave together in practice, not in isolation.
 
+` + deprecatedToolsSection + `
+
 ` + choiceQualitySection + `
 
 ` + topicalSpreadSection + `
@@ -144,6 +157,8 @@ RULES:
 
 RELATIONSHIP QUESTIONS:
 - At nightmare level, EVERY question should exercise the relationship between 2+ features. If you can't explain which features interact and how, the question isn't nightmare-worthy. Examples of strong feature pairings: Workflows + History + Versioning on replay safety; Signals + Updates + Workers on ordering guarantees; Schedules + Namespaces + Task Queues on cross-namespace routing; Data Converter + Payload Codec + mTLS on end-to-end encryption trust boundaries; Continuous Export + Visibility Store + Archival on observability cost and retention.
+
+` + deprecatedToolsSection + `
 
 ` + choiceQualitySection + `
 
@@ -199,7 +214,7 @@ func GenerationUserMsgForCategory(n int, difficulty, category, bucketText string
 const EvalSystem = `You are a quiz quality evaluator for Temporal platform educational content. Evaluate each question on these criteria (score 1-5):
 
 1. CLARITY: Is the question unambiguous? Is there exactly one clearly correct answer? Are the four choices comparable in length and specificity? Apply this concrete length rule: count the words of each choice, then FAIL CLARITY (score <= 2) if the correct choice is strictly the single longest, OR if the correct choice's word count exceeds 1.10x the average word count of the three wrong choices. Also FAIL CLARITY if the correct choice is more hedged, more qualified, or more "textbook-sounding" than the wrong choices, or if the four choices do not share the same grammatical shape.
-2. ACCURACY: Is the stated correct answer actually correct AND aligned with current Temporal behavior? Reject answers that depend on deprecated APIs or patterns (for example, legacy Cron fields when Schedules are the recommended replacement, or outdated signal handler signatures).
+2. ACCURACY: Is the stated correct answer actually correct AND aligned with current Temporal behavior? Reject answers that depend on deprecated APIs or patterns (for example, legacy Cron fields when Schedules are the recommended replacement, or outdated signal handler signatures). FAIL ACCURACY (score <= 2) if the question primarily concerns deprecated tools (tctl, tcld) instead of the current temporal CLI and "temporal cloud" subcommands.
 3. DIFFICULTY_FIT: Does the difficulty label (easy/med/hard/nightmare) match the actual difficulty?
 4. EXPLANATION: Does the explanation teach something useful and correctly explain why the answer is right?
 5. RELEVANCE: Would a Temporal user — application developer OR platform operator — benefit from understanding this BEFORE hitting it in production? Reject questions about Temporal's internal implementation details, contributor-level concerns, or purely academic trivia that won't change how someone builds or runs a Temporal system. For categories that are not explicitly SDK- or language-specific, FAIL RELEVANCE (score <= 2) if the question requires knowing a specific SDK's annotations, attributes, decorators, package names, class names, method signatures, analyzer rules, language runtime APIs, or syntax instead of a language-neutral Temporal concept.

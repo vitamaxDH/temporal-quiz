@@ -53,6 +53,19 @@ func TestEvalPrompt(t *testing.T) {
 	assert.Contains(t, result, "not explicitly SDK- or language-specific")
 }
 
+func TestDeprecatedToolsSection_InAllDifficulties(t *testing.T) {
+	for _, diff := range []string{"easy", "med", "hard", "nightmare"} {
+		t.Run(diff, func(t *testing.T) {
+			sys := GenerationSystem(diff)
+			assert.Contains(t, sys, "DEPRECATED TOOLS", "diff=%s", diff)
+			assert.Contains(t, sys, "tctl", "diff=%s", diff)
+			assert.Contains(t, sys, "tcld", "diff=%s", diff)
+		})
+	}
+	assert.Contains(t, EvalSystem, "deprecated tools (tctl, tcld)",
+		"evaluator must reject deprecated-tools questions")
+}
+
 func TestGenerationUserMsgForCategory(t *testing.T) {
 	result := GenerationUserMsgForCategory(2, "hard", "Features_Workflows", "workflow docs")
 
