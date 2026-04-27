@@ -386,6 +386,43 @@ function formatSubcategory(sourceDoc) {
     .join(' ');
 }
 
+function extractSourceDocFilename(sourceDoc) {
+  const raw = (sourceDoc || '').trim();
+  if (!raw) return '';
+  const match = /\(([^()]+\.html?)\)\s*$/.exec(raw);
+  return match ? match[1] : raw;
+}
+
+function normalizeReferenceUrl(reference) {
+  const raw = (reference || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^docs\.temporal\.io\//i.test(raw)) return `https://${raw}`;
+  if (raw.startsWith('/')) return `https://docs.temporal.io${raw}`;
+  return '';
+}
+
+function buildDocsReferenceUrlFromSourceDoc(sourceDoc) {
+  const filename = extractSourceDocFilename(sourceDoc);
+  if (!filename) return '';
+  const slug = filename.replace(/\.html?$/i, '').replace(/^\/+/, '');
+  if (!slug) return '';
+  return `https://docs.temporal.io/${slug.replace(/_/g, '/')}`;
+}
+
+function resolveReferenceUrl(q) {
+  return normalizeReferenceUrl(q?.reference) || buildDocsReferenceUrlFromSourceDoc(q?.source_doc);
+}
+
+function formatReferenceUrlLabel(url) {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.host}${parsed.pathname}`.replace(/\/$/, '') || parsed.host;
+  } catch {
+    return url;
+  }
+}
+
 /* ---- Init ---- */
 
 async function init() {
@@ -861,13 +898,15 @@ function showSessionScope() {
   const configCats = Array.isArray(sess?.config?.categories) ? sess.config.categories : [];
   const coversAllCurrentCats = configCats.length === fallbackCatList.length
     && fallbackCatList.every(cat => configCats.includes(cat));
+  const pillList = items => `<div class="scope-pill-list">${items.join('')}</div>`;
+  const categoryPill = label => `<span class="pill scope-pill">${escapeHtml(label)}</span>`;
   const catsDisplay = configCats.length && !coversAllCurrentCats
-    ? configCats.map(formatCategoryLabel).join(', ')
-    : `All categories (${fallbackCatList.length})`;
+    ? pillList(configCats.map(cat => categoryPill(formatCategoryLabel(cat))))
+    : pillList([categoryPill(`All categories (${fallbackCatList.length})`)]);
 
   const diffsDisplay = sess?.config?.difficulties?.length
-    ? sess.config.difficulties.map(formatDifficultyLabel).join(', ')
-    : 'All difficulties';
+    ? pillList(sess.config.difficulties.map(difficulty => difficultyDots(difficulty)))
+    : pillList([difficultyAllBadge()]);
 
   const datesDisplay = dates.length === 1
     ? formatRunDate(dates[0])
@@ -881,18 +920,18 @@ function showSessionScope() {
     ? `${sess.total ?? 0} / ${sess?.planned ?? (Array.isArray(sess?.queue) ? sess.queue.length : '?')} answered`
     : 'no active session';
 
-  const row = (label, value) => `
+  const row = (label, value, html = false) => `
     <div class="scope-row">
       <div class="scope-label">${escapeHtml(label)}</div>
-      <div class="scope-value">${escapeHtml(value)}</div>
+      <div class="scope-value${html ? ' scope-value-rich' : ''}">${html ? value : escapeHtml(value)}</div>
     </div>`;
 
   const body = `
     <div class="scope-list">
       ${row('Mode', modeLabel)}
-      ${row('Categories', catsDisplay)}
+      ${row('Categories', catsDisplay, true)}
       ${row('Dates', datesDisplay)}
-      ${row('Difficulty', diffsDisplay)}
+      ${row('Difficulty', diffsDisplay, true)}
       ${row('Length', lengthDisplay)}
       ${row('Progress', progressDisplay)}
     </div>
@@ -1713,12 +1752,7 @@ function replayAnsweredQuestion(q, h) {
   });
 
   // Re-show the explanation.
-  const explanation = document.getElementById('explanation');
-  explanation.style.display = 'block';
-  explanation.innerHTML = `
-    <div class="explanation-label">Explanation</div>
-    <div class="explanation-text">${formatQuestion(q.explanation)}</div>
-  `;
+  renderExplanation(q);
 
   // Submit becomes Next (or Finish on the last question) so the user
   // can move forward again.
@@ -1735,6 +1769,25 @@ function updatePrevButton() {
   const prev = document.getElementById('prevBtn');
   if (!prev) return;
   prev.disabled = !(mode === 'quiz' && currentIndex > 0);
+}
+
+function renderExplanation(q) {
+  const explanation = document.getElementById('explanation');
+  const referenceUrl = resolveReferenceUrl(q);
+  const referenceHtml = referenceUrl
+    ? `
+      <div class="explanation-reference">
+        <span class="explanation-reference-label">Reference</span>
+        <a class="explanation-reference-link" href="${escapeHtml(referenceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(formatReferenceUrlLabel(referenceUrl))}</a>
+      </div>
+    `
+    : '';
+  explanation.style.display = 'block';
+  explanation.innerHTML = `
+    <div class="explanation-label">Explanation</div>
+    <div class="explanation-text">${formatQuestion(q.explanation)}</div>
+    ${referenceHtml}
+  `;
 }
 
 function goPrevQuestion() {
@@ -1839,12 +1892,8 @@ function submitAnswer() {
   });
 
   // Show explanation
+  renderExplanation(q);
   const explanation = document.getElementById('explanation');
-  explanation.style.display = 'block';
-  explanation.innerHTML = `
-    <div class="explanation-label">Explanation</div>
-    <div class="explanation-text">${formatQuestion(q.explanation)}</div>
-  `;
 
   // Inline per-question note block (Phase 3)
   const qnKey = hashQuestion(q.question);
